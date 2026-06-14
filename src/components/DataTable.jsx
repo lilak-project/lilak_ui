@@ -54,6 +54,7 @@ export default function DataTable({
                 fontSize: 'var(--fs-micro, 10px)',
                 letterSpacing: '0.03em',
                 textTransform: 'uppercase',
+                whiteSpace: 'nowrap',
                 padding: d.headPad,
                 width: c.width,
                 borderBottom: '1px solid var(--border-default)',
