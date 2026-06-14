@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import {
   applyTheme, getTheme, setTheme, applyLangFont, THEMES,
-  LangProvider, useLang, useHotkeys, prettyKey,
+  LangProvider, useLang, useHotkeys, prettyKey, useBreakpoint,
   defineCommands, runCommand,
   IdentityProvider, useIdentity,
   Button, Input, Badge, Card, DataTable, Modal, TopBar, CommandBar, LogFeed, LogComposer, TopPanel, ColorSettings, ColorPicker, CrudTable,
@@ -36,6 +36,7 @@ function CrudTableDemo() {
   const nextId = () => (rows.reduce((m, r) => Math.max(m, r.id), 0) + 1)
   return (
     <Card title="CrudTable — add / edit / delete">
+     <div style={{ overflowX: 'auto' }}>
       <CrudTable
         rows={rows}
         rowKey={(r) => r.id}
@@ -57,6 +58,7 @@ function CrudTableDemo() {
         onDelete={(row) => setRows((rs) => rs.filter((r) => r.id !== row.id))}
         labels={{ add: 'Add row', confirmDelete: (r) => `Delete "${r.name}"?`, newTitle: 'New row', editTitle: 'Edit row' }}
       />
+     </div>
     </Card>
   )
 }
@@ -151,8 +153,9 @@ const TAB_IDS = ['run', 'log', 'root', 'settings']
 function Shell() {
   const { t, lang, setLang, langs } = useLang()
   const { name: userName, setName } = useIdentity()
+  const { isPhone } = useBreakpoint()   // glue-level responsive switch
   const [theme, setThemeState] = useState(getTheme())
-  const [tab, setTab] = useState('run')
+  const [tab, setTab] = useState(new URLSearchParams(location.search).get('tab') || 'run')
   const [sel, setSel] = useState(1)
   const [barOpen, setBarOpen] = useState(false)
   const [sysOpen, setSysOpen] = useState(false)
@@ -196,7 +199,9 @@ function Shell() {
     'Escape': () => setShowSC(false),
   })
 
-  const TABS = TAB_IDS.map((id) => ({ id, label: t(`tab_${id}`) }))
+  // icons let TopBar collapse tabs to icon-only when the bar gets narrow (phone)
+  const TAB_ICONS = { run: 'run', log: 'logs', root: 'graph', settings: 'settings' }
+  const TABS = TAB_IDS.map((id) => ({ id, label: t(`tab_${id}`), icon: TAB_ICONS[id] }))
   const columns = [
     { key: 'name', header: t('col_param'), width: '40%', mono: true, muted: true, render: (r) => `${r.group}/${r.name}` },
     { key: 'value', header: t('col_value'), mono: true, render: (r) => <Input mono value={r.value} onChange={() => {}} /> },
@@ -212,19 +217,20 @@ function Shell() {
         display: 'flex', alignItems: 'center', gap: 7,
         background: sysOpen ? 'var(--nav-accent)' : 'transparent',
         border: '1px solid var(--nav-border)', borderRadius: 8,
-        padding: '2px 10px', cursor: 'pointer',
+        padding: isPhone ? '4px 8px' : '2px 10px', cursor: 'pointer',
         color: 'var(--nav-text)', fontSize: 15.5, fontFamily: 'var(--font-mono)',
       }}
     >
       <span style={{ position: 'relative', display: 'inline-flex', color: 'var(--nav-text)' }}>
         <AlarmIcon />
       </span>
-      <span style={{ color: 'var(--nav-text)' }}>{userName}</span>
+      {/* drop the name on phones so the bar fits — the bell still opens the panel */}
+      {!isPhone && <span style={{ color: 'var(--nav-text)' }}>{userName}</span>}
     </button>
   )
 
   return (
-    <div style={{ minHeight: '100vh', paddingBottom: 80, fontFamily: 'var(--font-sans)' }}>
+    <div style={{ minHeight: '100vh', paddingBottom: 80, fontFamily: 'var(--font-sans)', overflowX: 'hidden' }}>
       <TopBar
         brand={t('brand')}
         tabs={TABS}
@@ -238,11 +244,11 @@ function Shell() {
         <SystemPanelContent
           t={t} theme={theme} lang={lang} langs={langs}
           onTheme={applyThemeId} onLang={setLang} entries={entries}
-          userName={userName} onName={setName}
+          userName={userName} onName={setName} isPhone={isPhone}
         />
       </TopPanel>
 
-      <div style={{ maxWidth: 780, margin: '0 auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ maxWidth: 780, margin: '0 auto', padding: isPhone ? '12px 10px' : '16px', display: 'flex', flexDirection: 'column', gap: isPhone ? 12 : 16 }}>
         {/* ── Run tab: parameter table ── */}
         {tab === 'run' && (
           <Card title="stark/config_conv.mac" pad={false}
@@ -250,7 +256,10 @@ function Shell() {
                   <Button variant="secondary" onClick={() => runCommand(commands, 'save')}>{t('btn_save')}</Button>
                   <Button onClick={() => runCommand(commands, 'run')}>{t('btn_run')} ▸</Button>
                 </>}>
-            <DataTable columns={columns} rows={PARAMS} zebra selectedKey={sel} rowKey={(_r, i) => i} onRowClick={(_r, i) => setSel(i)} />
+            {/* wide tables get their own horizontal scroll so they never widen the page */}
+            <div style={{ overflowX: 'auto' }}>
+              <DataTable columns={columns} rows={PARAMS} zebra selectedKey={sel} rowKey={(_r, i) => i} onRowClick={(_r, i) => setSel(i)} />
+            </div>
           </Card>
         )}
 
@@ -351,7 +360,7 @@ function Shell() {
 }
 
 // ── content of the system drop-down panel: left 2/3 logs · right 1/3 settings ──
-function SystemPanelContent({ t, theme, lang, langs, onTheme, onLang, entries, userName, onName }) {
+function SystemPanelContent({ t, theme, lang, langs, onTheme, onLang, entries, userName, onName, isPhone }) {
   const sectionTitle = { fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--nav-text-muted)', marginBottom: 8 }
   const card = { background: 'rgba(255,255,255,0.04)', border: '1px solid var(--nav-border)', borderRadius: 10, padding: '12px 14px' }
   const statRow = { display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '3px 0', color: 'var(--nav-text)' }
@@ -362,7 +371,7 @@ function SystemPanelContent({ t, theme, lang, langs, onTheme, onLang, entries, u
   })
 
   return (
-    <div style={{ height: '100%', display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16 }}>
+    <div style={{ height: '100%', display: 'grid', gridTemplateColumns: isPhone ? '1fr' : '2fr 1fr', gap: 16, overflowY: isPhone ? 'auto' : undefined }}>
       {/* LEFT 2/3 — system logs */}
       <div style={{ ...card, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
         <div style={sectionTitle}>{t('sys_recent')}</div>

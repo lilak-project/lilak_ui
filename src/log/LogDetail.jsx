@@ -160,24 +160,42 @@ export default function LogDetail({
           </div>
         )}
 
-        {/* attachments */}
-        {detail?.attachments?.length > 0 && (
-          <div style={{ ...divider }}>
-            <div style={{ fontSize: 'var(--fs-tiny, 11px)', textTransform: 'uppercase', letterSpacing: '.05em', color: 'var(--text-muted)', marginBottom: 8 }}>
-              {L.attachments(detail.attachments.length)}
+        {/* attachments — images render as thumbnails, the rest as filename chips */}
+        {detail?.attachments?.length > 0 && (() => {
+          const isImg = (a) => a.content_type ? a.content_type.startsWith('image/') : /\.(png|jpe?g|gif|webp|bmp|svg|avif)$/i.test(a.original_filename || '')
+          const images = detail.attachments.filter(isImg)
+          const files = detail.attachments.filter((a) => !isImg(a))
+          return (
+            <div style={{ ...divider }}>
+              <div style={{ fontSize: 'var(--fs-tiny, 11px)', textTransform: 'uppercase', letterSpacing: '.05em', color: 'var(--text-muted)', marginBottom: 8 }}>
+                {L.attachments(detail.attachments.length)}
+              </div>
+              {images.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: files.length ? 8 : 0 }}>
+                  {images.map((att) => (
+                    <a key={att.id} href={attachmentHref(att)} target="_blank" rel="noopener noreferrer" title={att.original_filename}
+                      style={{ display: 'block', borderRadius: 8, overflow: 'hidden', border: '1px solid var(--border-default)', lineHeight: 0 }}>
+                      <img src={attachmentHref(att)} alt={att.original_filename} loading="lazy"
+                        style={{ display: 'block', width: 'auto', maxWidth: 220, maxHeight: 220, objectFit: 'cover' }} />
+                    </a>
+                  ))}
+                </div>
+              )}
+              {files.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {files.map((att) => (
+                    <a key={att.id} href={attachmentHref(att)} target="_blank" rel="noopener noreferrer"
+                      style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--fs-small, 12px)', padding: '6px 10px', borderRadius: 8,
+                        border: '1px solid var(--border-default)', backgroundColor: 'var(--surface-2)', color: 'var(--text-primary)', textDecoration: 'none' }}>
+                      <span style={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{att.original_filename}</span>
+                      {att.size && <span style={{ color: 'var(--text-muted)' }}>{formatSize(att.size)}</span>}
+                    </a>
+                  ))}
+                </div>
+              )}
             </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {detail.attachments.map((att) => (
-                <a key={att.id} href={attachmentHref(att)} target="_blank" rel="noopener noreferrer"
-                  style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--fs-small, 12px)', padding: '6px 10px', borderRadius: 8,
-                    border: '1px solid var(--border-default)', backgroundColor: 'var(--surface-2)', color: 'var(--text-primary)', textDecoration: 'none' }}>
-                  <span style={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{att.original_filename}</span>
-                  {att.size && <span style={{ color: 'var(--text-muted)' }}>{formatSize(att.size)}</span>}
-                </a>
-              ))}
-            </div>
-          </div>
-        )}
+          )
+        })()}
 
         {actions}
         {footer}

@@ -17,6 +17,7 @@ export { hoverify } from './theme/uiStyles.js'
 // i18n + hotkeys + commands + identity
 export { LangProvider, useLang } from './i18n.jsx'
 export { useHotkeys, prettyKey } from './hooks/useHotkeys.js'
+export { useMediaQuery, useBreakpoint, BREAKPOINTS } from './hooks/useBreakpoint.js'
 export { defineCommands, matchCommands, runCommand } from './commands.js'
 export { IdentityProvider, useIdentity } from './identity.jsx'
 
