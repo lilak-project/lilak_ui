@@ -20,6 +20,11 @@ import {
   Leaf, Tree, Flower, FlowerLotus, Butterfly, Bird, Cat, Dog, Fish, Ghost,
   Robot, Brain, Eye, Crown, Diamond, Gift, Cube, Compass, Anchor, Snowflake,
   Cloud, Drop, Mountains, Cactus, Bug, PawPrint, MagicWand, Sparkle,
+  // extended set
+  Asterisk, Baseball, Basketball, Bicycle, Boat, Cake, Coffee, Feather,
+  GameController, Hamburger, Hexagon, IceCream, Key, Lightbulb, MusicNotes,
+  Pizza, Rainbow, Shield, ShootingStar, Smiley, SoccerBall, Spade, Sword,
+  Trophy, Wrench, YinYang, Crosshair, Bone, Alien,
 } from '@phosphor-icons/react'
 
 /** Curated set of Phosphor icons that read well as small avatars. */
@@ -32,15 +37,25 @@ export const AVATAR_ICON_MAP = {
   gift: Gift, cube: Cube, compass: Compass, anchor: Anchor, snowflake: Snowflake,
   cloud: Cloud, drop: Drop, mountains: Mountains, cactus: Cactus, bug: Bug,
   paw: PawPrint, wand: MagicWand, sparkle: Sparkle,
+  // extended set
+  asterisk: Asterisk, baseball: Baseball, basketball: Basketball, bicycle: Bicycle,
+  boat: Boat, cake: Cake, coffee: Coffee, feather: Feather, gamepad: GameController,
+  burger: Hamburger, hexagon: Hexagon, icecream: IceCream, key: Key, bulb: Lightbulb,
+  music: MusicNotes, pizza: Pizza, rainbow: Rainbow, shield: Shield, shootingstar: ShootingStar,
+  smiley: Smiley, soccer: SoccerBall, spade: Spade, sword: Sword,
+  trophy: Trophy, wrench: Wrench, yinyang: YinYang, crosshair: Crosshair, bone: Bone, alien: Alien,
 }
 
 export const AVATAR_ICONS = Object.keys(AVATAR_ICON_MAP)
 
-/** 20 hues picked to read on both light & dark backgrounds. */
+/** Hues picked to read on both light & dark backgrounds. */
 export const AVATAR_COLORS = [
   '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16', '#22c55e', '#10b981',
   '#14b8a6', '#06b6d4', '#0ea5e9', '#3b82f6', '#6366f1', '#8b5cf6', '#a855f7',
   '#d946ef', '#ec4899', '#f43f5e', '#64748b', '#a16207', '#0f766e',
+  // extended shades
+  '#b91c1c', '#c2410c', '#b45309', '#4d7c0f', '#15803d', '#047857', '#0e7490',
+  '#1d4ed8', '#4338ca', '#7c3aed', '#a21caf', '#be123c', '#9f1239', '#334155',
 ]
 
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)]

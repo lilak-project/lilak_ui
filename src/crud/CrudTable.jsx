@@ -97,8 +97,8 @@ export default function CrudTable({
           <div style={{ flex: 1 }} />
           {headerActions}
           {onCreate && formFields && (
-            <Button variant="primary" size="sm" onClick={() => setMode('create')} icon>
-              <Icon name="plus" size={14} /> {L.add}
+            <Button variant="primary" size="sm" onClick={() => setMode('create')}>
+              {L.add}
             </Button>
           )}
         </div>
