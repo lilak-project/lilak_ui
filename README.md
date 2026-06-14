@@ -19,9 +19,13 @@ step, no Tailwind. The host app's Vite transpiles the source directly.
 ## The demo gallery
 
 `npm run demo` boots a single-file app ([`demo/main.jsx`](demo/main.jsx)) that
-wires the kit into a realistic LILAK shell: a `TopBar` with tabs, a bottom
-`CommandBar`, a drop-down system panel, full i18n (한국어 / English), and live
-theme switching. Each tab exercises a different slice of the kit.
+wires the kit into a realistic LILAK shell: a `TopBar` with the brand lockup
+(logo `brandIcon` + two-line `brand`/`brandSub` + a `brandSuffix` chip), tabs, a
+bottom `CommandBar`, a drop-down system panel, full i18n (한국어 / English), and
+live theme switching. Each tab exercises a different slice of the kit. The brand
+mark ships in the kit (`<Icon name="lilak"/>`) and the same SVG
+([`demo/public/lilak.svg`](demo/public/lilak.svg)) is wired up as the browser-tab
+favicon.
 
 ### Run tab — `DataTable` + `Card`
 
@@ -47,6 +51,52 @@ and `ColorSettings` — the preset switcher (**Bright / Dark / Low contrast /
 Teal**) plus the live per-token editor.
 
 ![Settings tab](docs/images/settings.png)
+
+### Phone vs laptop — the same app, adapted
+
+The kit is responsive in two complementary ways, both on show in the demo:
+
+- **Components adapt to their own container.** `TopBar` measures its width with a
+  `ResizeObserver` and collapses tabs to **icon-only** when labels no longer fit;
+  `ColorSettings` lays its token groups out with `auto-fill minmax(220px, 1fr)`,
+  so the editor goes from 3 columns on a laptop down to 1 on a phone — no
+  viewport check, no JS.
+- **The app branches at the glue level** using the `useBreakpoint` hook
+  (`src/hooks/useBreakpoint.js`): below the phone breakpoint the demo stacks the
+  system panel to one column, tightens padding, drops the username next to the
+  bell, and switches `TopBar` into its **mobile mode** — pass `tabsAsMenu` and a
+  taller `height` and the tabs fold behind a single list-icon trigger that opens
+  a pick-list of the tabs (tap the icon → choose a tab):
+
+<p>
+  <img src="docs/images/phone-tabmenu.png" alt="Phone top bar with the tab pick-list open" width="300" />
+</p>
+
+Several components carry the responsive behaviour themselves, so glue code rarely
+has to special-case the phone:
+
+- **`DataTable scroll` / `CrudTable`** wrap a wide table in its own horizontal
+  scroller, so cells that can't shrink (inputs, action buttons) scroll *inside
+  the card* instead of widening the whole page. `CrudTable` enables it by default.
+- **`LogComposer`** lays its run / title fields out with `flex-wrap`, so they
+  reflow onto multiple rows on a narrow screen rather than squishing.
+- **`Grid minCol={220}`** ([`layout/`](src/layout/)) gives you the
+  `auto-fill minmax()` column behaviour as a primitive — responsive columns with
+  no breakpoint and no JS.
+
+<p>
+  <img src="docs/images/phone-run.png" alt="Run tab on a phone" width="300" />
+  &nbsp;
+  <img src="docs/images/phone-settings.png" alt="Settings tab on a phone" width="300" />
+</p>
+
+```jsx
+import { useBreakpoint } from 'lilak-ui'
+
+const { isPhone } = useBreakpoint()
+<div style={{ display: 'grid', gridTemplateColumns: isPhone ? '1fr' : '2fr 1fr' }}>…</div>
+// or branch into an entirely different tree:  isPhone ? <MobileShell/> : <DesktopShell/>
+```
 
 ### Running it
 
@@ -146,7 +196,10 @@ of `className="flex …"`.
   supplies the dictionaries.
 - **[`identity.jsx`](src/identity.jsx)** — `IdentityProvider / useIdentity`
   (current author name).
-- **[`auth/LoginForm.jsx`](src/auth/LoginForm.jsx)**, **[`hooks/useHotkeys.js`](src/hooks/useHotkeys.js)** (`useHotkeys / prettyKey`).
+- **[`hooks/useHotkeys.js`](src/hooks/useHotkeys.js)** (`useHotkeys /
+  prettyKey`) and **[`hooks/useBreakpoint.js`](src/hooks/useBreakpoint.js)**
+  (`useMediaQuery / useBreakpoint / BREAKPOINTS` — the responsive helpers above).
+- **[`auth/LoginForm.jsx`](src/auth/LoginForm.jsx)**.
 - **[`icons.jsx`](src/icons.jsx)** — `Icon` routed through one semantic `ICONS`
   map (a single swap changes an icon everywhere) + `customIcon / strokeIcon /
   fillIcon` factories for your own marks.
@@ -168,7 +221,7 @@ src/
   layout/           # Box · Stack · Row · Grid · Container · Spacer
   auth/             # LoginForm
   components/       # TopBar · CommandBar · Drawer · Modal · DataTable · …
-  hooks/            # useHotkeys
+  hooks/            # useHotkeys · useBreakpoint
   i18n.jsx · identity.jsx · icons.jsx
 demo/               # the gallery app (npm run demo)
 docs/images/        # the screenshots above

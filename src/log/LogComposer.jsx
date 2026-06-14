@@ -143,21 +143,21 @@ export default function LogComposer({
         </div>
       )}
 
-      {/* run row */}
+      {/* run row — wraps on narrow widths instead of squishing the fields */}
       {has('run') && (
-        <div style={{ display: 'flex', gap: 6 }}>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           <select value={draft.run_type} onChange={(e) => set('run_type', e.target.value)} style={{ ...field, width: 130, fontFamily: 'var(--font-mono)' }}>
             {RUN_TYPES.map((rt) => <option key={rt.id} value={rt.id}>{rt.id} · {rt.labelEn}</option>)}
           </select>
           <input value={draft.run_number} onChange={(e) => set('run_number', e.target.value)} placeholder={L.run} style={{ ...field, width: 110, fontFamily: 'var(--font-mono)' }} />
-          {has('beam') && <input value={draft.beam} onChange={(e) => set('beam', e.target.value)} placeholder={L.beam} style={{ ...field, flex: 1, fontFamily: 'var(--font-mono)' }} />}
-          {has('target') && <input value={draft.target} onChange={(e) => set('target', e.target.value)} placeholder={L.target} style={{ ...field, flex: 1, fontFamily: 'var(--font-mono)' }} />}
+          {has('beam') && <input value={draft.beam} onChange={(e) => set('beam', e.target.value)} placeholder={L.beam} style={{ ...field, flex: 1, minWidth: 120, fontFamily: 'var(--font-mono)' }} />}
+          {has('target') && <input value={draft.target} onChange={(e) => set('target', e.target.value)} placeholder={L.target} style={{ ...field, flex: 1, minWidth: 120, fontFamily: 'var(--font-mono)' }} />}
         </div>
       )}
 
       {/* title + level */}
-      <div style={{ display: 'flex', gap: 6 }}>
-        {has('title') && <input value={draft.title} onChange={(e) => set('title', e.target.value)} placeholder={L.title} style={{ ...field, flex: 1 }} />}
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        {has('title') && <input value={draft.title} onChange={(e) => set('title', e.target.value)} placeholder={L.title} style={{ ...field, flex: 1, minWidth: 160 }} />}
         <select value={draft.level} onChange={(e) => set('level', e.target.value)} style={{ ...field, width: 110 }}>
           {LEVELS.map((lv) => <option key={lv} value={lv}>{lv}</option>)}
         </select>

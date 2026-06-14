@@ -6,6 +6,7 @@ import {
   defineCommands, runCommand,
   IdentityProvider, useIdentity,
   Button, Input, Badge, Card, DataTable, Modal, TopBar, CommandBar, LogFeed, LogComposer, TopPanel, ColorSettings, ColorPicker, CrudTable,
+  Icon,
 } from '../src/index.js'
 
 // Demonstrates ColorPicker's component mode: set background / line / text
@@ -36,7 +37,6 @@ function CrudTableDemo() {
   const nextId = () => (rows.reduce((m, r) => Math.max(m, r.id), 0) + 1)
   return (
     <Card title="CrudTable — add / edit / delete">
-     <div style={{ overflowX: 'auto' }}>
       <CrudTable
         rows={rows}
         rowKey={(r) => r.id}
@@ -58,7 +58,6 @@ function CrudTableDemo() {
         onDelete={(row) => setRows((rs) => rs.filter((r) => r.id !== row.id))}
         labels={{ add: 'Add row', confirmDelete: (r) => `Delete "${r.name}"?`, newTitle: 'New row', editTitle: 'Edit row' }}
       />
-     </div>
     </Card>
   )
 }
@@ -154,8 +153,9 @@ function Shell() {
   const { t, lang, setLang, langs } = useLang()
   const { name: userName, setName } = useIdentity()
   const { isPhone } = useBreakpoint()   // glue-level responsive switch
+  const barH = isPhone ? 58 : 46        // taller, tap-friendlier bar on phones
   const [theme, setThemeState] = useState(getTheme())
-  const [tab, setTab] = useState(new URLSearchParams(location.search).get('tab') || 'run')
+  const [tab, setTab] = useState('run')
   const [sel, setSel] = useState(1)
   const [barOpen, setBarOpen] = useState(false)
   const [sysOpen, setSysOpen] = useState(false)
@@ -230,17 +230,27 @@ function Shell() {
   )
 
   return (
-    <div style={{ minHeight: '100vh', paddingBottom: 80, fontFamily: 'var(--font-sans)', overflowX: 'hidden' }}>
+    <div style={{ minHeight: '100vh', paddingBottom: 80, fontFamily: 'var(--font-sans)' }}>
       <TopBar
         brand={t('brand')}
+        brandSub="gallery"
+        brandIcon={<Icon name="lilak" size={isPhone ? 26 : 30} style={{ height: isPhone ? 26 : 30, width: 'auto', display: 'block' }} />}
+        brandSuffix={
+          <span style={{ marginLeft: 2, padding: '3px 8px', borderRadius: 999, fontFamily: 'var(--font-mono)', fontWeight: 500,
+            fontSize: 'var(--fs-micro, 10px)', lineHeight: 1.2, backgroundColor: 'var(--nav-accent)', color: 'var(--nav-text-muted)' }}>
+            lilak_ui
+          </span>
+        }
         tabs={TABS}
         active={tab}
         onTab={setTab}
         right={sysButton}
+        tabsAsMenu={isPhone}
+        height={barH}
       />
 
       {/* system / info panel that drops down from the top bar */}
-      <TopPanel open={sysOpen} onClose={() => setSysOpen(false)} topOffset={46} height="50vh">
+      <TopPanel open={sysOpen} onClose={() => setSysOpen(false)} topOffset={barH} height="50vh">
         <SystemPanelContent
           t={t} theme={theme} lang={lang} langs={langs}
           onTheme={applyThemeId} onLang={setLang} entries={entries}
@@ -256,10 +266,8 @@ function Shell() {
                   <Button variant="secondary" onClick={() => runCommand(commands, 'save')}>{t('btn_save')}</Button>
                   <Button onClick={() => runCommand(commands, 'run')}>{t('btn_run')} ▸</Button>
                 </>}>
-            {/* wide tables get their own horizontal scroll so they never widen the page */}
-            <div style={{ overflowX: 'auto' }}>
-              <DataTable columns={columns} rows={PARAMS} zebra selectedKey={sel} rowKey={(_r, i) => i} onRowClick={(_r, i) => setSel(i)} />
-            </div>
+            {/* `scroll` keeps a wide table inside its card on a phone (vs widening the page) */}
+            <DataTable scroll columns={columns} rows={PARAMS} zebra selectedKey={sel} rowKey={(_r, i) => i} onRowClick={(_r, i) => setSel(i)} />
           </Card>
         )}
 

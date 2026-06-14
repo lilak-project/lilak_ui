@@ -36,11 +36,16 @@ export default function DataTable({
   onRowClick,
   selectedKey,
   emptyText = 'no rows',
+  // When the cells can't shrink (inputs, action buttons) the table would push
+  // the page wider on a phone. `scroll` wraps it in its own horizontal scroller
+  // so wide tables stay inside their column instead of overflowing the layout.
+  scroll = false,
+  minWidth,
   style,
 }) {
   const d = DENSITY[density] ?? DENSITY.compact
-  return (
-    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: d.fontSize, ...style }}>
+  const table = (
+    <table style={{ width: '100%', minWidth, borderCollapse: 'collapse', fontSize: d.fontSize, ...style }}>
       <thead>
         <tr>
           {columns.map((c) => (
@@ -119,4 +124,5 @@ export default function DataTable({
       </tbody>
     </table>
   )
+  return scroll ? <div style={{ overflowX: 'auto', maxWidth: '100%' }}>{table}</div> : table
 }

@@ -44,6 +44,8 @@ export default function CrudTable({
   labels = {},
   density = 'comfortable',
   zebra = true,
+  // admin tables are wide — scroll horizontally on narrow screens by default
+  scroll = true,
 }) {
   const L = { add: 'Add', edit: 'Edit', delete: 'Delete', empty: 'no rows', loading: 'Loading…',
     newTitle: 'New', editTitle: 'Edit', ...labels }
@@ -67,7 +69,9 @@ export default function CrudTable({
       key: '__actions', header: '', align: 'right', fit: true,
       render: (row) => (
         <span style={{ display: 'inline-flex', gap: 4, justifyContent: 'flex-end' }}>
-          {extraActions?.(row)}
+          {/* extraActions gets imperative openers so a custom control (e.g. a
+              "Manage" menu) can trigger the built-in edit form / delete flow. */}
+          {extraActions?.(row, { openEdit: () => setMode(row), openDelete: () => handleDelete(row) })}
           {onUpdate && canEdit(row) && formFields && iconBtn('edit', 'var(--text-secondary)', () => setMode(row), L.edit)}
           {onDelete && canDelete(row) && iconBtn('trash', 'var(--danger-text)', () => handleDelete(row), L.delete)}
         </span>
@@ -126,6 +130,7 @@ export default function CrudTable({
           rowKey={rowKey}
           density={density}
           zebra={zebra}
+          scroll={scroll}
           emptyText={loading ? L.loading : L.empty}
         />
       </div>

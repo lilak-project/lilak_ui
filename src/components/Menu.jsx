@@ -60,12 +60,14 @@ export default function Menu({ trigger, sections = [], align = 'right', width = 
                 <button
                   key={it.id}
                   onClick={() => { it.onSelect?.(); if (!it.keepOpen) setOpen(false) }}
+                  disabled={it.disabled}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 8, width: '100%',
                     background: it.active ? 'var(--info-bg)' : 'transparent',
                     border: 'none', borderRadius: 6, padding: '5px 8px',
-                    fontSize: 'var(--fs-small, 12px)', textAlign: 'left', cursor: 'pointer',
-                    color: it.active ? 'var(--info-text)' : 'var(--text-primary)',
+                    fontSize: 'var(--fs-small, 12px)', textAlign: 'left',
+                    cursor: it.disabled ? 'not-allowed' : 'pointer', opacity: it.disabled ? 0.4 : 1,
+                    color: it.danger ? 'var(--danger-text)' : it.active ? 'var(--info-text)' : 'var(--text-primary)',
                   }}
                   onMouseEnter={(e) => { if (!it.active) e.currentTarget.style.background = 'var(--surface-2)' }}
                   onMouseLeave={(e) => { if (!it.active) e.currentTarget.style.background = 'transparent' }}
