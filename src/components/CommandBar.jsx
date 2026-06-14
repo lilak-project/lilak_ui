@@ -28,6 +28,10 @@ import Icon from '../icons.jsx'
 
 const OPEN_H = 44
 const PILL = 20
+// Compact "bubble" mode (e.g. the `g` goto): the collapsed circle expands just a
+// little — a small rounded input that opens/closes like the circle, same colour.
+const COMPACT_W = 132
+const COMPACT_H = 32
 const argVal = (a) => (a && typeof a === 'object' ? a.value : a)
 const argLabel = (a) => (a && typeof a === 'object' ? (a.label ?? a.value) : a)
 
@@ -89,6 +93,7 @@ export default function CommandBar({
   }, [inputKey])
 
   const expanded = !collapsible || open
+  const compact = !!input?.compact
   const lead = value[0]
   const mode = secure ? null : (findModes[lead] || null)
 
@@ -240,7 +245,8 @@ export default function CommandBar({
   }
 
   // ── Free-text input mode: the bar IS the text input (full width, expanded) ──
-  if (input) {
+  // (compact bubble inputs fall through to the circle render below instead)
+  if (input && !compact) {
     const submit = () => { input.onSubmit?.(inputVal); if (input.persistent) setInputVal('') }
     const onKey = (e) => {
       input.onKeyDown?.(e, inputVal, setInputVal)
@@ -257,6 +263,7 @@ export default function CommandBar({
           <Field
             ref={textRef}
             autoFocus
+            className="bg-transparent"
             value={inputVal}
             onChange={(e) => { setInputVal(e.target.value); input.onValueChange?.(e.target.value) }}
             onKeyDown={onKey}
@@ -279,22 +286,22 @@ export default function CommandBar({
       title={expanded ? undefined : 'Command bar  ( / )'}
       style={{
         position: 'fixed', left: 0, bottom: 0, zIndex: 40,
-        width: expanded ? '100%' : PILL,
-        height: expanded ? OPEN_H : PILL,
-        marginLeft: expanded ? 0 : 16,
-        marginBottom: expanded ? 0 : 16,
+        width: compact ? COMPACT_W : (expanded ? '100%' : PILL),
+        height: compact ? COMPACT_H : (expanded ? OPEN_H : PILL),
+        marginLeft: compact ? 16 : (expanded ? 0 : 16),
+        marginBottom: compact ? 16 : (expanded ? 0 : 16),
         backgroundColor: 'var(--nav-bg)',
-        borderTop: expanded ? '1px solid var(--nav-border)' : 'none',
-        border: expanded ? undefined : '1px solid var(--nav-border)',
-        borderRadius: expanded ? 0 : '50%',
-        boxShadow: expanded ? 'none' : '0 2px 6px rgba(0,0,0,0.25)',
+        borderTop: (expanded && !compact) ? '1px solid var(--nav-border)' : 'none',
+        border: (expanded && !compact) ? undefined : '1px solid var(--nav-border)',
+        borderRadius: compact ? 999 : (expanded ? 0 : '50%'),
+        boxShadow: (expanded && !compact) ? 'none' : '0 2px 6px rgba(0,0,0,0.25)',
         cursor: expanded ? 'default' : 'pointer',
         overflow: 'visible',
         fontFamily: 'var(--font-sans)',
         transition: 'width .28s cubic-bezier(.4,0,.2,1), height .24s cubic-bezier(.4,0,.2,1), border-radius .26s, margin .24s',
       }}
     >
-      {expanded && (suggestions.length > 0 || helpText) && (
+      {expanded && !compact && (suggestions.length > 0 || helpText) && (
         <div style={{
           position: 'absolute', left: 0, right: 0, bottom: '100%',
           maxHeight: 300, overflowY: 'auto',
@@ -345,36 +352,64 @@ export default function CommandBar({
       )}
 
       <div style={{
-        display: 'flex', alignItems: 'center', gap: 8, height: '100%', padding: '0 14px',
+        display: 'flex', alignItems: 'center', gap: compact ? 6 : 8, height: '100%', padding: compact ? '0 12px' : '0 14px',
         opacity: expanded ? 1 : 0,
         transition: 'opacity .16s ease', transitionDelay: expanded ? '.08s' : '0s',
         pointerEvents: expanded ? 'auto' : 'none',
         overflow: 'hidden', whiteSpace: 'nowrap',
       }}>
-        {secure && <Icon name="key" size={13} style={{ flexShrink: 0, color: 'var(--nav-text-muted)' }} />}
-        <input
-          ref={inputRef}
-          id={inputId}
-          type={secure ? 'password' : 'text'}
-          autoComplete={secure ? 'current-password' : 'off'}
-          value={value}
-          onChange={(e) => {
-            const v = e.target.value
-            // deleting the lead char (input goes empty) collapses the bar —
-            // but in secure mode an empty field just means "type the secret"
-            if (collapsible && v === '' && !secure) { close(); return }
-            setValue(v)
-          }}
-          onKeyDown={onKeyDown}
-          onBlur={() => { if (collapsible && !secure && value.length <= 1) close() }}
-          placeholder={activePlaceholder}
-          spellCheck={false}
-          style={{
-            flex: 1, minWidth: 0, background: 'transparent', border: 'none', outline: 'none',
-            color: 'var(--nav-text)', fontSize: 'var(--fs-body, 13px)', fontFamily: 'var(--font-mono)',
-          }}
-        />
-        {(mode?.hint || hint) && <span style={{ fontSize: 'var(--fs-tiny, 11px)', color: 'var(--nav-text-muted)', flexShrink: 0 }}>{mode?.hint || hint}</span>}
+        {compact ? (
+          <>
+            {input?.label && <span style={{ flexShrink: 0, fontSize: 'var(--fs-small, 12px)', color: 'var(--nav-text-muted)', fontFamily: 'var(--font-mono)' }}>{input.label}</span>}
+            <input
+              ref={textRef}
+              className="bg-transparent"
+              autoFocus
+              value={inputVal}
+              inputMode={input?.inputMode}
+              onChange={(e) => { setInputVal(e.target.value); input?.onValueChange?.(e.target.value) }}
+              onKeyDown={(e) => {
+                input?.onKeyDown?.(e, inputVal, setInputVal)
+                if (e.defaultPrevented) return
+                if (e.key === 'Escape') { e.preventDefault(); input?.onCancel?.() }
+                else if (e.key === 'Enter') { e.preventDefault(); input?.onSubmit?.(inputVal) }
+              }}
+              onBlur={() => input?.onCancel?.()}
+              placeholder={input?.placeholder || ''}
+              spellCheck={false}
+              style={{ flex: 1, minWidth: 0, width: 40, background: 'transparent', border: 'none', outline: 'none',
+                color: 'var(--nav-text)', fontSize: 'var(--fs-small, 12px)', fontFamily: 'var(--font-mono)' }}
+            />
+          </>
+        ) : (
+          <>
+            {secure && <Icon name="key" size={13} style={{ flexShrink: 0, color: 'var(--nav-text-muted)' }} />}
+            <input
+              ref={inputRef}
+              id={inputId}
+              className="bg-transparent"
+              type={secure ? 'password' : 'text'}
+              autoComplete={secure ? 'current-password' : 'off'}
+              value={value}
+              onChange={(e) => {
+                const v = e.target.value
+                // deleting the lead char (input goes empty) collapses the bar —
+                // but in secure mode an empty field just means "type the secret"
+                if (collapsible && v === '' && !secure) { close(); return }
+                setValue(v)
+              }}
+              onKeyDown={onKeyDown}
+              onBlur={() => { if (collapsible && !secure && value.length <= 1) close() }}
+              placeholder={activePlaceholder}
+              spellCheck={false}
+              style={{
+                flex: 1, minWidth: 0, background: 'transparent', border: 'none', outline: 'none',
+                color: 'var(--nav-text)', fontSize: 'var(--fs-body, 13px)', fontFamily: 'var(--font-mono)',
+              }}
+            />
+            {(mode?.hint || hint) && <span style={{ fontSize: 'var(--fs-tiny, 11px)', color: 'var(--nav-text-muted)', flexShrink: 0 }}>{mode?.hint || hint}</span>}
+          </>
+        )}
       </div>
     </div>
   )

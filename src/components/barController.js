@@ -39,21 +39,6 @@ export function subscribeBarLead(fn) {
   return () => { if (leadListener === fn) leadListener = null }
 }
 
-// ── Command mode ──────────────────────────────────────────────────────────────
-// A page that supports keyboard-command mode (e.g. the log feed when esc'd)
-// publishes whether commands are currently live, so the shell can reflect it on
-// the brand logo (bright = commands active, dim = an input/edit mode is in front).
-let commandActive = false
-const cmdActiveSubs = new Set()
-export function setCommandActive(on) {
-  commandActive = !!on
-  cmdActiveSubs.forEach((f) => f(commandActive))
-}
-export function subscribeCommandActive(fn) {
-  cmdActiveSubs.add(fn); fn(commandActive)
-  return () => cmdActiveSubs.delete(fn)
-}
-
 // ── Slot mode ───────────────────────────────────────────────────────────────
 // For rich, always-on bars (community chat): the shell renders the ONE bottom
 // bar as an empty always-expanded container, and the owning page portals its own
