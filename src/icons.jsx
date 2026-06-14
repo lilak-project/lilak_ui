@@ -22,6 +22,8 @@ import {
   Play, SlidersHorizontal, TreeStructure, MapTrifold, ChartLine,
   Users, Key, Table, Plug, Robot, Palette,
   DownloadSimple, UploadSimple, FileArrowDown,
+  Microscope, TestTube, Dna, Magnet, Gauge, Thermometer, Lightbulb, Wrench, Cpu,
+  Hexagon, Shapes, Crosshair, Polygon, Pulse, Waveform, ChartLineUp, Circuitry, Graph,
 } from '@phosphor-icons/react'
 
 const WEIGHTS = ['thin', 'light', 'regular', 'bold', 'fill', 'duotone']
@@ -83,7 +85,24 @@ export const ICONS = {
   play: Play, run: Play, sliders: SlidersHorizontal, parameters: SlidersHorizontal,
   tree: TreeStructure, flow: TreeStructure, map: MapTrifold, mapping: MapTrifold,
   'chart-line': ChartLine,
+  // project / experiment marks (distinct from the avatar icon set)
+  microscope: Microscope, 'test-tube': TestTube, dna: Dna, magnet: Magnet,
+  gauge: Gauge, thermometer: Thermometer, lightbulb: Lightbulb, wrench: Wrench,
+  cpu: Cpu, hexagon: Hexagon, shapes: Shapes, crosshair: Crosshair, polygon: Polygon,
+  pulse: Pulse, waveform: Waveform, 'chart-line-up': ChartLineUp, circuitry: Circuitry, graph: Graph,
 }
+
+/**
+ * Project / experiment icons — a curated set kept SEPARATE from the avatar icon
+ * set (AVATAR_ICONS), so an experiment's mark never looks like a user profile.
+ * Pick one at random when creating a project; store it WITH the project's data.
+ */
+export const PROJECT_ICONS = [
+  'microscope', 'test-tube', 'dna', 'magnet', 'gauge', 'thermometer', 'lightbulb',
+  'wrench', 'cpu', 'hexagon', 'shapes', 'crosshair', 'polygon', 'pulse', 'waveform',
+  'chart-line-up', 'circuitry', 'graph',
+]
+export const randomProjectIcon = () => PROJECT_ICONS[Math.floor(Math.random() * PROJECT_ICONS.length)]
 
 /**
  * strokeIcon — like customIcon, but for LINE-ART (stroke) marks. Phosphor's

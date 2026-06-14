@@ -40,7 +40,7 @@ export { default as CrudTable } from './crud/CrudTable.jsx'
 export { default as CrudForm } from './crud/CrudForm.jsx'
 
 // icons (Phosphor, via one semantic map) + custom-icon factories
-export { default as Icon, ICONS, customIcon, strokeIcon, fillIcon } from './icons.jsx'
+export { default as Icon, ICONS, customIcon, strokeIcon, fillIcon, PROJECT_ICONS, randomProjectIcon } from './icons.jsx'
 
 // log system (ported from lilak_elog)
 export * as formatUtils from './log/formatUtils.js'

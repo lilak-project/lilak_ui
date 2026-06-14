@@ -38,6 +38,7 @@ export default function Button({
   variant = 'primary',
   size = 'sm',
   icon = false,
+  disabled = false,
   style,
   children,
   ...rest
@@ -57,9 +58,12 @@ export default function Button({
     transition: 'background-color .12s, color .12s, border-color .12s',
     ...(icon ? { padding: size === 'sm' ? 5 : 7, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' } : {}),
     ...style,
+    // disabled wins last: greyed + not interactive (no hover).
+    ...(disabled ? { opacity: 0.4, cursor: 'not-allowed' } : {}),
   }
+  const interactions = disabled ? {} : hoverify(merged, { ...merged, ...hover })
   return (
-    <button style={merged} {...hoverify(merged, { ...merged, ...hover })} {...rest}>
+    <button disabled={disabled} style={merged} {...interactions} {...rest}>
       {children}
     </button>
   )
