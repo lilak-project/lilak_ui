@@ -72,6 +72,7 @@ export { default as Avatar, randomAvatar, avatarFor, AVATAR_ICONS, AVATAR_COLORS
 export { default as Card } from './components/Card.jsx'
 export { default as Tabs } from './components/Tabs.jsx'
 export { default as Modal } from './components/Modal.jsx'
+export { default as CameraCapture } from './components/CameraCapture.jsx'
 export { default as DataTable } from './components/DataTable.jsx'
 export { default as Menu } from './components/Menu.jsx'
 export { default as ColorSettings } from './components/ColorSettings.jsx'

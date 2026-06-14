@@ -1,97 +1,155 @@
 # lilak-ui
 
-A shared, compact, **theme-aware React UI kit** for LILAK projects — the
-electronic logbook (`lilak_elog` / `lilak_elog_v2`), the LILAK control web, and
-future tools. One design system so every app starts from a finished kit instead
-of re-building (and re-fixing) the same shell, theme, log views, command bar, and
-admin tables.
+A compact, **theme-aware React UI kit** for LILAK projects — the electronic
+logbook (`lilak_elog`), the LILAK control web, and future tools. One design
+system, written once and shared, so every app starts from a finished shell
+(theme, log views, command bar, admin tables) instead of rebuilding it.
 
-The kit is the product; the apps are its proving grounds. Anything reusable is
-pushed *out* of an app and *into* the kit, so the next project inherits it for
-free.
+Everything is one barrel import:
 
----
+```js
+import { TopBar, CommandBar, LogFeed, DataTable, applyTheme } from 'lilak-ui'
+```
 
-## Design language
-
-- **Semantic design tokens.** Every colour is a CSS variable (`--surface`,
-  `--text-primary`, `--btn-primary-bg`, …) defined per theme: **bright / dark /
-  lowcontrast**, plus the shipped **Teal** preset. `theme/tokens.js` is the single
-  source of truth; `applyTheme()` generates the CSS-variable blocks at runtime.
-- **High information density.** Compact rows, hairline borders, small type, a
-  9-step font scale (`--fs-micro` … `--fs-display`). Built for dashboards and
-  logbooks where you want a lot on screen without it feeling cramped.
-- **Phosphor icons throughout**, routed through one semantic map (`ICONS`) so a
-  single swap changes an icon everywhere.
-- **No Tailwind, no build step.** Components are inline-style + CSS-vars. The kit
-  ships as source; the host app's Vite transpiles the JSX.
+The whole kit lives under [`src/`](src/) as plain JSX + CSS variables — no build
+step, no Tailwind. The host app's Vite transpiles the source directly.
 
 ---
 
-## What's inside
+## The demo gallery
 
-Everything is a single barrel import: `import { … } from 'lilak-ui'`.
+`npm run demo` boots a single-file app ([`demo/main.jsx`](demo/main.jsx)) that
+wires the kit into a realistic LILAK shell: a `TopBar` with tabs, a bottom
+`CommandBar`, a drop-down system panel, full i18n (한국어 / English), and live
+theme switching. Each tab exercises a different slice of the kit.
 
-**Theme** — `TOKENS / TOKEN_GROUPS / THEMES`, `applyTheme / setTheme / cycleTheme
-/ buildThemeCSS`, font helpers `loadFonts / applyLangFont / FONT_DEFAULTS`, and
-presets `listPresets / applyPreset / saveCustomPreset / setTokenOverride /
-BUILTIN_PRESETS` (ships **Teal**). `uiStyles` + `hoverify` for shared style
-recipes.
+### Run tab — `DataTable` + `Card`
 
-**App shell** — `TopBar` (brand + `brandIcon` + `brandSuffix` + `onBrandClick` +
-tabs-with-icons that collapse to icons when narrow + a right slot), `CommandBar`
-(the collapsible bottom command line), `Drawer` (top panel up to 3/4 of the
-viewport, a modal alternative), `TopPanel`, `NotificationBell`, `ShortcutsModal`,
-`Menu`.
+A parameter table (`LKRun/*`, `lilak/*`) rendered with `DataTable` (zebra rows,
+mono columns, inline `Input` editors) inside a `Card` with header actions.
 
-**Command + hotkey connector** — `CommandRegistryProvider` + `useCommand /
-useCommands / useShortcut / useCommandRegistry`. Components self-register commands
-(each with an optional `hotkey`) and shortcuts that auto-wire into the CommandBar,
-the global hotkey layer, and the ShortcutsModal. The CommandBar supports `/`
-commands, option pick-lists (`args`), Tab-autocomplete, a secure password mode,
-free-text input mode, a portal `slot` mode, and lead-char **find modes**.
+![Run tab](docs/images/run.png)
 
-**Tag index** — `TagIndexProvider` + `useTaggable / useTaggables / useTagIndex`.
-Any searchable surface registers `{ id, label, tags, kind, number, run }`; `#tag`
-search (AND-combined) queries the live index from the CommandBar and from your own
-search UI. The store is exposed via `useSyncExternalStore` so registration is
-cheap and render-safe.
+### Log tab — the elog domain (`LogComposer`, `LogFeed`)
 
-**Data components** — the unified, collapsible data-entry abstraction.
-`DataCard` (collapsed = index char + title + tags; open = image / text / node
-media), `DataGrid` (roving-focus arrows + `hjkl`, space to toggle), and
-`makeDataFindModes / DATA_INDEX / INDEX_CHARS` — the special-character index
-scheme (`% _ ^ & @ ~ > !` per kind, `*` for bookmarks). `bookmarks.js` backs the
-`*` channel.
+The logbook model. `LogComposer` in **edit mode** (pre-filled from an existing
+entry, Save / Cancel) on top, a fresh **create** composer with a format picker
+and markdown write/preview below, then the `LogFeed` of entries with keyboard
+navigation (`j`/`k`, space to expand).
 
-**Log domain** (the elog model) — `LogEntryCard` (brief / normal / rich),
-`LogList` (task-child nesting + a configurable `groupBy` divider), `LogToolbar`
-(page-size / view-mode / groupBy / filter), `LogFeed`, `LogDetail` (slots for
-banners / child-tasks / actions / comments), `LogComposer` (create **and** edit),
+![Log tab](docs/images/log.png)
+
+### Settings tab — `CrudTable`, `ColorPicker`, `ColorSettings`
+
+`CrudTable` (add / edit / delete over in-memory rows with a schema-driven
+form), the component-mode `ColorPicker` (background · line · text for a tag),
+and `ColorSettings` — the preset switcher (**Bright / Dark / Low contrast /
+Teal**) plus the live per-token editor.
+
+![Settings tab](docs/images/settings.png)
+
+### Running it
+
+```sh
+npm install
+npm run demo        # → http://localhost:5120
+```
+
+The port is read from `PORT` (see [`.env.example`](.env.example)), so
+`PORT=5121 npm run demo` or a `.env.local` overrides it. The Vite config
+([`vite.config.js`](vite.config.js)) roots Vite at `demo/` and serves the kit
+from `src/` directly.
+
+Keyboard shortcuts in the demo: `/` command bar · `\` system panel · `[` `]`
+switch tabs · `g r/l/o/s` jump to a tab · `?` shortcuts modal.
+
+---
+
+## What's inside `src/`
+
+### Theme — [`theme/`](src/theme/)
+
+The single source of truth for every color and size.
+
+- **`tokens.js`** — every color is a *semantic token* (`--app-bg`, `--surface`,
+  `--text-primary`, `--btn-primary-bg`, …) enumerated in `TOKEN_GROUPS` with a
+  value for each theme (**bright / dark / lowcontrast**). Grouped by category
+  (surface / border / text / status / bubble / button / input / schedule) so
+  the settings editor can render them.
+- **`applyTheme.js`** — `applyTheme / setTheme / cycleTheme / buildThemeCSS`
+  generate the CSS-variable blocks at runtime and drive `[data-theme]`. Font
+  helpers `loadFonts / applyLangFont / FONT_DEFAULTS` swap the sans stack per
+  language.
+- **`presets.js`** — named palettes on top of a theme: `listPresets /
+  applyPreset / saveCustomPreset / setTokenOverride / BUILTIN_PRESETS` (ships
+  **Teal**).
+- **`uiStyles.js`** — shared inline-style recipes + `hoverify`.
+
+### Command + hotkey connector — [`command/`](src/command/) & [`commands.js`](src/commands.js)
+
+- **`commands.js`** — the low-level matcher: `defineCommands / matchCommands /
+  runCommand`.
+- **`command/registry.js` + `CommandRegistry.jsx`** — a context store where
+  components self-register commands and shortcuts (`useCommand / useCommands /
+  useShortcut`). Registered entries auto-wire into the `CommandBar`, the global
+  hotkey layer, and the `ShortcutsModal`. The CommandBar supports `/` commands,
+  option pick-lists, Tab-autocomplete, a secure password mode, free-text and
+  portal-`slot` modes, and lead-char **find modes**.
+
+### Tag / search index — [`tags/`](src/tags/)
+
+`TagIndexProvider` + `useTaggable / useTaggables / useTagIndex`. Any searchable
+surface registers `{ id, label, tags, kind, number, run }`; `#tag` search
+(AND-combined) queries the live index. The store is exposed via
+`useSyncExternalStore`, so registration is cheap and render-safe.
+
+### Data components — [`data/`](src/data/)
+
+The unified collapsible data-entry abstraction: `DataCard` (collapsed = index
+char + title + tags; open = image / text / node media), `DataGrid`
+(roving-focus arrows + `hjkl`, space to toggle), and `makeDataFindModes /
+DATA_INDEX / INDEX_CHARS` — the special-character index scheme (`% _ ^ & @ ~ >
+!` per kind, `*` for bookmarks, backed by `bookmarks.js`).
+
+### Log domain — [`log/`](src/log/)
+
+The elog model, ported from `lilak_elog`: `LogEntryCard` (brief / normal /
+rich), `LogList` (task-child nesting + configurable `groupBy` divider),
+`LogToolbar`, `LogFeed`, `LogDetail`, `LogComposer` (create **and** edit),
 `FormatPicker`, `NumberEntryField`, `Markdown`, plus `formatUtils` and
 `tagColors`.
 
-**CRUD scaffolding** — `CrudForm` (schema-driven fields: text / number / email /
-password (+eye) / textarea / select / checkbox / color / custom; with `full`,
-`disabledOnEdit`, `requiredOnCreate`) and `CrudTable` (DataTable + auto
-edit/delete actions + Add → inline form + delete-confirm).
+### CRUD scaffolding — [`crud/`](src/crud/)
 
-**Primitives** — `Button` (8 variants, sm/md, icon-only), `Input`, `Badge`,
-`Chip / ChipGroup`, `Callout`, `Card`, `Tabs`, `SubTabs`, `Modal`, `DataTable`
-(columns support a `fit` flag that hugs content), `Avatar` (Phosphor-in-a-circle,
-seedable), `CopyField`, `Lightbox`, `DashboardGrid`, `TimeRangePicker`, `SideNav`,
-`Pagination`, `ColorSettings` (preset + token editor), `ColorPicker` (popover:
-hex / copy / paste; single or bg·line·text).
+`CrudForm` (schema-driven fields: text / number / email / password / textarea /
+select / checkbox / color / custom, with `full`, `disabledOnEdit`,
+`requiredOnCreate`) and `CrudTable` (a `DataTable` + auto edit/delete actions +
+Add → inline form + delete-confirm).
 
-**Layout** — `Box / Stack / Row / Grid / Container / Spacer`. Use these in glue
-code instead of `className="flex …"`.
+### Primitives — [`components/`](src/components/)
 
-**App services** — `LangProvider / useLang` (i18n; the consumer supplies the
-dictionaries), `useHotkeys / prettyKey`, `IdentityProvider / useIdentity`,
-`LoginForm`.
+`Button` (8 variants, sm/md, icon-only), `Input`, `Badge`, `Chip / ChipGroup`,
+`Callout`, `Card`, `Tabs`, `SubTabs`, `Modal`, `DataTable`, `Avatar`
+(seedable Phosphor-in-a-circle), `CopyField`, `Lightbox`, `DashboardGrid`,
+`TimeRangePicker`, `SideNav`, `Pagination`, `ColorSettings`, `ColorPicker`,
+plus the shell pieces `TopBar`, `CommandBar` (+ `barController.js`), `TopPanel`,
+`Drawer`, `NotificationBell`, `ShortcutsModal`, `Menu`.
 
-**Icons** — `Icon` (Phosphor via the `ICONS` semantic map) + `customIcon /
-strokeIcon / fillIcon` factories for your own marks.
+### Layout — [`layout/`](src/layout/)
+
+`Box / Stack / Row / Grid / Container / Spacer`. Use these in glue code instead
+of `className="flex …"`.
+
+### App services & icons
+
+- **[`i18n.jsx`](src/i18n.jsx)** — `LangProvider / useLang`; the consumer
+  supplies the dictionaries.
+- **[`identity.jsx`](src/identity.jsx)** — `IdentityProvider / useIdentity`
+  (current author name).
+- **[`auth/LoginForm.jsx`](src/auth/LoginForm.jsx)**, **[`hooks/useHotkeys.js`](src/hooks/useHotkeys.js)** (`useHotkeys / prettyKey`).
+- **[`icons.jsx`](src/icons.jsx)** — `Icon` routed through one semantic `ICONS`
+  map (a single swap changes an icon everywhere) + `customIcon / strokeIcon /
+  fillIcon` factories for your own marks.
 
 ---
 
@@ -99,164 +157,47 @@ strokeIcon / fillIcon` factories for your own marks.
 
 ```
 src/
-  index.js          # the public barrel (every export above)
-  theme/            # tokens.js, applyTheme.js, presets.js, uiStyles.js
-  i18n.jsx          # LangProvider / useLang
-  icons.jsx         # Icon + ICONS map + custom-icon factories
+  index.js          # the public barrel (everything above)
+  theme/            # tokens.js · applyTheme.js · presets.js · uiStyles.js
   commands.js       # low-level command match/run
   command/          # registry.js + CommandRegistry.jsx (the connector)
   tags/             # index.js + TagIndex.jsx (the search index)
-  data/             # DataCard, DataGrid, dataFindModes, bookmarks
-  log/              # LogEntryCard, LogFeed, LogList, LogDetail, LogComposer, …
-  crud/             # CrudTable, CrudForm
-  layout/           # Box / Stack / Row / Grid / Container / Spacer
+  data/             # DataCard · DataGrid · dataFindModes · bookmarks
+  log/              # LogEntryCard · LogFeed · LogList · LogDetail · LogComposer · …
+  crud/             # CrudTable · CrudForm
+  layout/           # Box · Stack · Row · Grid · Container · Spacer
   auth/             # LoginForm
-  components/        # everything else (TopBar, CommandBar, Drawer, Modal, …)
+  components/       # TopBar · CommandBar · Drawer · Modal · DataTable · …
   hooks/            # useHotkeys
+  i18n.jsx · identity.jsx · icons.jsx
 demo/               # the gallery app (npm run demo)
+docs/images/        # the screenshots above
 ```
 
 ---
 
-## Usage
+## Conventions
 
-### Install the runtime deps
-
-```sh
-npm i @phosphor-icons/react react-markdown remark-gfm
-```
-
-The kit itself is consumed **from source** — no build step. The host app's Vite
-transpiles the JSX. Each consumer adds an alias + a couple of Vite settings.
-
-### Wire it into a consumer (Vite)
-
-```js
-// vite.config.js
-import { resolve } from 'path'
-export default defineConfig({
-  resolve: {
-    alias: { 'lilak-ui': resolve(__dirname, '<rel>/lilak_ui/src') },
-  },
-  server: {
-    // the kit lives outside the project root → allow Vite to read it
-    fs: { allow: [resolve(__dirname), resolve(__dirname, '<rel>/lilak_ui')] },
-  },
-  // pre-bundle the kit's runtime deps so adding them never triggers a reload loop
-  optimizeDeps: { include: ['@phosphor-icons/react', 'react-markdown', 'remark-gfm'] },
-})
-```
-
-> **Gotcha:** if you add `@phosphor-icons/react` to a running dev server without
-> `optimizeDeps.include`, Vite re-optimizes the big icon barrel on demand and the
-> page can blank in a reload loop. Fix: add the `include` above, then
-> `rm -rf node_modules/.vite` and restart.
-
-### Bootstrap once at app startup
-
-```jsx
-import { loadFonts, FONT_DEFAULTS, applyTheme } from 'lilak-ui'
-
-loadFonts()                                   // Pretendard / IBM Plex / JetBrains Mono
-for (const [k, v] of Object.entries(FONT_DEFAULTS))
-  document.documentElement.style.setProperty(k, v)
-applyTheme()                                  // or drive [data-theme] yourself
-```
-
-### Compose a screen
-
-```jsx
-import { TopBar, CommandBar, Drawer, Button, Icon, Container } from 'lilak-ui'
-
-<TopBar brand="LILAK" brandIcon={<Icon name="lilak" size={28}/>}
-        tabs={tabs} active={tab} onTab={setTab} right={<Button>…</Button>} />
-<Container max={1180}>{/* page */}</Container>
-<CommandBar collapsible commands={registry.commands} findModes={findModes} />
-```
-
-### Register a command + a searchable entry
-
-```jsx
-import { useCommand, useTaggables } from 'lilak-ui'
-
-useCommand({ id: 'new-log', title: 'New log', hotkey: 'c', run: () => openNewLog() })
-
-useTaggables(() => logs.map((l) => ({
-  id: `log:${l.id}`, label: l.title, number: l.id,
-  tags: l.tags, kind: 'log', run: () => openLog(l.id),
-})), [logs])
-```
-
-### Custom icons (Phosphor-compatible)
-
-Three factories build icons that take the **same props as Phosphor** (`size`,
-`color`, `weight` ∈ thin/light/regular/bold/fill/duotone, `mirrored`):
-
-```jsx
-import { customIcon, strokeIcon, fillIcon, ICONS, Icon } from 'lilak-ui'
-
-ICONS['mark']     = customIcon({ regular: <path d="…"/>, fill: <path d="…"/> }, 'Mark')
-ICONS['scribble'] = strokeIcon((sw) => <path d="…" fill="none" stroke="currentColor" strokeWidth={sw}/>, 'Scribble')
-ICONS['lilak']    = fillIcon('0 0 1024 816', <path fill="currentColor" d="…"/>, 'LilakMark')
-
-<Icon name="lilak" size={26} weight="fill" />
-```
-
-Paths use `currentColor`. `customIcon` rides Phosphor's `IconBase` (256 grid);
-`strokeIcon` / `fillIcon` set CSS `color` themselves so stroke art follows the
-`color` prop.
-
----
-
-## Development
-
-```sh
-npm install
-npm run demo        # the component gallery → http://localhost:5120
-```
-
-**Conventions**
-
+- **Tokens, not literals.** Colors come from `var(--…)`; font sizes from the
+  `--fs-*` scale. A new color belongs in [`theme/tokens.js`](src/theme/tokens.js),
+  a new icon in the `ICONS` map — never hardcoded inline.
 - **No Tailwind in the kit.** Inline styles + CSS-vars only. Reach for the
-  `layout/` primitives, never `className="flex …"`.
-- **Tokens, not literals.** Colours come from `var(--…)`; font sizes from the
-  `--fs-*` scale. A new colour belongs in `theme/tokens.js`, a new icon in the
-  `ICONS` map — never hardcoded inline.
+  [`layout/`](src/layout/) primitives, never `className="flex …"`.
 - **i18n at the edge.** Kit components never hardcode user-facing text; the
-  consumer passes strings (or dict-backed `t()`).
+  consumer passes strings (or a dict-backed `t()`).
 - **Add a component:** drop it in the right subfolder, export it from
-  `src/index.js`, and add a demo case so the gallery documents it.
+  [`src/index.js`](src/index.js), and add a demo case so the gallery documents it.
 
-**Gotchas**
+## Gotchas
 
 - **Provider stores.** The command-registry and tag-index context *value is the
   stable store* (not a per-render snapshot); read hooks subscribe via
-  `useSyncExternalStore`. Putting a per-render value in a registration hook's deps
-  causes an infinite "Maximum update depth" loop.
-- **Phosphor named exports.** One wrong import name (e.g. `Pushpin` vs `PushPin`)
-  makes the whole `icons.jsx` module fail and blanks the app **with no console
-  error**. Diagnose by `await import()`-ing the module in the browser console.
+  `useSyncExternalStore`. Putting a per-render value in a registration hook's
+  deps causes an infinite "Maximum update depth" loop.
 - **Border shorthand vs longhand.** Don't mix the `border` shorthand with
   longhand props across a rerender — React warns.
 
 ---
 
-## Distribution & migration
-
-The kit is consumed from source today (Vite alias). The `package.json` already
-declares proper `exports` and `files: ["src"]`, so it can later be linked via a
-`file:` dependency, `npm link`, or published — without changing any consumer
-import.
-
-1. **Now** — apps consume `lilak-ui` via the alias. The kit was hardened by
-   rebuilding **all** of `lilak_elog_v2` from kit blocks + thin glue.
-2. **Once stable** — production `lilak_elog` deletes its local `theme/tokens.js`,
-   `theme/uiStyles.js`, and duplicated components and imports them from
-   `lilak-ui` (tokens were copied verbatim, so the swap is lossless).
-
----
-
-## Ports & license
-
-- Demo dev server: **5120**.
-- License: MIT (`package.json`).
+License: MIT.
+</content>
