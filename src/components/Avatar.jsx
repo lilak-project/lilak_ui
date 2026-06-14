@@ -53,19 +53,17 @@ export const AVATAR_ICON_MAP = {
 
 export const AVATAR_ICONS = Object.keys(AVATAR_ICON_MAP)
 
-/** Hues + light pastels + light grays. (Black is reserved for managers and is
- *  NOT in this pool — apps apply it separately for manager profiles.) */
+/** Backgrounds dark enough that the white icon always reads (no colour forces a
+ *  dark icon). Black is reserved for managers and is NOT in this pool — apps
+ *  apply it separately for manager profiles. */
 export const AVATAR_COLORS = [
   // mid hues
-  '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16', '#22c55e', '#10b981',
-  '#14b8a6', '#06b6d4', '#0ea5e9', '#3b82f6', '#6366f1', '#8b5cf6', '#a855f7',
-  '#d946ef', '#ec4899', '#f43f5e', '#64748b', '#a16207', '#0f766e',
+  '#ef4444', '#f97316', '#84cc16', '#22c55e', '#10b981', '#14b8a6', '#06b6d4',
+  '#0ea5e9', '#3b82f6', '#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899',
+  '#f43f5e', '#64748b', '#a16207', '#0f766e', '#9ca3af',
   // deeper shades
   '#b91c1c', '#c2410c', '#b45309', '#4d7c0f', '#15803d', '#047857', '#0e7490',
   '#1d4ed8', '#4338ca', '#7c3aed', '#a21caf', '#be123c', '#9f1239',
-  // light pastels + light grays
-  '#fca5a5', '#fdba74', '#fde047', '#bef264', '#86efac', '#5eead4', '#7dd3fc',
-  '#93c5fd', '#c4b5fd', '#f0abfc', '#f9a8d4', '#e2e8f0', '#cbd5e1', '#9ca3af',
 ]
 
 // A readable icon colour for the circle: dark on light backgrounds, white on
