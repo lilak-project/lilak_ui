@@ -92,7 +92,7 @@ export default function LogEntryCard({ entry, viewMode = 'normal', focused = fal
         {entry.is_deleted && <span style={{ ...CHIP, backgroundColor: 'var(--danger-bg)', color: 'var(--danger-text)' }}>DELETED</span>}
         {entry.level && entry.level !== 'info' && <span style={{ ...sev, fontSize: 'var(--fs-tiny, 11px)', padding: '1px 6px', borderRadius: 4, flexShrink: 0 }}>{entry.level.toUpperCase()}</span>}
         <RunBadges entry={entry} sm />
-        <span style={{ fontSize: 'var(--fs-body, 13px)', fontWeight: 500, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{title}</span>
+        <span style={{ fontFamily: 'var(--font-sans)', fontSize: 'var(--fs-body, 13px)', fontWeight: 500, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{title}</span>
         {tagChips}
         <span style={{ flex: 1 }} />
         {entry.attachment_count > 0 && <span style={{ fontSize: 'var(--fs-tiny, 11px)', color: 'var(--text-muted)', flexShrink: 0 }}>[{entry.attachment_count}]</span>}
@@ -114,7 +114,7 @@ export default function LogEntryCard({ entry, viewMode = 'normal', focused = fal
           <RunBadges entry={entry} />
         </div>
         {/* row 2: title */}
-        <div style={{ fontSize: viewMode === 'rich' ? 15 : 14, fontWeight: 500, lineHeight: 1.35, color: 'var(--text-primary)' }}>{title}</div>
+        <div style={{ fontFamily: 'var(--font-sans)', fontSize: viewMode === 'rich' ? 15 : 14, fontWeight: 500, lineHeight: 1.35, color: 'var(--text-primary)' }}>{title}</div>
         {/* row 3: tags */}
         {(runTag || isPending || entry.is_auto || entry.parent_log_id || entry.tags?.length > 0) && (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>{tagChips}</div>
