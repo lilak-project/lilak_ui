@@ -1,36 +1,46 @@
 /**
- * Button — the kit's one button look: a soft neutral pill that tints to its
- * semantic colour on hover. The `variant` only chooses the hover tint; every
- * button rests the same (surface-2 + secondary text) so the UI stays calm.
+ * Button — soft, flat buttons. Two looks share one shape:
+ *  • Semantic/action variants (primary, info, success, warning, danger) rest
+ *    with a LIGHT tint of their colour and fill solid on hover — so the
+ *    important actions (create / edit / delete / …) read by colour at a glance.
+ *  • Neutral variants (secondary, ghost) rest as a calm grey pill and only
+ *    darken slightly on hover.
  *
- *   <Button>Save</Button>                      primary (blue tint)
- *   <Button variant="secondary">Cancel</Button>
+ *   <Button>Save</Button>                      primary  (blue tint)
+ *   <Button variant="success">New</Button>     green tint
  *   <Button variant="danger">Delete</Button>   red tint
+ *   <Button variant="secondary">Cancel</Button> grey
  *   <Button variant="ghost" icon><Icon/></Button>
  *
  * variant: primary | secondary | danger | dangerSoft | ghost | info | warning | success
  * size:    sm (compact, default) | md
  */
 
-// Hover tint per variant. The resting look is the same for all (the neutral pill).
-const TINTS = {
-  primary:    { bg: 'var(--info-bg)',    fg: 'var(--info-text)' },
-  secondary:  { bg: 'var(--surface-3)',  fg: 'var(--text-primary)' },
-  danger:     { bg: 'var(--danger-bg)',  fg: 'var(--danger-text)' },
-  dangerSoft: { bg: 'var(--danger-bg)',  fg: 'var(--danger-text)' },
-  ghost:      { bg: 'var(--surface-2)',  fg: 'var(--text-primary)' },
-  info:       { bg: 'var(--info-bg)',    fg: 'var(--info-text)' },
-  warning:    { bg: 'var(--warning-bg)', fg: 'var(--warning-text)' },
-  success:    { bg: 'var(--success-bg)', fg: 'var(--success-text)' },
+const SOLID_TEXT = 'var(--btn-primary-text, #fff)'
+
+// Tinted (semantic/action) variants: light bg + text at rest, solid on hover.
+const TINTED = {
+  primary:    { bg: 'var(--info-bg)',    fg: 'var(--info-text)',    onBg: 'var(--info-text)' },
+  info:       { bg: 'var(--info-bg)',    fg: 'var(--info-text)',    onBg: 'var(--info-text)' },
+  success:    { bg: 'var(--success-bg)', fg: 'var(--success-text)', onBg: 'var(--success-text)' },
+  warning:    { bg: 'var(--warning-bg)', fg: 'var(--warning-text)', onBg: 'var(--warning-text)' },
+  danger:     { bg: 'var(--danger-bg)',  fg: 'var(--danger-text)',  onBg: 'var(--danger-text)' },
+  dangerSoft: { bg: 'var(--danger-bg)',  fg: 'var(--danger-text)',  onBg: 'var(--danger-text)' },
 }
 
-// Font sizes track the host app's type scale (`--fs-*`).
 const SIZES = {
   sm: { fontSize: 'var(--fs-small, 12px)', padding: '5px 10px', borderRadius: 8 },
   md: { fontSize: 'var(--fs-body, 13px)', padding: '7px 13px', borderRadius: 8 },
 }
 
-const REST_FG = 'var(--text-secondary)'
+// rest / hover colour pair for a variant.
+function palette(variant) {
+  const t = TINTED[variant]
+  if (t) return { restBg: t.bg, restFg: t.fg, hovBg: t.onBg, hovFg: SOLID_TEXT }
+  // neutral: secondary (grey pill) / ghost (transparent) — only darken on hover.
+  const restBg = variant === 'ghost' ? 'transparent' : 'var(--surface-2)'
+  return { restBg, restFg: 'var(--text-secondary)', hovBg: 'var(--surface-3)', hovFg: 'var(--text-primary)' }
+}
 
 export default function Button({
   variant = 'primary',
@@ -41,14 +51,12 @@ export default function Button({
   children,
   ...rest
 }) {
-  const tint = TINTS[variant] ?? TINTS.primary
-  // Ghost rests transparent; everything else rests as the soft pill.
-  const restBg = variant === 'ghost' ? 'transparent' : 'var(--surface-2)'
+  const { restBg, restFg, hovBg, hovFg } = palette(variant)
   const dims = SIZES[size] ?? SIZES.sm
   const merged = {
     ...dims,
     backgroundColor: restBg,
-    color: REST_FG,
+    color: restFg,
     border: 'none',
     fontWeight: 500,
     lineHeight: 1.2,
@@ -62,8 +70,8 @@ export default function Button({
     ...(disabled ? { opacity: 0.4, cursor: 'not-allowed' } : {}),
   }
   const interactions = disabled ? {} : {
-    onMouseEnter: (e) => { e.currentTarget.style.backgroundColor = tint.bg; e.currentTarget.style.color = tint.fg },
-    onMouseLeave: (e) => { e.currentTarget.style.backgroundColor = (style && style.backgroundColor) || restBg; e.currentTarget.style.color = (style && style.color) || REST_FG },
+    onMouseEnter: (e) => { e.currentTarget.style.backgroundColor = hovBg; e.currentTarget.style.color = hovFg },
+    onMouseLeave: (e) => { e.currentTarget.style.backgroundColor = (style && style.backgroundColor) || restBg; e.currentTarget.style.color = (style && style.color) || restFg },
   }
   return (
     <button disabled={disabled} style={merged} {...interactions} {...rest}>
