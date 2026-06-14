@@ -24,6 +24,7 @@ import {
   DownloadSimple, UploadSimple, FileArrowDown,
   Microscope, TestTube, Dna, Magnet, Gauge, Thermometer, Lightbulb, Wrench, Cpu,
   Hexagon, Shapes, Crosshair, Polygon, Pulse, Waveform, ChartLineUp, Circuitry, Graph,
+  Camera, Image as ImageIcon,
 } from '@phosphor-icons/react'
 
 const WEIGHTS = ['thin', 'light', 'regular', 'bold', 'fill', 'duotone']
@@ -81,6 +82,7 @@ export const ICONS = {
   images: Images, browse: Images, chats: ChatsCircle, community: ChatsCircle,
   chart: ChartBar, infography: ChartBar, calendar: CalendarBlank, schedule: CalendarBlank,
   folder: FolderOpen, home: House,
+  camera: Camera, image: ImageIcon, photo: ImageIcon,
   // LILAK control tabs
   play: Play, run: Play, sliders: SlidersHorizontal, parameters: SlidersHorizontal,
   tree: TreeStructure, flow: TreeStructure, map: MapTrifold, mapping: MapTrifold,
