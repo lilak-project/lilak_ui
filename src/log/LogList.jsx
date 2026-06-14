@@ -1,19 +1,22 @@
 /**
- * LogList — renders a feed of log entries with task-child nesting and a
+ * LogList — renders a feed of log entries in their array order with a
  * CONFIGURABLE group divider (#8). elog historically drew a divider whenever the
  * run number changed; here the grouping key is switchable: run / date / run type
  * / beam / target / none.
  *
  *   <LogList
- *     entries={filtered}          // API order (oldest→newest)
+ *     entries={filtered}          // already in display order (e.g. newest→oldest)
  *     groupBy="run"               // 'run'|'date'|'run_type'|'beam'|'target'|'none' | fn(entry)
- *     reverse                     // show newest first (elog default)
+ *     reverse={false}             // flip the array before rendering (default true)
  *     gap={3}
  *     renderItem={(entry, idx) => <Card …/>} // idx = index into `entries`
  *   />
  *
- * Task children (entry.parent_log_id present and on this page) are kept grouped
- * directly under their mother log (not indented), as in elog.
+ * Entries render strictly in (optionally reversed) array order so the feed stays
+ * monotonically sorted. Task children (entry.parent_log_id present) carry the
+ * same group key as their mother (e.g. run_number), so they sit inline next to
+ * it in time order rather than being pinned above/below it — keeping the list
+ * correctly sorted regardless of the parent/child relationship.
  */
 export const GROUP_ACCESSORS = {
   none: () => null,
@@ -34,33 +37,19 @@ export default function LogList({
 }) {
   const accessor = typeof groupBy === 'function' ? groupBy : (GROUP_ACCESSORS[groupBy] || GROUP_ACCESSORS.none)
 
-  // task children grouped under their mother (within this page)
-  const idSet = new Set(entries.map((e) => e.id))
-  const childrenOf = {}
-  for (const e of entries) {
-    if (e.parent_log_id != null && idSet.has(e.parent_log_id)) {
-      (childrenOf[e.parent_log_id] ||= []).push(e)
-    }
-  }
-  let topLevel = entries.filter((e) => e.parent_log_id == null || !idSet.has(e.parent_log_id))
-  if (reverse) topLevel = [...topLevel].reverse()
-
+  const list = reverse ? [...entries].reverse() : entries
   const idxOf = (e) => entries.indexOf(e)
   const out = []
   let prevKey
   const grouping = groupBy !== 'none'
 
-  for (const e of topLevel) {
+  for (const e of list) {
     const key = accessor(e)
     if (grouping && prevKey !== undefined && key !== prevKey) {
       out.push(<div key={`sep-${e.id}`} style={{ height: 2, margin: '4px 0', backgroundColor: dividerColor }} />)
     }
     prevKey = key
     out.push(renderItem(e, idxOf(e)))
-    const kids = childrenOf[e.id]
-    if (kids) {
-      for (const k of [...kids].sort((a, b) => a.id - b.id)) out.push(renderItem(k, idxOf(k)))
-    }
   }
 
   return <div style={{ display: 'flex', flexDirection: 'column', gap }}>{out}</div>
