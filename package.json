@@ -18,7 +18,7 @@
     "react-dom": "^19.2.7"
   },
   "scripts": {
-    "demo": "vite --port 5120"
+    "demo": "vite"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.1",
