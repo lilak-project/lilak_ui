@@ -60,7 +60,7 @@ function seed(fields, initial) {
 
 export default function CrudForm({
   fields = [], initial = null, onSubmit, onCancel,
-  title, submitLabel, cancelLabel = 'Cancel', busy = false, error, columns = 2,
+  title, submitLabel, cancelLabel = 'Cancel', busy = false, error, columns = 2, extra,
 }) {
   const [values, setValues] = useState(() => seed(fields, initial))
   const set = (k, v) => setValues((s) => ({ ...s, [k]: v }))
@@ -131,6 +131,8 @@ export default function CrudForm({
           </div>
         ))}
       </div>
+
+      {extra}
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
         {onCancel && <Button variant="ghost" size="sm" type="button" onClick={onCancel}>{cancelLabel}</Button>}

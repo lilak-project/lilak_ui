@@ -37,6 +37,7 @@ export default function CrudTable({
   canEdit = () => !!onUpdate,
   canDelete = () => !!onDelete,
   extraActions,
+  formExtra,        // (row, { close }) => node — rendered inside the EDIT form
   headerActions,
   loading = false,
   busy = false,
@@ -118,6 +119,7 @@ export default function CrudTable({
           submitLabel={editing ? L.edit : L.add}
           busy={busy}
           error={error}
+          extra={editing && formExtra ? formExtra(editing, { close: () => setMode(null) }) : undefined}
           onSubmit={handleSubmit}
           onCancel={() => setMode(null)}
         />
