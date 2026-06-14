@@ -40,8 +40,14 @@ export function applyLangFont(lang) {
   document.documentElement.style.setProperty('--font-sans', stack)
 }
 
-/** Load Pretendard + IBM Plex Sans + D2Coding (+ JetBrains Mono) from jsDelivr. Idempotent. */
-export function loadFonts({ pretendard = true, ibmPlexSans = true, d2coding = true, jetbrainsMono = true } = {}) {
+/** Load Pretendard + IBM Plex Sans + D2Coding (+ JetBrains Mono) from jsDelivr,
+ *  AND make the themed sans stack the document-wide default font. Idempotent.
+ *
+ *  Defines the `--font-sans` / `--font-mono` (+ radius) tokens if the app hasn't
+ *  already, then sets `<html style="font-family: var(--font-sans)">` so every
+ *  card and component inherits Pretendard / IBM Plex Sans instead of the host's
+ *  CSS-reset system font. Pass `{ setDefault: false }` to load files only. */
+export function loadFonts({ pretendard = true, ibmPlexSans = true, d2coding = true, jetbrainsMono = true, setDefault = true } = {}) {
   if (typeof document === 'undefined') return
   const links = []
   if (pretendard) links.push('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css')
@@ -56,6 +62,15 @@ export function loadFonts({ pretendard = true, ibmPlexSans = true, d2coding = tr
     link.rel = 'stylesheet'
     link.href = href
     document.head.appendChild(link)
+  }
+  if (setDefault) {
+    const root = document.documentElement
+    // Define the font tokens if the app hasn't, so var(--font-sans) resolves…
+    for (const [k, v] of Object.entries(FONT_DEFAULTS)) {
+      if (!root.style.getPropertyValue(k)) root.style.setProperty(k, v)
+    }
+    // …then make it the document default (overrides the host's system-ui reset).
+    root.style.fontFamily = 'var(--font-sans)'
   }
 }
 
