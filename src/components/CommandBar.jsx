@@ -48,8 +48,8 @@ export default function CommandBar({
   // Free-text input mode — turns the collapsible bar into a labelled text bar so
   // the app never needs a second fixed bottom bar (comments, chat, goto, …).
   // { label?, placeholder?, hint?, contextNode?, multiline?, persistent?,
-  //   initialValue?, onSubmit(value), onCancel?(), onValueChange?(v),
-  //   onKeyDown?(e, value, setValue) }
+  //   initialValue?, secure?(mask as password), inputMode?, onSubmit(value),
+  //   onCancel?(), onValueChange?(v), onKeyDown?(e, value, setValue) }
   input = null,
   // Slot mode: render the bar as an empty always-expanded container whose DOM
   // node is published via barController, so a page can portal its own composer
@@ -183,6 +183,13 @@ export default function CommandBar({
       const freeCmd = findCmd(m[1], 'freeArg')
       if (freeCmd) { freeCmd.run?.(arg); onRun?.(freeCmd, arg); close(); return }
     }
+    // "/cmd " (expanded, no argument typed) → run a freeArg command with empty
+    // text: e.g. `/search ` clears the search, `/account ` starts the prompt flow.
+    const bare = value.match(/^\/(\S+)\s+$/)
+    if (bare) {
+      const freeCmd = findCmd(bare[1], 'freeArg')
+      if (freeCmd) { freeCmd.run?.(''); onRun?.(freeCmd, ''); close(); return }
+    }
     const chosen = suggestions[sel]
     if (chosen) return chosen.onPick()
     const raw = value.replace(/^[/#%_&*>@^]/, '').trim()
@@ -255,6 +262,8 @@ export default function CommandBar({
             onKeyDown={onKey}
             placeholder={input.placeholder || ''}
             rows={input.multiline ? 1 : undefined}
+            type={input.secure && !input.multiline ? 'password' : undefined}
+            inputMode={input.inputMode}
             spellCheck={false}
             style={{ flex: 1, minWidth: 0, background: 'transparent', border: 'none', outline: 'none', resize: 'none', color: 'var(--nav-text)', fontSize: 'var(--fs-small, 12px)', fontFamily: 'inherit', lineHeight: 1.4, maxHeight: input.multiline ? 72 : undefined, padding: input.multiline ? '10px 0' : 0 }}
           />
