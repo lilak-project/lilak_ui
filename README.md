@@ -21,7 +21,7 @@ step, no Tailwind. The host app's Vite transpiles the source directly.
 `npm run demo` boots a single-file app ([`demo/main.jsx`](demo/main.jsx)) that
 wires the kit into a realistic LILAK shell: a `TopBar` with the brand lockup
 (logo `brandIcon` + two-line `brand`/`brandSub` + a `brandSuffix` chip), tabs, a
-bottom `CommandBar`, a drop-down system panel, full i18n (한국어 / English), and
+bottom `CommandBar`, a drop-down system panel, full i18n (한국어 / English / 日本語), and
 live theme switching. Each tab exercises a different slice of the kit. The brand
 mark ships in the kit (`<Icon name="lilak"/>`) and the same SVG
 ([`demo/public/lilak.svg`](demo/public/lilak.svg)) is wired up as the browser-tab
@@ -193,7 +193,10 @@ of `className="flex …"`.
 ### App services & icons
 
 - **[`i18n.jsx`](src/i18n.jsx)** — `LangProvider / useLang`; the consumer
-  supplies the dictionaries.
+  supplies the dictionaries. Languages are derived from the dict keys, so
+  **adding a language is one dict entry** (`t(key)` falls back across languages,
+  then to the key itself). For a new script, register its font stack with
+  `registerLangFont(lang, stack)` — the demo adds Japanese (日本語) this way.
 - **[`identity.jsx`](src/identity.jsx)** — `IdentityProvider / useIdentity`
   (current author name).
 - **[`hooks/useHotkeys.js`](src/hooks/useHotkeys.js)** (`useHotkeys /

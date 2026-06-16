@@ -1,13 +1,18 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import {
-  applyTheme, getTheme, setTheme, applyLangFont, THEMES,
+  applyTheme, getTheme, setTheme, applyLangFont, registerLangFont, THEMES,
   LangProvider, useLang, useHotkeys, prettyKey, useBreakpoint,
   defineCommands, runCommand,
   IdentityProvider, useIdentity,
   Button, Input, Badge, Card, DataTable, Modal, TopBar, CommandBar, LogFeed, LogComposer, TopPanel, ColorSettings, ColorPicker, CrudTable,
   Icon,
 } from '../src/index.js'
+
+// Adding a language is two steps: (1) register its font stack (kit API), and
+// (2) add a dict entry below. Here Japanese uses a CJK system stack so kana /
+// kanji render without shipping a webfont.
+registerLangFont('ja', "'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Noto Sans JP', Pretendard, sans-serif")
 
 // Demonstrates ColorPicker's component mode: set background / line / text
 // separately for a tag-like component (#3).
@@ -62,20 +67,10 @@ function CrudTableDemo() {
   )
 }
 
-function AlarmIcon() {
-  // bell — notifications / alarm
-  return (
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-         strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block' }}>
-      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-    </svg>
-  )
-}
-
 const DICTS = {
   en: {
-    brand: 'LILAK',
+    _label: 'English',
+    brand: 'lilak',
     tab_run: 'Run', tab_log: 'Log', tab_root: 'ROOT', tab_settings: 'Settings',
     cs_presets: 'Presets', cs_edit: 'Edit colors', cs_save: 'Save as preset', cs_reset: 'Reset', cs_nameph: 'My palette',
     status_running: 'running',
@@ -96,6 +91,7 @@ const DICTS = {
     sc_help: 'This help', sc_close: 'Close / cancel', ran: (c) => `▸ ran: ${c}`,
   },
   ko: {
+    _label: '한국어',
     brand: '라일락',
     tab_run: '실행', tab_log: '로그', tab_root: 'ROOT', tab_settings: '설정',
     cs_presets: '프리셋', cs_edit: '색상 편집', cs_save: '프리셋으로 저장', cs_reset: '되돌리기', cs_nameph: '내 팔레트',
@@ -115,6 +111,28 @@ const DICTS = {
     sc_cmd: '명령 바 열기', sc_settings: '시스템 패널 열기', sc_tabprev: '이전 탭', sc_tabnext: '다음 탭',
     sc_run: '실행 탭으로', sc_log: '로그 탭으로', sc_root: 'ROOT 탭으로', sc_lognav: '로그: 이동 / 열기',
     sc_help: '이 도움말', sc_close: '닫기 / 취소', ran: (c) => `▸ 실행됨: ${c}`,
+  },
+  ja: {
+    _label: '日本語',
+    brand: 'lilak',
+    tab_run: '実行', tab_log: 'ログ', tab_root: 'ROOT', tab_settings: '設定',
+    cs_presets: 'プリセット', cs_edit: '色の編集', cs_save: 'プリセットとして保存', cs_reset: 'リセット', cs_nameph: 'マイパレット',
+    status_running: '実行中',
+    col_param: 'パラメータ', col_value: '値', col_comment: 'コメント',
+    btn_save: '保存', btn_run: '実行',
+    log_title: 'タイトル', log_tags: 'タグ（カンマ区切り）', log_body: '本文（マークダウン）…', log_add: '追加', log_empty: 'ログがありません',
+    log_format: 'フォーマット', log_standard: '標準', log_write: '作成', log_preview: 'プレビュー', log_attach: '添付', log_drop: 'ファイルをドロップまたはクリック',
+    log_help: '↑↓ / j k  移動 · space  開閉 · enter  追加',
+    root_hint: 'ここに ROOT ビューア（JSROOT キャンバス）が表示されます。',
+    sys_title: 'システム', sys_status: 'ステータス', sys_recent: '最近のシステムログ',
+    sys_daq: 'DAQ', sys_disk: 'ディスク', sys_lastrun: '最終ラン', sys_online: 'オンライン',
+    sys_name: '名前', sys_name_hint: '作成したログの作成者として記録されます。',
+    cmd_placeholder: 'コマンドを入力…   run · open · theme · goto',
+    cmd_hint: '↵ 実行 · esc 閉じる', settings: '設定', theme: 'テーマ', language: '言語',
+    shortcuts: 'ショートカット', sc_title: 'キーボードショートカット',
+    sc_cmd: 'コマンドバーを開く', sc_settings: 'システムパネルを開く', sc_tabprev: '前のタブ', sc_tabnext: '次のタブ',
+    sc_run: '実行へ', sc_log: 'ログへ', sc_root: 'ROOT へ', sc_lognav: 'ログ：移動 / 開閉',
+    sc_help: 'このヘルプ', sc_close: '閉じる / キャンセル', ran: (c) => `▸ 実行しました: ${c}`,
   },
 }
 
@@ -153,7 +171,7 @@ function Shell() {
   const { t, lang, setLang, langs } = useLang()
   const { name: userName, setName } = useIdentity()
   const { isPhone } = useBreakpoint()   // glue-level responsive switch
-  const barH = isPhone ? 58 : 46        // taller, tap-friendlier bar on phones
+  const barH = 46                       // match elog's compact bar height
   const [theme, setThemeState] = useState(getTheme())
   const [tab, setTab] = useState('run')
   const [sel, setSel] = useState(1)
@@ -183,8 +201,8 @@ function Shell() {
     { id: 'theme bright', title: 'Bright theme', run: () => { applyThemeId('bright'); pushLog('theme bright') } },
     { id: 'theme dark', title: 'Dark theme', run: () => { applyThemeId('dark'); pushLog('theme dark') } },
     { id: 'theme lowcontrast', title: 'Low-contrast theme', run: () => { applyThemeId('lowcontrast'); pushLog('theme lowcontrast') } },
-    { id: 'lang en', title: 'English', run: () => { setLang('en'); pushLog('lang en') } },
-    { id: 'lang ko', title: '한국어', run: () => { setLang('ko'); pushLog('lang ko') } },
+    // one command per language, generated from the dictionaries (add a dict → it appears)
+    ...langs.map((l) => ({ id: `lang ${l}`, title: DICTS[l]?._label || l, run: () => { setLang(l); pushLog(`lang ${l}`) } })),
     { id: 'shortcuts', title: t('shortcuts'), keywords: 'help keys', run: () => setShowSC(true) },
   ]), [t, lang])
 
@@ -208,24 +226,23 @@ function Shell() {
     { key: 'comment', header: t('col_comment'), mono: true, muted: true, render: (r) => r.comment || '—' },
   ]
 
-  // elog-style name + icon button → opens the system drop-down panel
+  // elog-style account button: no box (transparent + hover), mono small text,
+  // a user icon (not a bell), opens the system drop-down panel.
   const sysButton = (
     <button
       onClick={() => setSysOpen((o) => !o)}
       title={`${t('sys_title')}  ( \\ )`}
       style={{
-        display: 'flex', alignItems: 'center', gap: 7,
+        display: 'inline-flex', alignItems: 'center', gap: 6, height: 28, padding: '0 10px',
+        borderRadius: 8, border: 'none', cursor: 'pointer',
         background: sysOpen ? 'var(--nav-accent)' : 'transparent',
-        border: '1px solid var(--nav-border)', borderRadius: 8,
-        padding: isPhone ? '4px 8px' : '2px 10px', cursor: 'pointer',
-        color: 'var(--nav-text)', fontSize: 15.5, fontFamily: 'var(--font-mono)',
+        color: 'var(--nav-text)', fontSize: 'var(--fs-tiny, 11px)', fontFamily: 'var(--font-mono)',
       }}
+      onMouseEnter={(e) => { if (!sysOpen) e.currentTarget.style.backgroundColor = 'var(--nav-accent)' }}
+      onMouseLeave={(e) => { if (!sysOpen) e.currentTarget.style.backgroundColor = 'transparent' }}
     >
-      <span style={{ position: 'relative', display: 'inline-flex', color: 'var(--nav-text)' }}>
-        <AlarmIcon />
-      </span>
-      {/* drop the name on phones so the bar fits — the bell still opens the panel */}
-      {!isPhone && <span style={{ color: 'var(--nav-text)' }}>{userName}</span>}
+      <Icon name="user" size={15} />
+      {!isPhone && <span>{userName}</span>}
     </button>
   )
 
@@ -370,8 +387,6 @@ function Shell() {
 // ── content of the system drop-down panel: left 2/3 logs · right 1/3 settings ──
 function SystemPanelContent({ t, theme, lang, langs, onTheme, onLang, entries, userName, onName, isPhone }) {
   const sectionTitle = { fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--nav-text-muted)', marginBottom: 8 }
-  const card = { background: 'rgba(255,255,255,0.04)', border: '1px solid var(--nav-border)', borderRadius: 10, padding: '12px 14px' }
-  const statRow = { display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '3px 0', color: 'var(--nav-text)' }
   const muted = { color: 'var(--nav-text-muted)' }
   const chip = (active) => ({
     border: '1px solid var(--nav-border)', borderRadius: 7, padding: '4px 12px', fontSize: 12.5, cursor: 'pointer',
@@ -380,8 +395,8 @@ function SystemPanelContent({ t, theme, lang, langs, onTheme, onLang, entries, u
 
   return (
     <div style={{ height: '100%', display: 'grid', gridTemplateColumns: isPhone ? '1fr' : '2fr 1fr', gap: 16, overflowY: isPhone ? 'auto' : undefined }}>
-      {/* LEFT 2/3 — system logs */}
-      <div style={{ ...card, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+      {/* LEFT 2/3 — system logs (flat, no card box — matches elog) */}
+      <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, paddingRight: isPhone ? 0 : 16 }}>
         <div style={sectionTitle}>{t('sys_recent')}</div>
         <div style={{ display: 'flex', gap: 14, marginBottom: 10, fontSize: 12.5 }}>
           <span style={muted}>{t('sys_daq')}: <span style={{ color: 'var(--success-text)' }}>● {t('sys_online')}</span></span>
@@ -401,8 +416,9 @@ function SystemPanelContent({ t, theme, lang, langs, onTheme, onLang, entries, u
         </div>
       </div>
 
-      {/* RIGHT 1/3 — settings */}
-      <div style={{ ...card, display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {/* RIGHT 1/3 — settings (flat, divider instead of a card box) */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14, paddingLeft: isPhone ? 0 : 16,
+        borderLeft: isPhone ? 'none' : '1px solid var(--nav-border)', borderTop: isPhone ? '1px solid var(--nav-border)' : 'none', paddingTop: isPhone ? 14 : 0 }}>
         <div>
           <div style={sectionTitle}>{t('sys_name')}</div>
           <input
@@ -422,7 +438,7 @@ function SystemPanelContent({ t, theme, lang, langs, onTheme, onLang, entries, u
         <div>
           <div style={sectionTitle}>{t('language')}</div>
           <div style={{ display: 'flex', gap: 6 }}>
-            {langs.map((l) => <button key={l} style={chip(l === lang)} onClick={() => onLang(l)}>{l === 'ko' ? '한국어' : 'English'}</button>)}
+            {langs.map((l) => <button key={l} style={chip(l === lang)} onClick={() => onLang(l)}>{DICTS[l]?._label || l}</button>)}
           </div>
         </div>
       </div>

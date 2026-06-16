@@ -9,7 +9,7 @@
 
 // theme
 export { TOKENS, TOKEN_GROUPS, THEMES } from './theme/tokens.js'
-export { applyTheme, buildThemeCSS, getTheme, setTheme, cycleTheme, loadFonts, applyLangFont, SANS_BY_LANG, FONT_DEFAULTS } from './theme/applyTheme.js'
+export { applyTheme, buildThemeCSS, getTheme, setTheme, cycleTheme, loadFonts, applyLangFont, registerLangFont, SANS_BY_LANG, FONT_DEFAULTS } from './theme/applyTheme.js'
 export { listPresets, getActivePreset, setActivePreset, applyPreset, saveCustomPreset, deleteCustomPreset, setTokenOverride, clearOverrides, BUILTIN_PRESETS } from './theme/presets.js'
 export * as uiStyles from './theme/uiStyles.js'
 export { hoverify } from './theme/uiStyles.js'

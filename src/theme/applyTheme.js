@@ -18,12 +18,23 @@ const FONT_ID = 'lilak-ui-fonts'
 const STORAGE_KEY = 'lilak-ui-theme'
 
 /** Per-language sans stacks: Korean → Pretendard, English → IBM Plex Sans.
- *  Both list the other as fallback so mixed text always renders. */
+ *  Both list the other as fallback so mixed text always renders. Extend it for
+ *  a new language (especially a new script) with `registerLangFont`. */
 export const SANS_BY_LANG = {
   ko: "Pretendard, 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, system-ui, sans-serif",
   en: "'IBM Plex Sans', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif",
 }
 const SANS_DEFAULT = SANS_BY_LANG.ko
+
+/** Register (or override) the sans stack for a language so `applyLangFont(lang)`
+ *  picks it up — the consumer-facing way to add a language with its own script
+ *  font (e.g. registerLangFont('ja', "'Hiragino Sans', 'Noto Sans JP', …")).
+ *  Loading the actual webfont is the app's job; this only maps lang → stack.
+ *  Re-applies immediately if `lang` is the one currently on <html>. */
+export function registerLangFont(lang, stack) {
+  SANS_BY_LANG[lang] = stack
+  if (typeof document !== 'undefined' && document.documentElement.lang === lang) applyLangFont(lang)
+}
 
 export const FONT_DEFAULTS = {
   '--font-sans': SANS_DEFAULT,
