@@ -8,13 +8,17 @@
  *     <div style={{ flex: 1, minWidth: 0 }}>{content}</div>
  *   </Row>
  *
- * sections: [{ id, label, icon? }]. `groups` (optional) renders dividers — pass
- * sections with a `group` key and consecutive groups get a gap.
+ * sections: [{ id, label, icon?, title? }]. `groups` (optional) renders dividers —
+ * pass sections with a `group` key and consecutive groups get a gap.
+ *
+ * `wrap` lets long labels (e.g. file paths) wrap onto multiple lines instead of
+ * truncating with an ellipsis — useful when SideNav is used as a file browser.
+ * Each section may carry a `title` string for a hover tooltip.
  */
 import Icon from '../icons.jsx'
 
 export default function SideNav({
-  title, sections = [], active, onSelect, width = 176, style, ...rest
+  title, sections = [], active, onSelect, width = 176, wrap = false, style, ...rest
 }) {
   return (
     <aside
@@ -39,10 +43,12 @@ export default function SideNav({
             <button
               key={s.id}
               type="button"
+              title={s.title}
               onClick={() => onSelect?.(s.id)}
               style={{
-                display: 'flex', alignItems: 'center', gap: 8,
-                width: '100%', height: 32, padding: '0 12px',
+                display: 'flex', alignItems: wrap ? 'flex-start' : 'center', gap: 8,
+                width: '100%', height: wrap ? 'auto' : 32, minHeight: wrap ? 28 : undefined,
+                padding: wrap ? '5px 12px' : '0 12px',
                 marginTop: gapTop ? 8 : 0,
                 borderRadius: 8, border: 'none', cursor: 'pointer',
                 textAlign: 'left', fontSize: 'var(--fs-small, 12px)', fontFamily: 'inherit',
@@ -54,7 +60,11 @@ export default function SideNav({
               onMouseLeave={(e) => { if (!on) e.currentTarget.style.backgroundColor = 'transparent' }}
             >
               {s.icon && <Icon name={s.icon} size={15} weight={on ? 'fill' : 'regular'} />}
-              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.label}</span>
+              <span style={wrap
+                ? { flex: 1, minWidth: 0, whiteSpace: 'normal', overflowWrap: 'anywhere', wordBreak: 'break-word', lineHeight: 1.35 }
+                : { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {s.label}
+              </span>
             </button>
           )
         })}
