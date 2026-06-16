@@ -45,8 +45,8 @@ function RunBadges({ entry }) {
   return (
     <>
       {num && <span style={{ ...cls, ...numStyle }}>{`*${num}`}</span>}
-      <span style={{ ...cls, ...BEAM }}>{`>${entry.beam || ''}`}</span>
-      <span style={{ ...cls, ...TARGET }}>{`@${entry.target || ''}`}</span>
+      {entry.beam !== undefined && <span style={{ ...cls, ...BEAM }}>{`>${entry.beam || ''}`}</span>}
+      {entry.target !== undefined && <span style={{ ...cls, ...TARGET }}>{`@${entry.target || ''}`}</span>}
     </>
   )
 }
@@ -70,8 +70,11 @@ export default function LogDetail({
   headerRight,         // manager-only notice toggle etc.
   banner,
   beforeBody,
+  body,                // optional: replaces the markdown body (e.g. an infograph chart)
   actions,
   footer,
+  indexPrefix = '_',   // '_' for logs, '&' for infographs
+  showIndex = true,    // run groups hide the per-log index pill (it's not one log)
 }) {
   if (!entry) return null
   const d = detail || entry
@@ -103,7 +106,7 @@ export default function LogDetail({
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '10px 16px',
         borderBottom: '1px solid var(--border-subtle)', backgroundColor: 'var(--surface-2)', borderRadius: '12px 12px 0 0', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-          <span style={idPill}>_{entry.log_index ?? entry.id}</span>
+          {showIndex && <span style={idPill}>{indexPrefix}{entry.log_index ?? entry.id}</span>}
           {level !== 'info' && <span style={{ ...CHIP, ...severityStyle(level) }}>{level.toUpperCase()}</span>}
           <RunBadges entry={entry} />
           {entry.category && <span style={{ ...CHIP, backgroundColor: 'var(--surface-3)', color: 'var(--text-secondary)' }}>{entry.category}</span>}
@@ -148,8 +151,10 @@ export default function LogDetail({
 
         {beforeBody}
 
-        {/* body */}
-        {detail ? (
+        {/* body — an explicit `body` slot (e.g. a chart) wins over the markdown body */}
+        {body !== undefined ? (
+          <div style={{ ...divider }}>{body}</div>
+        ) : detail ? (
           d.body
             ? <div style={{ ...divider, fontSize: 'var(--fs-medium, 14px)', color: 'var(--text-primary)' }}><Markdown>{d.body}</Markdown></div>
             : <p style={{ ...divider, fontSize: 'var(--fs-medium, 14px)', fontStyle: 'italic', color: 'var(--text-muted)' }}>{L.noBody}</p>

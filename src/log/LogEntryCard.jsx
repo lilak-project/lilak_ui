@@ -51,15 +51,15 @@ function RunBadges({ entry, sm }) {
   return (
     <>
       {num && <span style={{ ...cls, ...numStyle }}>{`*${num}`}</span>}
-      <span style={{ ...cls, ...BEAM }}>{`>${entry.beam || ''}`}</span>
-      <span style={{ ...cls, ...TARGET }}>{`@${entry.target || ''}`}</span>
+      {entry.beam !== undefined && <span style={{ ...cls, ...BEAM }}>{`>${entry.beam || ''}`}</span>}
+      {entry.target !== undefined && <span style={{ ...cls, ...TARGET }}>{`@${entry.target || ''}`}</span>}
     </>
   )
 }
 
 const CHIP = { fontSize: 'var(--fs-tiny, 11px)', padding: '1px 8px', borderRadius: 999, flexShrink: 0, whiteSpace: 'nowrap' }
 
-export default function LogEntryCard({ entry, viewMode = 'normal', focused = false, expanded = false, onClick, tagColorMap }) {
+export default function LogEntryCard({ entry, viewMode = 'normal', focused = false, expanded = false, onClick, tagColorMap, indexPrefix = '_', showIndex = true }) {
   const sev = severityStyle(entry.level)
   const frame = cardFrameStyle(entry, focused)
   const idPill = { fontSize: 'var(--fs-small, 12px)', fontFamily: 'var(--font-mono)', padding: '2px 6px', borderRadius: 4, backgroundColor: 'var(--surface-2)', color: 'var(--text-muted)', flexShrink: 0 }
@@ -88,7 +88,7 @@ export default function LogEntryCard({ entry, viewMode = 'normal', focused = fal
   if (viewMode === 'brief') {
     return (
       <div onClick={onClick} style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, padding: '6px 12px', borderRadius: 8, border: '1px solid', cursor: 'pointer', ...frame }}>
-        <span style={idPill}>_{entry.log_index ?? entry.id}</span>
+        {showIndex && <span style={idPill}>{indexPrefix}{entry.log_index ?? entry.id}</span>}
         {entry.is_deleted && <span style={{ ...CHIP, backgroundColor: 'var(--danger-bg)', color: 'var(--danger-text)' }}>DELETED</span>}
         {entry.level && entry.level !== 'info' && <span style={{ ...sev, fontSize: 'var(--fs-tiny, 11px)', padding: '1px 6px', borderRadius: 4, flexShrink: 0 }}>{entry.level.toUpperCase()}</span>}
         <RunBadges entry={entry} sm />
@@ -108,7 +108,7 @@ export default function LogEntryCard({ entry, viewMode = 'normal', focused = fal
       <div style={{ padding: viewMode === 'rich' ? '14px 16px' : '12px 16px', display: 'flex', flexDirection: 'column', gap: 6 }}>
         {/* row 1: id + level + run badges */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-          <span style={idPill}>_{entry.log_index ?? entry.id}</span>
+          {showIndex && <span style={idPill}>{indexPrefix}{entry.log_index ?? entry.id}</span>}
           {entry.is_deleted && <span style={{ ...CHIP, backgroundColor: 'var(--danger-bg)', color: 'var(--danger-text)' }}>DELETED</span>}
           {entry.level && entry.level !== 'info' && <span style={{ ...sev, fontSize: 'var(--fs-tiny, 11px)', padding: '1px 8px', borderRadius: 999, flexShrink: 0 }}>{entry.level.toUpperCase()}</span>}
           <RunBadges entry={entry} />
