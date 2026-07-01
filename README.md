@@ -16,6 +16,37 @@ step, no Tailwind. The host app's Vite transpiles the source directly.
 
 ---
 
+## The default skeleton — `AppShell`
+
+Ask for "just a skeleton with lilak-ui" and this is what you get. `AppShell` wires
+the chrome every LILAK app shares (pioneered by `lilak_elog`, then `lilak_gui`)
+into a one-liner — you supply brand + tabs + content, it supplies the rest:
+
+```jsx
+import { AppShell, LangProvider, IdentityProvider } from 'lilak-ui'
+
+<LangProvider dicts={DICTS} defaultLang="ko">
+  <IdentityProvider defaultName={user}>
+    <AppShell brand="lilak" service="gui" tabs={TABS} active={tab} onTab={setTab}>
+      {tabContent}
+    </AppShell>
+  </IdentityProvider>
+</LangProvider>
+```
+
+Out of the box: a `TopBar` (lilak mark that **dims in command mode** + two-line
+`brand`/`service` lockup + optional `project` chip + tabs + right slot for
+`status` and the account button), the `/` `CommandBar` pre-registered with
+help / theme / language / go-to-tab, a `\` drawer (your `drawer` node, or a
+built-in **settings** panel: account + theme + language), a `?` `ShortcutsModal`,
+and the keys `[` / `]` (tabs) · `/` (command bar) · `\` (drawer) · `?` (help).
+`AppShell` provides its own `CommandRegistryProvider`. Chrome strings are
+dict-independent — pass a `labels` object to localize; restrict the theme picker
+with `themes={['bright']}`. See [`components/AppShell.jsx`](src/components/AppShell.jsx),
+and `lilak_gui`'s `frontend/src/components/Shell.jsx` for a real, minimal consumer.
+
+---
+
 ## The demo gallery
 
 `npm run demo` boots a single-file app ([`demo/main.jsx`](demo/main.jsx)) that
