@@ -22,6 +22,8 @@
  *     (theme + language + account) when you don't pass one.
  *   • `?` shortcuts modal (reads the live registry).
  *   • Keys: `[` / `]` prev/next tab, `/` command bar, `\` drawer, `?` help.
+ *   • Responsive: on phones the tabs fold into a ☰ pick-list (`tabsAsMenu`,
+ *     default 'auto'; pass true/false to force).
  *
  * Strings are dict-independent: pass a `labels` object to localize the few
  * chrome strings (defaults are English). Tab labels come from `tabs`.
@@ -33,6 +35,7 @@ import Drawer from './Drawer.jsx'
 import ShortcutsModal from './ShortcutsModal.jsx'
 import Icon from '../icons.jsx'
 import { Row, Stack } from '../layout/index.jsx'
+import { useBreakpoint } from '../hooks/useBreakpoint.js'
 import { CommandRegistryProvider, useCommandRegistry, useCommands, useShortcut } from '../command/CommandRegistry.jsx'
 import { useLang } from '../i18n.jsx'
 import { useIdentity } from '../identity.jsx'
@@ -126,6 +129,8 @@ function AppShellInner({
   onAccountClick,
   drawer,
   drawerHeight = 'half',
+  // 'auto' (default) folds tabs into a ☰ pick-list on phones; true/false forces it.
+  tabsAsMenu = 'auto',
   themes = THEMES.map((t) => t.id),
   commands,
   extraShortcuts = [],
@@ -136,6 +141,8 @@ function AppShellInner({
   const { lang, setLang, langs } = useLang()
   const identity = useIdentity()
   const reg = useCommandRegistry()
+  const { isPhone } = useBreakpoint()
+  const foldTabs = tabsAsMenu === 'auto' ? isPhone : !!tabsAsMenu
 
   const [barOpen, setBarOpen] = useState(false)
   const [barLead, setBarLead] = useState('/')
@@ -249,6 +256,7 @@ function AppShellInner({
         tabs={tabs}
         active={active}
         onTab={onTab}
+        tabsAsMenu={foldTabs}
         right={<>{status}{accountBtn}</>}
       />
 
