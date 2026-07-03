@@ -28,6 +28,10 @@ import {
   FinnTheHuman, Aperture, BowlFood, FlyingSaucer, Guitar, HandEye, HandPeace,
   PuzzlePiece, Shrimp, UserCircle, Yarn, Confetti, Headphones, Martini, Popcorn,
 } from '@phosphor-icons/react'
+// Unify the pool: an avatar glyph is resolved from the SAME icon set the service
+// picker uses (kit ICONS / PICKER_ICONS). AVATAR_ICON_MAP below stays only as a
+// fallback for legacy profile_shape values not in ICONS.
+import { ICONS, PICKER_ICONS } from '../icons.jsx'
 
 /** Curated set of Phosphor icons that read well as small avatars (80). */
 export const AVATAR_ICON_MAP = {
@@ -51,7 +55,9 @@ export const AVATAR_ICON_MAP = {
   yarn: Yarn, confetti: Confetti, headphones: Headphones, martini: Martini, popcorn: Popcorn,
 }
 
-export const AVATAR_ICONS = Object.keys(AVATAR_ICON_MAP)
+// Pickable pool = the shared service/profile set. Profiles render each in a
+// coloured circle; services render the same names duotone.
+export const AVATAR_ICONS = PICKER_ICONS
 
 /** Backgrounds dark enough that the white icon always reads (no colour forces a
  *  dark icon). Black is reserved for managers and is NOT in this pool — apps
@@ -99,7 +105,7 @@ export function avatarFor(seed) {
 
 export default function Avatar({ icon, color, seed, size = 36, weight = 'fill', title, style, ...rest }) {
   const det = avatarFor(seed)
-  const Cmp = AVATAR_ICON_MAP[icon] || AVATAR_ICON_MAP[det.profile_shape]
+  const Cmp = ICONS[icon] || AVATAR_ICON_MAP[icon] || ICONS[det.profile_shape] || AVATAR_ICON_MAP[det.profile_shape]
   const bg = color || det.profile_color
   const fg = iconColorFor(bg)
   return (
