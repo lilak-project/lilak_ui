@@ -56,6 +56,10 @@ export const AVATAR_ICONS = Object.keys(AVATAR_ICON_MAP)
 /** Backgrounds dark enough that the white icon always reads (no colour forces a
  *  dark icon). Black is reserved for managers and is NOT in this pool — apps
  *  apply it separately for manager profiles. */
+// Reserved for admins/managers — NOT in AVATAR_COLORS, so only admins use it and
+// non-admins can't pick it. (Same value elog uses.)
+export const MANAGER_COLOR = '#111827'
+
 export const AVATAR_COLORS = [
   // mid hues
   '#ef4444', '#f97316', '#84cc16', '#22c55e', '#10b981', '#14b8a6', '#06b6d4',

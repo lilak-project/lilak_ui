@@ -41,7 +41,7 @@ export { default as CrudTable } from './crud/CrudTable.jsx'
 export { default as CrudForm } from './crud/CrudForm.jsx'
 
 // icons (Phosphor, via one semantic map) + custom-icon factories
-export { default as Icon, ICONS, customIcon, strokeIcon, fillIcon, PROJECT_ICONS, randomProjectIcon } from './icons.jsx'
+export { default as Icon, ICONS, customIcon, strokeIcon, fillIcon, PROJECT_ICONS, PICKER_ICONS, randomProjectIcon } from './icons.jsx'
 
 // log system (ported from lilak_elog)
 export * as formatUtils from './log/formatUtils.js'
@@ -69,7 +69,7 @@ export { default as DashboardGrid } from './components/DashboardGrid.jsx'
 export { default as TimeRangePicker, rangeBounds } from './components/TimeRangePicker.jsx'
 export { default as SideNav } from './components/SideNav.jsx'
 export { default as SubTabs } from './components/SubTabs.jsx'
-export { default as Avatar, randomAvatar, avatarFor, AVATAR_ICONS, AVATAR_COLORS, AVATAR_ICON_MAP } from './components/Avatar.jsx'
+export { default as Avatar, randomAvatar, avatarFor, AVATAR_ICONS, AVATAR_COLORS, AVATAR_ICON_MAP, MANAGER_COLOR } from './components/Avatar.jsx'
 export { default as Card } from './components/Card.jsx'
 export { default as CoverPage, CoverCard } from './components/CoverPage.jsx'
 export { default as Tabs } from './components/Tabs.jsx'
