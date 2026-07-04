@@ -29,21 +29,17 @@ const TINTED = {
 }
 
 const SIZES = {
-  sm: { fontSize: 'var(--fs-small, 13px)', padding: '7px 13px', borderRadius: 9 },
-  md: { fontSize: 'var(--fs-body, 15px)', padding: '9px 17px', borderRadius: 9 },
+  sm: { fontSize: 'var(--fs-small, 12px)', padding: '5px 10px', borderRadius: 8 },
+  md: { fontSize: 'var(--fs-body, 13px)', padding: '7px 13px', borderRadius: 8 },
 }
 
-// rest / hover colour pair for a variant, each with a VISIBLE border so buttons
-// read clearly at a glance (borders used to be absent → "흐릿해서 안 보여").
+// rest / hover colour pair for a variant.
 function palette(variant) {
   const t = TINTED[variant]
-  // tinted: light fill + its own coloured border at rest; solid fill on hover.
-  if (t) return { restBg: t.bg, restFg: t.fg, restBorder: t.onBg, hovBg: t.onBg, hovFg: SOLID_TEXT, hovBorder: t.onBg }
-  // neutral: secondary (grey pill) / ghost (transparent) — both carry a clear
-  // border and firmly darken on hover so hover/selected states are obvious.
+  if (t) return { restBg: t.bg, restFg: t.fg, hovBg: t.onBg, hovFg: SOLID_TEXT }
+  // neutral: secondary (grey pill) / ghost (transparent) — only darken on hover.
   const restBg = variant === 'ghost' ? 'transparent' : 'var(--surface-2)'
-  const restBorder = variant === 'ghost' ? 'var(--border-default, #cbd5e1)' : 'var(--border-strong, #94a3b8)'
-  return { restBg, restFg: 'var(--text-secondary)', restBorder, hovBg: 'var(--surface-3)', hovFg: 'var(--text-primary)', hovBorder: 'var(--text-secondary)' }
+  return { restBg, restFg: 'var(--text-secondary)', hovBg: 'var(--surface-3)', hovFg: 'var(--text-primary)' }
 }
 
 export default function Button({
@@ -55,27 +51,27 @@ export default function Button({
   children,
   ...rest
 }) {
-  const { restBg, restFg, restBorder, hovBg, hovFg, hovBorder } = palette(variant)
+  const { restBg, restFg, hovBg, hovFg } = palette(variant)
   const dims = SIZES[size] ?? SIZES.sm
   const merged = {
     ...dims,
     backgroundColor: restBg,
     color: restFg,
-    border: `1.5px solid ${restBorder}`,
-    fontWeight: 600,
+    border: 'none',
+    fontWeight: 500,
     lineHeight: 1.2,
     cursor: 'pointer',
     whiteSpace: 'nowrap',
-    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-    transition: 'background-color .12s, color .12s, border-color .12s',
-    ...(icon ? { padding: size === 'sm' ? 7 : 9, gap: 0 } : {}),
+    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+    transition: 'background-color .12s, color .12s',
+    ...(icon ? { padding: size === 'sm' ? 6 : 8, gap: 0 } : {}),
     ...style,
     // disabled wins last: greyed + not interactive (no hover).
     ...(disabled ? { opacity: 0.4, cursor: 'not-allowed' } : {}),
   }
   const interactions = disabled ? {} : {
-    onMouseEnter: (e) => { e.currentTarget.style.backgroundColor = hovBg; e.currentTarget.style.color = hovFg; e.currentTarget.style.borderColor = hovBorder },
-    onMouseLeave: (e) => { e.currentTarget.style.backgroundColor = (style && style.backgroundColor) || restBg; e.currentTarget.style.color = (style && style.color) || restFg; e.currentTarget.style.borderColor = (style && style.borderColor) || restBorder },
+    onMouseEnter: (e) => { e.currentTarget.style.backgroundColor = hovBg; e.currentTarget.style.color = hovFg },
+    onMouseLeave: (e) => { e.currentTarget.style.backgroundColor = (style && style.backgroundColor) || restBg; e.currentTarget.style.color = (style && style.color) || restFg },
   }
   return (
     <button disabled={disabled} style={merged} {...interactions} {...rest}>
