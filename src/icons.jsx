@@ -78,7 +78,7 @@ export const ICONS = {
   key: Key, table: Table, plug: Plug, robot: Robot, palette: Palette,
   download: DownloadSimple, upload: UploadSimple, 'file-download': FileArrowDown,
   filter: Funnel, tagFill: Tag, link: Link, pin: PushPin,
-  eye: Eye, 'eye-off': EyeSlash, help: Question,
+  eye: Eye, 'eye-off': EyeSlash, help: Question, 'question-mark': Question, question: Question,
   // tab / nav glyphs
   flask: Flask, experiment: Flask, notebook: Notebook, logs: Notebook,
   images: Images, browse: Images, chats: ChatsCircle, community: ChatsCircle,
