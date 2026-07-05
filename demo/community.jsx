@@ -29,6 +29,7 @@ const api = {
   async poll() { return { myKey: store.meKey, myRole: 'manager', banned: false, online: store.online, messages: store.messages } },
   async send(p) {
     const m = { id: ++seq, author_key: p.anonymous ? 'u_me_anon' : store.meKey, author_name: p.anonymous ? p.anon_name : store.meName,
+      author_username: p.anonymous ? undefined : 'jungwoo',
       author_color: p.anonymous ? undefined : store.meColor, author_shape: p.anonymous ? p.anon_shape : store.meShape, anon: !!p.anonymous, real_name: p.anonymous ? store.meName : undefined,
       body: p.body, kind: p.kind, done: false, reply_to_id: p.reply_to_id || 0,
       reply_to_author: p.reply_to_id ? (store.messages.find((x) => x.id === p.reply_to_id)?.author_name) : undefined,
@@ -39,6 +40,7 @@ const api = {
   async upload(fd) { const f = fd.get('file'); return { id: 'a' + (++seq), name: f.name, type: f.type, size: f.size, url: URL.createObjectURL(f) } },
   async blobURL(url) { return url },
   async del(id) { store.messages = store.messages.filter((m) => m.id !== id) },
+  async edit(id, body) { const m = store.messages.find((x) => x.id === id); if (m) { m.body = body; m.edited = true } return m },
   async clearAll() { store.messages = [] },
   async users() { return store.users },
   async ban(k, n, b) { const u = store.users.find((x) => x.user_key === k); if (u) u.banned = b },
@@ -67,6 +69,7 @@ const realApi = {
   upload: async (fd) => (await fetch(BASE + '/api/community/upload', { method: 'POST', body: fd })).json(),
   blobURL: (url) => Promise.resolve(/^https?:/.test(url) ? url : BASE + url),
   del: (id) => j('DELETE', '/api/community/messages/' + id),
+  edit: (id, body) => j('PATCH', '/api/community/messages/' + id, { body }),
   clearAll: () => j('POST', '/api/community/clear'),
   users: () => j('GET', '/api/community/users').then((d) => d.users),
   ban: (k, n, b) => j('POST', '/api/community/ban', { user_key: k, name: n, banned: b }),

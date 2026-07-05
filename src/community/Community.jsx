@@ -52,7 +52,10 @@ const DEFAULT_LABELS = {
   emptyQ: '등록된 질문이 없습니다.', emptyDone: '완료된 질문이 없습니다.',
   placeholder: '메시지 입력…  (Enter 전송 · Shift+Enter 줄바꿈)',
   send: '전송', reply: '답글', del: '삭제', done: '완료', me: '나', back: '← 채팅으로',
+  edit: '수정', save: '저장', cancel: '취소', edited: '수정됨',
   attach: '첨부파일', attachManage: '첨부파일 관리', chatManage: '채팅창 관리',
+  attachList: '첨부 목록', noAttach: '첨부파일이 없습니다.',
+  listMode: '목록', spatialMode: '공간', spatialHint: '메시지가 공간에 떠오릅니다 · 마우스를 올리면 프로필',
   question: '질문', questionList: '질문 목록', completedList: '완료 목록',
   anonOn: '익명으로 전환', anonOff: '익명 끄기', poll: '설문 / 투표',
   clearAll: '채팅 전체 삭제', confirmClear: '정말 전체 삭제?', ban: '이용제한', unban: '해제',
@@ -128,17 +131,23 @@ const chipS = { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '
 const chipBtnS = { ...chipS, border: '1px solid var(--border-default)', cursor: 'pointer', color: 'var(--text-primary)' }
 
 /* ── a chat row: avatar + author/time + bubble(s). Everyone left-aligned. ── */
-function MessageRow({ m, meKey, grouped, isManager, blobURL, onReply, onDelete, onComplete, onRowClick, onPollClick, revealed, onReveal, labels }) {
+function MessageRow({ m, meKey, grouped, isManager, blobURL, onReply, onEdit, onDelete, onComplete, onRowClick, onPollClick, revealed, onReveal, labels }) {
   const isQ = m.kind === 'question'
   const isPoll = m.kind === 'poll'
   const mine = m.author_key === meKey
   const bg = isQ ? 'var(--warning-bg)' : isPoll ? 'var(--info-bg)' : 'var(--surface-2)'
-  const bd = isQ ? 'var(--warning-text)' : isPoll ? 'var(--info-text)' : 'var(--border-subtle)'
+  // every bubble gets a slightly-darker-than-bg outline; my own chat is themed.
+  const bd = isQ ? 'var(--warning-text)' : isPoll ? 'var(--info-text)' : mine ? 'var(--btn-primary-bg)' : 'var(--border-default)'
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState('')
+  const canEdit = mine && onEdit && !isPoll
+  const canDelete = onDelete && (mine || isManager)
+  function saveEdit() { const b = draft.trim(); if (b && b !== m.body) onEdit(m, b); setEditing(false) }
   return (
     <div style={{ display: 'flex', gap: 7, padding: '1px 4px', alignItems: 'flex-start', cursor: onRowClick ? 'pointer' : 'default' }}
       onClick={onRowClick ? () => onRowClick(m) : undefined}>
       <div style={{ width: 26, flexShrink: 0 }}>
-        {!grouped && <Avatar outline={m.anon} icon={m.author_shape} color={m.anon ? undefined : m.author_color} seed={m.author_key} size={26} title={m.author_name} />}
+        {!grouped && <Avatar outline={m.anon} icon={m.author_shape} color={m.anon ? undefined : m.author_color} seed={m.author_username || m.author_key} size={26} title={m.author_name} />}
       </div>
       <div style={{ minWidth: 0, flex: 1 }}>
         {!grouped && (
@@ -170,7 +179,19 @@ function MessageRow({ m, meKey, grouped, isManager, blobURL, onReply, onDelete, 
                 <b>{m.reply_to_author}</b> {String(m.reply_to_body || '').slice(0, 60)}
               </div>
             ) : null}
-            {m.body && !isPoll && <div style={{ lineHeight: 1.4, wordBreak: 'break-word' }}><ReactMarkdown remarkPlugins={[remarkGfm]} components={CM_MD}>{mdPrep(m.body)}</ReactMarkdown></div>}
+            {editing ? (
+              <div onClick={(e) => e.stopPropagation()} style={{ display: 'flex', flexDirection: 'column', gap: 5, minWidth: 220 }}>
+                <textarea autoFocus value={draft} onChange={(e) => setDraft(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); saveEdit() } if (e.key === 'Escape') setEditing(false) }}
+                  rows={2} style={{ ...fieldS, resize: 'vertical', fontFamily: 'inherit', fontSize: 'var(--fs-body,13px)' }} />
+                <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                  <button onClick={() => setEditing(false)} style={ghostBtnS}>{labels.cancel}</button>
+                  <button onClick={saveEdit} style={primaryBtnS}>{labels.save}</button>
+                </div>
+              </div>
+            ) : (
+              m.body && !isPoll && <div style={{ lineHeight: 1.4, wordBreak: 'break-word' }}><ReactMarkdown remarkPlugins={[remarkGfm]} components={CM_MD}>{mdPrep(m.body)}</ReactMarkdown>{m.edited && <span style={{ fontSize: 'var(--fs-micro,10px)', color: 'var(--text-muted)', marginLeft: 4 }}>({labels.edited})</span>}</div>
+            )}
             {(m.attachments || []).length > 0 && (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: m.body ? 5 : 0 }}>
                 {m.attachments.map((a, k) => <Attachment att={a} key={k} blobURL={blobURL} />)}
@@ -180,7 +201,8 @@ function MessageRow({ m, meKey, grouped, isManager, blobURL, onReply, onDelete, 
           <div className="cm-actions" style={{ display: 'flex', gap: 2, opacity: 0, transition: 'opacity .1s', flexShrink: 0, paddingTop: 2 }}>
             {onReply && <button title={labels.reply} onClick={(e) => { e.stopPropagation(); onReply(m) }} style={actS}><Icon name="reply" size={13} /></button>}
             {isManager && isQ && !m.done && onComplete && <button title={labels.done} onClick={(e) => { e.stopPropagation(); onComplete(m) }} style={actS}><Icon name="check" size={13} /></button>}
-            {isManager && onDelete && <button title={labels.del} onClick={(e) => { e.stopPropagation(); onDelete(m) }} style={{ ...actS, color: 'var(--danger-text)' }}><Icon name="trash" size={13} /></button>}
+            {canEdit && <button title={labels.edit} onClick={(e) => { e.stopPropagation(); setDraft(m.body || ''); setEditing(true) }} style={actS}><Icon name="edit" size={13} /></button>}
+            {canDelete && <button title={labels.del} onClick={(e) => { e.stopPropagation(); onDelete(m) }} style={{ ...actS, color: 'var(--danger-text)' }}><Icon name="trash" size={13} /></button>}
           </div>
         </div>
       </div>
@@ -266,11 +288,11 @@ export default function Community({ api, role = 'user', features = {}, labels: l
   const [reply, setReply] = useState(null)
   const [uploading, setUploading] = useState(false)
   const [drag, setDrag] = useState(false)
-  const [view, setView] = useState('chat')       // chat | questions | completed
-  const [list2, setList2] = useState([])          // questions/completed list
+  const [mode, setMode] = useState('list')        // list | spatial  (display mode)
+  const [panel, setPanel] = useState(null)        // right dock: null|poll|questions|completed|files|manage
+  const [panelList, setPanelList] = useState([])  // questions/completed rows for the right dock
   const [qMode, setQMode] = useState(false)       // next send goes up as a question
   const [plusOpen, setPlusOpen] = useState(false)
-  const [manageOpen, setManageOpen] = useState(false)
   const [users, setUsers] = useState([])
   const [confirmClear, setConfirmClear] = useState(false)
   const [anon, setAnon] = useState(null)          // { name, shape, on }
@@ -281,7 +303,6 @@ export default function Community({ api, role = 'user', features = {}, labels: l
   const [admin, setAdmin] = useState(null)         // 'names' | 'bots' | null (in manage drawer)
   const [names, setNames] = useState(null)         // { surnames, given }
   const [bots, setBots] = useState([])
-  const [rightOpen, setRightOpen] = useState(false)   // collapsible poll/vote side panel
   const [activePollId, setActivePollId] = useState(null)
   const [showClosed, setShowClosed] = useState(false)  // reveal completed (closed) polls
 
@@ -307,13 +328,37 @@ export default function Community({ api, role = 'user', features = {}, labels: l
   // assign an anon identity on mount (kept until this component unmounts / login changes)
   useEffect(() => { if (F.anon && api.anonIdentity) api.anonIdentity().then((a) => setAnon((cur) => cur || { ...a, on: false })).catch(() => {}) }, [])
 
-  useEffect(() => { const el = logRef.current; if (el && stick.current && view === 'chat') el.scrollTop = el.scrollHeight }, [messages, view])
+  useEffect(() => { const el = logRef.current; if (el && stick.current && mode === 'list') el.scrollTop = el.scrollHeight }, [messages, mode])
 
-  const activeList = view === 'chat' ? messages : list2
-  async function loadList(which) {
-    try { setList2(which === 'completed' ? await api.completed() : await api.questions()) } catch (e) { setError(String(e.message || e)) }
+  // ── entering the community: land the cursor in the chat input, and let a bare
+  //    Enter (when not already typing) jump straight to it. ──
+  useEffect(() => { inputRef.current?.focus() }, [])
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key !== 'Enter' || e.shiftKey || e.altKey || e.ctrlKey || e.metaKey || banned) return
+      const t = e.target, tag = t && t.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || (t && t.isContentEditable)) return
+      inputRef.current?.focus()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [banned])
+
+  // ── right dock panels (poll / questions / completed / files / manage) ──
+  async function openPanel(p) {
+    setPlusOpen(false)
+    const next = panel === p ? null : p
+    setPanel(next)
+    if (next === 'questions' || next === 'completed') {
+      try { setPanelList(next === 'completed' ? await api.completed() : await api.questions()) } catch (e) { setError(String(e.message || e)) }
+    }
+    if (next === 'manage' && api.users) { try { setUsers(await api.users()) } catch {} }
   }
-  function goView(v) { setView(v); setPlusOpen(false); if (v !== 'chat') loadList(v) }
+  async function reloadPanel() {
+    if (panel === 'questions' || panel === 'completed') {
+      try { setPanelList(panel === 'completed' ? await api.completed() : await api.questions()) } catch {}
+    }
+  }
 
   async function uploadFiles(files) {
     if (!api.upload) return
@@ -333,7 +378,7 @@ export default function Community({ api, role = 'user', features = {}, labels: l
     try {
       const m = await api.send(payload); stick.current = true
       setMessages((p) => (p.some((x) => x.id === m.id) ? p : [...p, m]))
-      if (view !== 'chat') loadList(view)
+      reloadPanel()
     } catch (e) { setError(String(e.message || e)); setText(body) }
     finally { sending.current = false }
   }
@@ -341,13 +386,13 @@ export default function Community({ api, role = 'user', features = {}, labels: l
   function toggleAnon() {
     setAnon((cur) => { const next = cur ? { ...cur, on: !cur.on } : { on: true }; return next }); setPlusOpen(false)
   }
-  async function deleteMsg(m) { try { await api.del(m.id); setMessages((p) => p.filter((x) => x.id !== m.id)); setList2((p) => p.filter((x) => x.id !== m.id)) } catch (e) { setError(String(e.message || e)) } }
-  async function completeQ(m) { try { await api.complete(m.id); loadList(view) } catch (e) { setError(String(e.message || e)) } }
+  async function deleteMsg(m) { try { await api.del(m.id); setMessages((p) => p.filter((x) => x.id !== m.id)); setPanelList((p) => p.filter((x) => x.id !== m.id)) } catch (e) { setError(String(e.message || e)) } }
+  async function editMsg(m, body) { try { const u = await api.edit(m.id, body); setMessages((p) => p.map((x) => x.id === m.id ? { ...x, ...u } : x)); setPanelList((p) => p.map((x) => x.id === m.id ? { ...x, ...u } : x)) } catch (e) { setError(String(e.message || e)) } }
+  async function completeQ(m) { try { await api.complete(m.id); setMessages((p) => p.map((x) => x.id === m.id ? { ...x, done: true } : x)); reloadPanel() } catch (e) { setError(String(e.message || e)) } }
   async function clearAll() {
     if (!confirmClear) { setConfirmClear(true); setTimeout(() => setConfirmClear(false), 3000); return }
     setConfirmClear(false); try { await api.clearAll(); setMessages([]) } catch (e) { setError(String(e.message || e)) }
   }
-  async function openManage() { const n = !manageOpen; setManageOpen(n); setPlusOpen(false); if (n && api.users) { try { setUsers(await api.users()) } catch {} } }
   async function toggleBan(u) { try { await api.ban(u.user_key, u.name, !u.banned); setUsers((p) => p.map((x) => x.user_key === u.user_key ? { ...x, banned: !x.banned } : x)) } catch (e) { setError(String(e.message || e)) } }
   async function vote(pid, oid) { try { await api.vote(pid, oid, { anonymous: anonOn, anon_name: anonOn ? anon.name : '', anon_shape: anonOn ? anon.shape : '' }); setPolls(await api.polls()) } catch (e) { setError(String(e.message || e)) } }
   async function closePoll(pid) { try { await api.closePoll(pid); setPolls(await api.polls()) } catch (e) { setError(String(e.message || e)) } }
@@ -360,7 +405,7 @@ export default function Community({ api, role = 'user', features = {}, labels: l
     if (mins > 0) { const d = new Date(Date.now() + mins * 60000); deadline = localIso(d) }
     try {
       const r = await api.createPoll({ title: pollForm.title.trim(), options: opts, deadline, named: pollForm.named !== false })
-      setPollForm(null); setRightOpen(true)
+      setPollForm(null); setPanel('poll')
       if (r && r.id) setActivePollId(r.id)
       setPolls(await api.polls())
     } catch (e) { setError(String(e.message || e)) }
@@ -400,117 +445,81 @@ export default function Community({ api, role = 'user', features = {}, labels: l
   async function saveBot(b) { try { await api.saveBot(b); setBots(await api.bots()) } catch (e) { setError(String(e.message || e)) } }
   async function delBot(name) { try { await api.delBot(name); setBots(await api.bots()) } catch (e) { setError(String(e.message || e)) } }
 
-  // ── the + menu items (filtered by features + role) ──
+  // ── the + menu: only compose actions (attach, question-mode, anon).
+  //    Lists & management moved to the right dock (see rail below). ──
   const menu = [
     F.attachments && { id: 'attach', label: L.attach, icon: 'attach', on: () => { setPlusOpen(false); document.getElementById('cm-file')?.click() } },
     F.attachments && isManager && onOpenFiles && { id: 'attachManage', label: L.attachManage, icon: 'browse', on: () => { setPlusOpen(false); onOpenFiles() } },
-    F.moderation && isManager && { id: 'chatManage', label: L.chatManage, icon: 'more', on: openManage },
     F.questions && { id: 'question', label: L.question, icon: 'chats', active: qMode, on: () => { setQMode((v) => !v); setPlusOpen(false); inputRef.current?.focus() } },
-    F.questions && { id: 'qlist', label: L.questionList, icon: 'menu', on: () => goView('questions') },
-    F.questions && { id: 'done', label: L.completedList, icon: 'check', on: () => goView('completed') },
     F.anon && { id: 'anon', label: anonOn ? L.anonOff : L.anonOn, icon: 'eye', active: anonOn, on: toggleAnon },
-    F.polls && isManager && { id: 'poll', label: L.poll, icon: 'chart', on: () => { setPollForm({ title: '', options: ['', ''], deadline: '', minutes: '', named: true }); setRightOpen(true); setPlusOpen(false) } },
+  ].filter(Boolean)
+
+  // ── the right icon rail: each opens a "커뮤니티 채팅"-style box beside the chat ──
+  const rail = [
+    F.polls && { id: 'poll', label: L.poll, icon: 'chart', badge: polls.filter((p) => !p.closed).length || null },
+    F.questions && { id: 'questions', label: L.questionList, icon: 'chats' },
+    F.questions && { id: 'completed', label: L.completedList, icon: 'check' },
+    F.attachments && { id: 'files', label: L.attachList, icon: 'attach' },
+    F.moderation && isManager && { id: 'manage', label: L.chatManage, icon: 'gear' },
   ].filter(Boolean)
 
   const activePolls = polls.filter((p) => !p.closed)
   const closedPolls = polls.filter((p) => p.closed)
+  const allAttachments = useMemo(() => messages.flatMap((m) => (m.attachments || []).map((a) => ({ att: a, from: m.author_name, at: m.created_at, mid: m.id }))), [messages])
 
   return (
     <div style={{ display: 'flex', gap: 12, height: '100%', minHeight: 0, fontFamily: 'var(--font-sans)' }}>
       <div style={{ flex: 1, minWidth: 0, position: 'relative', display: 'flex', flexDirection: 'column', border: '1px solid var(--border-default)', borderRadius: 12, background: 'var(--surface)', overflow: 'hidden' }}
         onDragOver={!banned && F.attachments ? (e) => { e.preventDefault(); setDrag(true) } : undefined}
         onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setDrag(false) }}
-        onDrop={!banned && F.attachments ? (e) => { e.preventDefault(); setDrag(false); if (e.dataTransfer?.files?.length) { if (view !== 'chat') setView('chat'); uploadFiles(e.dataTransfer.files) } } : undefined}>
+        onDrop={!banned && F.attachments ? (e) => { e.preventDefault(); setDrag(false); if (e.dataTransfer?.files?.length) uploadFiles(e.dataTransfer.files) } : undefined}>
         {drag && <div style={{ position: 'absolute', inset: 6, border: '2px dashed var(--btn-primary-bg)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--info-bg)', color: 'var(--info-text)', zIndex: 20, pointerEvents: 'none', fontSize: 'var(--fs-medium,14px)', fontWeight: 600 }}>{L.drop}</div>}
         {/* header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 14px', borderBottom: '1px solid var(--border-subtle)', background: 'var(--surface-2)' }}>
           <Icon name="community" size={17} />
-          <span style={{ fontWeight: 600, fontSize: 'var(--fs-medium,14px)', flex: 1 }}>
-            {view === 'questions' ? L.questions : view === 'completed' ? L.completed : L.chat}
+          <span style={{ fontWeight: 600, fontSize: 'var(--fs-medium,14px)', flex: 1 }}>{L.chat}</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 'var(--fs-tiny,11px)', color: 'var(--text-muted)' }}>
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--success-text)' }} />{L.online(online.length)}
           </span>
-          {view !== 'chat'
-            ? <button onClick={() => setView('chat')} style={ghostBtnS}>{L.back}</button>
-            : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 'var(--fs-tiny,11px)', color: 'var(--text-muted)' }}>
-                <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--success-text)' }} />{L.online(online.length)}
-              </span>}
+          {/* display-mode toggle: 목록 ↔ 공간(Spatial) */}
+          <div style={{ display: 'inline-flex', border: '1px solid var(--border-default)', borderRadius: 8, overflow: 'hidden' }}>
+            {[['list', 'menu', L.listMode], ['spatial', 'map', L.spatialMode]].map(([mv, ic, lb]) => (
+              <button key={mv} onClick={() => setMode(mv)} title={lb}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 9px', border: 'none', cursor: 'pointer', fontSize: 'var(--fs-tiny,11px)',
+                  background: mode === mv ? 'var(--btn-primary-bg)' : 'transparent', color: mode === mv ? 'var(--btn-primary-text)' : 'var(--text-secondary)' }}>
+                <Icon name={ic} size={13} weight={mode === mv ? 'fill' : 'regular'} /> {lb}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* message list */}
-        <div ref={logRef} onScroll={() => { const el = logRef.current; if (el) stick.current = el.scrollHeight - el.scrollTop - el.clientHeight < 60 }}
-          style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 10, display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {activeList.length === 0 && <div style={{ margin: 'auto', color: 'var(--text-muted)', fontSize: 'var(--fs-small,12px)' }}>{view === 'completed' ? L.emptyDone : view === 'questions' ? L.emptyQ : L.empty}</div>}
-          {activeList.map((m, i) => (
-            <MessageRow key={m.id} m={m} meKey={meKey} isManager={isManager} blobURL={api.blobURL}
-              grouped={view === 'chat' && i > 0 && activeList[i - 1].author_key === m.author_key && (activeList[i - 1].kind || 'msg') === 'msg' && (m.kind || 'msg') === 'msg'}
-              onReply={view === 'chat' ? (mm) => { setReply(mm); inputRef.current?.focus() } : null}
-              onDelete={F.moderation && isManager ? deleteMsg : null}
-              onComplete={completeQ}
-              onRowClick={view !== 'chat' ? () => setView('chat') : null}
-              onPollClick={(pid) => { setActivePollId(pid); setRightOpen(true) }}
-              revealed={revealed.has(m.id)} onReveal={() => setRevealed((s) => { const n = new Set(s); n.has(m.id) ? n.delete(m.id) : n.add(m.id); return n })}
-              labels={L} />
-          ))}
-        </div>
+        {/* message area: list (scrolling rows) or spatial (floating canvas) */}
+        {mode === 'spatial' ? (
+          <SpatialView messages={messages} meKey={meKey} blobURL={api.blobURL} labels={L} />
+        ) : (
+          <div ref={logRef} onScroll={() => { const el = logRef.current; if (el) stick.current = el.scrollHeight - el.scrollTop - el.clientHeight < 60 }}
+            style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 10, display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {messages.length === 0 && <div style={{ margin: 'auto', color: 'var(--text-muted)', fontSize: 'var(--fs-small,12px)' }}>{L.empty}</div>}
+            {messages.map((m, i) => (
+              <MessageRow key={m.id} m={m} meKey={meKey} isManager={isManager} blobURL={api.blobURL}
+                grouped={i > 0 && messages[i - 1].author_key === m.author_key && (messages[i - 1].kind || 'msg') === 'msg' && (m.kind || 'msg') === 'msg'}
+                onReply={(mm) => { setReply(mm); inputRef.current?.focus() }}
+                onEdit={editMsg}
+                onDelete={deleteMsg}
+                onComplete={completeQ}
+                onPollClick={(pid) => { setActivePollId(pid); setPanel('poll') }}
+                revealed={revealed.has(m.id)} onReveal={() => setRevealed((s) => { const n = new Set(s); n.has(m.id) ? n.delete(m.id) : n.add(m.id); return n })}
+                labels={L} />
+            ))}
+          </div>
+        )}
 
         {error && <div style={{ padding: '4px 12px', color: 'var(--danger-text)', fontSize: 'var(--fs-small,12px)' }}>⚠ {error}</div>}
         {banned && <div style={{ padding: '8px 12px', color: 'var(--danger-text)', fontSize: 'var(--fs-small,12px)', textAlign: 'center' }}>{L.banned}</div>}
 
-        {/* chat-manage mini drawer (drops just above the input) */}
-        {manageOpen && isManager && (
-          <div style={{ borderTop: '1px solid var(--border-subtle)', background: 'var(--surface-2)', padding: '8px 12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-              <strong style={{ fontSize: 'var(--fs-small,12px)' }}>{L.chatManage}</strong>
-              <button onClick={clearAll} style={{ marginLeft: 'auto', ...ghostBtnS, color: confirmClear ? 'var(--danger-text)' : 'var(--text-secondary)', borderColor: confirmClear ? 'var(--danger-text)' : 'var(--border-default)' }}>
-                {confirmClear ? L.confirmClear : L.clearAll}
-              </button>
-              <button onClick={() => setManageOpen(false)} style={actS}><Icon name="close" size={14} /></button>
-            </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-              {users.length === 0 && <span style={{ fontSize: 'var(--fs-tiny,11px)', color: 'var(--text-muted)' }}>사용자 없음</span>}
-              {users.map((u) => (
-                <span key={u.user_key} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '2px 4px 2px 10px', borderRadius: 999, background: u.banned ? 'var(--danger-bg)' : 'var(--surface-3)', fontSize: 'var(--fs-small,12px)' }}>
-                  {u.name}
-                  <button onClick={() => toggleBan(u)} style={{ ...actS, fontSize: 'var(--fs-micro,10px)', padding: '2px 6px', background: 'var(--surface)', border: '1px solid var(--border-default)', borderRadius: 999 }}>{u.banned ? L.unban : L.ban}</button>
-                </span>
-              ))}
-            </div>
-            {(api.anonNames || api.bots) && (
-              <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-                {F.anon && api.anonNames && <button onClick={() => openAdmin(admin === 'names' ? null : 'names')} style={{ ...ghostBtnS, ...(admin === 'names' ? activeGhost : {}) }}>익명 이름 목록</button>}
-                {api.bots && <button onClick={() => openAdmin(admin === 'bots' ? null : 'bots')} style={{ ...ghostBtnS, ...(admin === 'bots' ? activeGhost : {}) }}>봇 관리</button>}
-              </div>
-            )}
-            {admin === 'names' && names && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 8, marginTop: 8 }}>
-                <div><div style={lblS}>성씨 ({names.surnames.length})</div><textarea value={names.surnames.join(' ')} onChange={(e) => setNames((n) => ({ ...n, surnames: e.target.value.split(/[\s,]+/).filter(Boolean) }))} rows={3} style={taS} /></div>
-                <div><div style={lblS}>이름 ({names.given.length})</div><textarea value={names.given.join(' ')} onChange={(e) => setNames((n) => ({ ...n, given: e.target.value.split(/[\s,]+/).filter(Boolean) }))} rows={3} style={taS} /></div>
-                <div style={{ gridColumn: '1 / -1' }}><button onClick={saveNames} style={primaryBtnS}>저장 · {names.surnames.length}×{names.given.length} 조합</button></div>
-              </div>
-            )}
-            {admin === 'bots' && (
-              <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {bots.map((b) => (
-                  <div key={b.name} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 'var(--fs-small,12px)' }}>
-                    <Avatar icon="robot" color="#8b5cf6" seed={b.name} size={20} /> <b>@{b.name}</b>
-                    <span style={{ color: 'var(--text-muted)' }}>{b.provider}{b.model ? ` · ${b.model}` : ''}</span>
-                    <button onClick={() => saveBot({ ...b, enabled: !b.enabled })} style={{ ...ghostBtnS, marginLeft: 'auto' }}>{b.enabled ? 'on' : 'off'}</button>
-                    <button onClick={() => delBot(b.name)} style={{ ...actS, color: 'var(--danger-text)' }}><Icon name="trash" size={13} /></button>
-                  </div>
-                ))}
-                <BotAdd onSave={saveBot} />
-              </div>
-            )}
-          </div>
-        )}
-
         {/* input bar: [+]  [textarea]  [send] */}
         {!banned && (
           <div style={{ borderTop: '1px solid var(--border-subtle)', padding: 10 }}>
-            {view !== 'chat' && (
-              <div style={{ display: 'flex', marginBottom: 6 }}>
-                <button onClick={() => setView('chat')} style={{ marginLeft: 'auto', ...ghostBtnS }}>{L.back}</button>
-              </div>
-            )}
             {reply && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 'var(--fs-small,12px)', color: 'var(--text-secondary)', marginBottom: 6 }}>
                 <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>↩ <b>{reply.author_name}</b>: {(reply.body || '첨부').slice(0, 60)}</span>
@@ -589,72 +598,158 @@ export default function Community({ api, role = 'user', features = {}, labels: l
         )}
       </div>
 
-      {/* right dock: collapsible poll/vote panel (opened by a poll bubble or the + menu) */}
-      {F.polls && (rightOpen || pollForm) && (
-        <div style={{ width: 250, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 10, overflowY: 'auto' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Icon name="chart" size={15} color="var(--btn-primary-bg)" />
-            <span style={{ fontWeight: 600, fontSize: 'var(--fs-small,12px)', flex: 1 }}>{L.poll}</span>
-            <button onClick={() => { setRightOpen(false); setPollForm(null) }} title="닫기" style={actS}><Icon name="close" size={15} /></button>
+      {/* right dock: a "커뮤니티 채팅"-style box hosting the active rail panel */}
+      {panel && (
+        <div style={{ width: 288, flexShrink: 0, display: 'flex', flexDirection: 'column', border: '1px solid var(--border-default)', borderRadius: 12, background: 'var(--surface)', overflow: 'hidden' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', borderBottom: '1px solid var(--border-subtle)', background: 'var(--surface-2)' }}>
+            <Icon name={(rail.find((r) => r.id === panel) || {}).icon || 'community'} size={16} color="var(--btn-primary-bg)" />
+            <span style={{ fontWeight: 600, fontSize: 'var(--fs-small,12px)', flex: 1 }}>{PANEL_TITLES(L)[panel]}</span>
+            {panel === 'poll' && isManager && !pollForm && (
+              <button title={L.createPoll} onClick={() => setPollForm({ title: '', options: ['', ''], deadline: '', minutes: '', named: true })} style={actS}><Icon name="plus" size={16} /></button>
+            )}
+            <button onClick={() => setPanel(null)} title="닫기" style={actS}><Icon name="close" size={15} /></button>
           </div>
-          {pollForm && (
-            <div style={{ border: '1px solid var(--border-default)', borderRadius: 12, background: 'var(--surface)', padding: 12 }}>
-              <div style={{ fontWeight: 600, fontSize: 'var(--fs-small,12px)', marginBottom: 8 }}>{L.createPoll}</div>
-              <input value={pollForm.title} onChange={(e) => setPollForm((f) => ({ ...f, title: e.target.value }))} placeholder={L.pollTitle} style={fieldS} />
-              {/* 실명 / 익명 투표 선택 */}
-              <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
-                <button onClick={() => setPollForm((f) => ({ ...f, named: true }))} style={{ ...ghostBtnS, flex: 1, ...(pollForm.named !== false ? activeGhost : {}) }}>{L.pollNamed}</button>
-                <button onClick={() => setPollForm((f) => ({ ...f, named: false }))} style={{ ...ghostBtnS, flex: 1, ...(pollForm.named === false ? activeGhost : {}) }}>{L.pollAnon}</button>
-              </div>
-              {pollForm.options.map((o, i) => (
-                <input key={i} value={o} onChange={(e) => setPollForm((f) => ({ ...f, options: f.options.map((x, j) => j === i ? e.target.value : x) }))}
-                  placeholder={`${L.pollOption} ${i + 1}`} style={{ ...fieldS, marginTop: 6 }} />
+          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {/* ── 투표 / 설문 ── */}
+            {panel === 'poll' && <>
+              {pollForm && (
+                <div style={{ border: '1px solid var(--border-default)', borderRadius: 12, background: 'var(--surface)', padding: 12 }}>
+                  <div style={{ fontWeight: 600, fontSize: 'var(--fs-small,12px)', marginBottom: 8 }}>{L.createPoll}</div>
+                  <input value={pollForm.title} onChange={(e) => setPollForm((f) => ({ ...f, title: e.target.value }))} placeholder={L.pollTitle} style={fieldS} />
+                  <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+                    <button onClick={() => setPollForm((f) => ({ ...f, named: true }))} style={{ ...ghostBtnS, flex: 1, ...(pollForm.named !== false ? activeGhost : {}) }}>{L.pollNamed}</button>
+                    <button onClick={() => setPollForm((f) => ({ ...f, named: false }))} style={{ ...ghostBtnS, flex: 1, ...(pollForm.named === false ? activeGhost : {}) }}>{L.pollAnon}</button>
+                  </div>
+                  {pollForm.options.map((o, i) => (
+                    <input key={i} value={o} onChange={(e) => setPollForm((f) => ({ ...f, options: f.options.map((x, j) => j === i ? e.target.value : x) }))}
+                      placeholder={`${L.pollOption} ${i + 1}`} style={{ ...fieldS, marginTop: 6 }} />
+                  ))}
+                  <button onClick={() => setPollForm((f) => ({ ...f, options: [...f.options, ''] }))} style={{ ...ghostBtnS, marginTop: 6, width: '100%' }}>+ {L.addOption}</button>
+                  <div style={{ marginTop: 8, fontSize: 'var(--fs-tiny,11px)', color: 'var(--text-muted)', marginBottom: 3 }}>{L.closeAfter}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                    <input type="number" min="1" value={pollForm.minutes} placeholder="분"
+                      onChange={(e) => setPollForm((f) => ({ ...f, minutes: e.target.value }))} style={{ ...fieldS, width: 64 }} />
+                    {[5, 10, 30, 60].map((mm) => (
+                      <button key={mm} onClick={() => setPollForm((f) => ({ ...f, minutes: String(mm) }))}
+                        style={{ ...ghostBtnS, padding: '3px 8px', ...(String(mm) === pollForm.minutes ? activeGhost : {}) }}>{mm}</button>
+                    ))}
+                  </div>
+                  <div style={{ marginTop: 8, fontSize: 'var(--fs-tiny,11px)', color: 'var(--text-muted)', marginBottom: 3 }}>{L.orDeadline}</div>
+                  <input type="datetime-local" value={pollForm.deadline} onChange={(e) => setPollForm((f) => ({ ...f, deadline: e.target.value, minutes: '' }))} style={fieldS} />
+                  <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                    <button onClick={submitPoll} style={{ flex: 1, ...primaryBtnS, padding: '6px 0' }}>{L.createPoll}</button>
+                    <button onClick={() => setPollForm(null)} style={ghostBtnS}><Icon name="close" size={14} /></button>
+                  </div>
+                </div>
+              )}
+              {!pollForm && activePolls.length === 0 && <div style={{ color: 'var(--text-muted)', fontSize: 'var(--fs-small,12px)' }}>{L.noPoll}</div>}
+              {[...activePolls].sort((a, b) => (b.id === activePollId ? 1 : 0) - (a.id === activePollId ? 1 : 0))
+                .map((p) => <PollCard key={p.id} poll={p} highlight={p.id === activePollId} isManager={isManager} onVote={vote} onClose={closePoll} fetchResults={api.pollResults} labels={L} />)}
+              {!pollForm && (closedPolls.length > 0 || showClosed) && (
+                <button onClick={() => setShowClosed((v) => !v)} style={{ ...ghostBtnS, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+                  <Icon name={showClosed ? 'caret-up' : 'caret-down'} size={13} />
+                  {(showClosed ? L.hideClosedPolls : L.showClosedPolls) + (closedPolls.length ? ` (${closedPolls.length})` : '')}
+                </button>
+              )}
+              {!pollForm && showClosed && closedPolls.length === 0 && <div style={{ color: 'var(--text-muted)', fontSize: 'var(--fs-small,12px)' }}>{L.noClosedPoll}</div>}
+              {!pollForm && showClosed && closedPolls
+                .map((p) => <PollCard key={p.id} poll={p} highlight={p.id === activePollId} isManager={isManager} onVote={vote} onClose={closePoll} fetchResults={api.pollResults} labels={L} />)}
+            </>}
+
+            {/* ── 질문 목록 / 완료 목록 ── */}
+            {(panel === 'questions' || panel === 'completed') && <>
+              {panelList.length === 0 && <div style={{ color: 'var(--text-muted)', fontSize: 'var(--fs-small,12px)' }}>{panel === 'completed' ? L.emptyDone : L.emptyQ}</div>}
+              {panelList.map((m) => (
+                <div key={m.id} style={{ border: '1px solid var(--border-subtle)', borderRadius: 10, background: 'var(--surface-2)', padding: '8px 10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                    <Avatar outline={m.anon} icon={m.author_shape} color={m.anon ? undefined : m.author_color} seed={m.author_username || m.author_key} size={18} />
+                    <b style={{ fontSize: 'var(--fs-small,12px)' }}>{m.author_name}</b>
+                    <em style={{ fontStyle: 'normal', fontSize: 'var(--fs-micro,10px)', color: 'var(--text-muted)', marginLeft: 'auto' }}>{timeLabel(m.created_at)}</em>
+                  </div>
+                  <div style={{ fontSize: 'var(--fs-small,12px)', color: 'var(--text-primary)', wordBreak: 'break-word' }}>{m.body}</div>
+                  {panel === 'questions' && isManager && !m.done && (
+                    <button onClick={() => completeQ(m)} style={{ ...ghostBtnS, marginTop: 6 }}><Icon name="check" size={12} /> {L.done}</button>
+                  )}
+                </div>
               ))}
-              <button onClick={() => setPollForm((f) => ({ ...f, options: [...f.options, ''] }))} style={{ ...ghostBtnS, marginTop: 6, width: '100%' }}>+ {L.addOption}</button>
-              {/* close after N minutes (overrides the deadline below) */}
-              <div style={{ marginTop: 8, fontSize: 'var(--fs-tiny,11px)', color: 'var(--text-muted)', marginBottom: 3 }}>{L.closeAfter}</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <input type="number" min="1" value={pollForm.minutes} placeholder="분"
-                  onChange={(e) => setPollForm((f) => ({ ...f, minutes: e.target.value }))} style={{ ...fieldS, width: 70 }} />
-                <span style={{ fontSize: 'var(--fs-tiny,11px)', color: 'var(--text-muted)' }}>{L.minutes}</span>
-                {[5, 10, 30, 60].map((mm) => (
-                  <button key={mm} onClick={() => setPollForm((f) => ({ ...f, minutes: String(mm) }))}
-                    style={{ ...ghostBtnS, padding: '3px 8px', ...(String(mm) === pollForm.minutes ? activeGhost : {}) }}>{mm}</button>
+            </>}
+
+            {/* ── 첨부 목록 ── */}
+            {panel === 'files' && <>
+              {allAttachments.length === 0 && <div style={{ color: 'var(--text-muted)', fontSize: 'var(--fs-small,12px)' }}>{L.noAttach}</div>}
+              {allAttachments.map((x, k) => (
+                <div key={k} style={{ display: 'flex', flexDirection: 'column', gap: 4, borderBottom: '1px solid var(--border-subtle)', paddingBottom: 8 }}>
+                  <Attachment att={x.att} blobURL={api.blobURL} />
+                  <span style={{ fontSize: 'var(--fs-micro,10px)', color: 'var(--text-muted)' }}>{x.from} · {timeLabel(x.at)}</span>
+                </div>
+              ))}
+            </>}
+
+            {/* ── 채팅창 관리 (manager) ── */}
+            {panel === 'manage' && isManager && <>
+              <button onClick={clearAll} style={{ ...ghostBtnS, alignSelf: 'flex-start', color: confirmClear ? 'var(--danger-text)' : 'var(--text-secondary)', borderColor: confirmClear ? 'var(--danger-text)' : 'var(--border-default)' }}>
+                {confirmClear ? L.confirmClear : L.clearAll}
+              </button>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {users.length === 0 && <span style={{ fontSize: 'var(--fs-tiny,11px)', color: 'var(--text-muted)' }}>사용자 없음</span>}
+                {users.map((u) => (
+                  <span key={u.user_key} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '2px 4px 2px 10px', borderRadius: 999, background: u.banned ? 'var(--danger-bg)' : 'var(--surface-3)', fontSize: 'var(--fs-small,12px)' }}>
+                    {u.name}
+                    <button onClick={() => toggleBan(u)} style={{ ...actS, fontSize: 'var(--fs-micro,10px)', padding: '2px 6px', background: 'var(--surface)', border: '1px solid var(--border-default)', borderRadius: 999 }}>{u.banned ? L.unban : L.ban}</button>
+                  </span>
                 ))}
               </div>
-              <div style={{ marginTop: 8, fontSize: 'var(--fs-tiny,11px)', color: 'var(--text-muted)', marginBottom: 3 }}>{L.orDeadline}</div>
-              <input type="datetime-local" value={pollForm.deadline} onChange={(e) => setPollForm((f) => ({ ...f, deadline: e.target.value, minutes: '' }))} style={fieldS} />
-              <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-                <button onClick={submitPoll} style={{ flex: 1, ...primaryBtnS, padding: '6px 0' }}>{L.createPoll}</button>
-                <button onClick={() => setPollForm(null)} style={ghostBtnS}><Icon name="close" size={14} /></button>
-              </div>
-            </div>
-          )}
-          {!pollForm && activePolls.length === 0 && <div style={{ color: 'var(--text-muted)', fontSize: 'var(--fs-small,12px)' }}>{L.noPoll}</div>}
-          {[...activePolls].sort((a, b) => (b.id === activePollId ? 1 : 0) - (a.id === activePollId ? 1 : 0))
-            .map((p) => <PollCard key={p.id} poll={p} highlight={p.id === activePollId} isManager={isManager} onVote={vote} onClose={closePoll} fetchResults={api.pollResults} labels={L} />)}
-          {!pollForm && (closedPolls.length > 0 || showClosed) && (
-            <button onClick={() => setShowClosed((v) => !v)}
-              style={{ ...ghostBtnS, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
-              <Icon name={showClosed ? 'caret-up' : 'caret-down'} size={13} />
-              {(showClosed ? L.hideClosedPolls : L.showClosedPolls) + (closedPolls.length ? ` (${closedPolls.length})` : '')}
-            </button>
-          )}
-          {!pollForm && showClosed && closedPolls.length === 0 && <div style={{ color: 'var(--text-muted)', fontSize: 'var(--fs-small,12px)' }}>{L.noClosedPoll}</div>}
-          {!pollForm && showClosed && closedPolls
-            .map((p) => <PollCard key={p.id} poll={p} highlight={p.id === activePollId} isManager={isManager} onVote={vote} onClose={closePoll} fetchResults={api.pollResults} labels={L} />)}
+              {(api.anonNames || api.bots) && (
+                <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
+                  {F.anon && api.anonNames && <button onClick={() => openAdmin(admin === 'names' ? null : 'names')} style={{ ...ghostBtnS, ...(admin === 'names' ? activeGhost : {}) }}>익명 이름 목록</button>}
+                  {api.bots && <button onClick={() => openAdmin(admin === 'bots' ? null : 'bots')} style={{ ...ghostBtnS, ...(admin === 'bots' ? activeGhost : {}) }}>봇 관리</button>}
+                </div>
+              )}
+              {admin === 'names' && names && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div><div style={lblS}>성씨 ({names.surnames.length})</div><textarea value={names.surnames.join(' ')} onChange={(e) => setNames((n) => ({ ...n, surnames: e.target.value.split(/[\s,]+/).filter(Boolean) }))} rows={3} style={taS} /></div>
+                  <div><div style={lblS}>이름 ({names.given.length})</div><textarea value={names.given.join(' ')} onChange={(e) => setNames((n) => ({ ...n, given: e.target.value.split(/[\s,]+/).filter(Boolean) }))} rows={3} style={taS} /></div>
+                  <button onClick={saveNames} style={primaryBtnS}>저장 · {names.surnames.length}×{names.given.length} 조합</button>
+                </div>
+              )}
+              {admin === 'bots' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {bots.map((b) => (
+                    <div key={b.name} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 'var(--fs-small,12px)' }}>
+                      <Avatar icon="robot" color="#8b5cf6" seed={b.name} size={20} /> <b>@{b.name}</b>
+                      <button onClick={() => saveBot({ ...b, enabled: !b.enabled })} style={{ ...ghostBtnS, marginLeft: 'auto' }}>{b.enabled ? 'on' : 'off'}</button>
+                      <button onClick={() => delBot(b.name)} style={{ ...actS, color: 'var(--danger-text)' }}><Icon name="trash" size={13} /></button>
+                    </div>
+                  ))}
+                  <BotAdd onSave={saveBot} />
+                </div>
+              )}
+            </>}
+          </div>
         </div>
       )}
-      {/* collapsed handle — reopen the panel when polls exist */}
-      {F.polls && !rightOpen && !pollForm && polls.length > 0 && (
-        <button onClick={() => setRightOpen(true)} title={L.poll}
-          style={{ alignSelf: 'flex-start', display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 3, padding: '8px 6px', border: '1px solid var(--border-default)', borderRadius: 10, background: 'var(--surface)', cursor: 'pointer', color: 'var(--btn-primary-bg)' }}>
-          <Icon name="chart" size={16} /><span style={{ fontSize: 'var(--fs-micro,10px)', color: 'var(--text-secondary)' }}>{activePolls.length || closedPolls.length}</span>
-        </button>
-      )}
+
+      {/* right icon rail — each opens its box beside the chat (chat stays visible) */}
+      <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {rail.map((it) => {
+          const on = panel === it.id
+          return (
+            <button key={it.id} onClick={() => openPanel(it.id)} title={it.label}
+              style={{ position: 'relative', width: 44, height: 44, display: 'inline-flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2,
+                border: `1px solid ${on ? 'var(--btn-primary-bg)' : 'var(--border-default)'}`, borderRadius: 10, cursor: 'pointer',
+                background: on ? 'var(--info-bg)' : 'var(--surface)', color: on ? 'var(--btn-primary-bg)' : 'var(--text-secondary)' }}>
+              <Icon name={it.icon} size={18} weight={on ? 'fill' : 'regular'} />
+              {it.badge ? <span style={{ position: 'absolute', top: -5, right: -5, minWidth: 16, height: 16, padding: '0 4px', borderRadius: 999, background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', fontSize: 9, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>{it.badge}</span> : null}
+            </button>
+          )
+        })}
+      </div>
     </div>
   )
 }
+
+// right-dock box titles per panel id
+const PANEL_TITLES = (L) => ({ poll: L.poll, questions: L.questionList, completed: L.completedList, files: L.attachList, manage: L.chatManage })
 
 const ghostBtnS = { border: '1px solid var(--border-default)', background: 'transparent', borderRadius: 8, padding: '4px 10px', cursor: 'pointer', fontSize: 'var(--fs-small,12px)', color: 'var(--text-secondary)' }
 const activeGhost = { background: 'var(--info-bg)', color: 'var(--info-text)', borderColor: 'var(--info-text)' }
@@ -674,6 +769,80 @@ function BotAdd({ onSave }) {
       <input value={f.model} onChange={(e) => setF((s) => ({ ...s, model: e.target.value }))} placeholder="model" style={{ ...fieldS, width: 130 }} />
       <input value={f.api_key} onChange={(e) => setF((s) => ({ ...s, api_key: e.target.value }))} placeholder="api key" type="password" style={{ ...fieldS, width: 120 }} />
       <button onClick={() => { if (f.name.trim()) { onSave({ ...f, enabled: 1 }); setF({ name: '', provider: 'echo', model: '', api_key: '', system: '' }) } }} style={primaryBtnS}>추가</button>
+    </div>
+  )
+}
+
+/* ── Spatial mode: messages float in a fixed canvas (no scroll). Each bubble is
+   pinned to a stable cell (id-hashed → no jitter when new ones arrive), jittered
+   for an organic feel, brighter the more recent, and reveals its profile on
+   hover. A living 광장 rather than a time-ordered feed. ── */
+const SPATIAL_CSS = `
+@keyframes cmSpawn { from { transform: translate(-50%,-50%) scale(.8) } to { transform: translate(-50%,-50%) scale(1) } }
+.cm-spatial-b { animation: cmSpawn .28s ease; }
+.cm-spatial-b .cm-prof { opacity: 0; transition: opacity .15s; }
+.cm-spatial-b:hover .cm-prof { opacity: 1; }
+.cm-spatial-b:hover { z-index: 6; }
+`
+function hashInt(s) { let x = 2166136261 >>> 0; for (let i = 0; i < s.length; i++) { x ^= s.charCodeAt(i); x = Math.imul(x, 16777619) >>> 0 } return x }
+function placeSpatial(list, w, h) {
+  if (!list.length || w < 60 || h < 60) return []
+  const pad = 44
+  const cols = Math.max(2, Math.floor((w - pad) / 210))
+  const rows = Math.max(2, Math.floor((h - pad) / 108))
+  const cap = cols * rows
+  const cw = (w - pad) / cols, ch = (h - pad) / rows
+  const recent = list.slice(-cap)                 // only as many bubbles as cells (oldest drop off)
+  const used = new Set(); const out = []
+  recent.forEach((m, i) => {
+    let cell = hashInt(String(m.id)) % cap, tries = 0
+    while (used.has(cell) && tries < cap) { cell = (cell + 1) % cap; tries++ }
+    used.add(cell)
+    const col = cell % cols, row = Math.floor(cell / cols)
+    const s2 = hashInt('j' + m.id)
+    const jx = ((s2 % 100) / 100 - 0.5) * cw * 0.28
+    const jy = (((s2 >> 7) % 100) / 100 - 0.5) * ch * 0.28
+    const x = pad / 2 + cw * (col + 0.5) + jx
+    const y = pad / 2 + ch * (row + 0.5) + jy
+    const op = 0.45 + 0.55 * ((i + 1) / recent.length)   // most recent = brightest
+    out.push({ m, x, y, op })
+  })
+  return out
+}
+
+function SpatialView({ messages, meKey, blobURL, labels }) {
+  const ref = useRef(null)
+  const [size, setSize] = useState({ w: 800, h: 500 })
+  useEffect(() => {
+    const el = ref.current; if (!el || typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(() => setSize({ w: el.clientWidth, h: el.clientHeight }))
+    ro.observe(el); return () => ro.disconnect()
+  }, [])
+  const shown = messages.filter((m) => m.kind !== 'poll')
+  const ids = shown.map((m) => m.id).join(',')
+  const layout = useMemo(() => placeSpatial(shown, size.w, size.h), [ids, size.w, size.h])
+  return (
+    <div ref={ref} style={{ flex: 1, minHeight: 0, position: 'relative', overflow: 'hidden', background: 'var(--surface-2)' }}>
+      <style>{SPATIAL_CSS}</style>
+      {shown.length === 0 && <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: 'var(--fs-small,12px)' }}>{labels.empty}</div>}
+      {layout.map(({ m, x, y, op }) => {
+        const mine = m.author_key === meKey
+        const isQ = m.kind === 'question'
+        return (
+          <div key={m.id} className="cm-spatial-b" style={{ position: 'absolute', left: x, top: y, transform: 'translate(-50%,-50%)', width: 190, opacity: op }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3 }}>
+              <Avatar outline={m.anon} icon={m.author_shape} color={m.anon ? undefined : m.author_color} seed={m.author_username || m.author_key} size={18} title={m.author_name} />
+              <span className="cm-prof" style={{ fontSize: 'var(--fs-micro,10px)', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{mine ? labels.me : m.author_name} · {timeLabel(m.created_at)}</span>
+            </div>
+            <div style={{ padding: '7px 11px', borderRadius: '3px 12px 12px 12px',
+              background: isQ ? 'var(--warning-bg)' : mine ? 'var(--info-bg)' : 'var(--surface)',
+              border: `1px solid ${isQ ? 'var(--warning-text)' : mine ? 'var(--btn-primary-bg)' : 'var(--border-default)'}`,
+              fontSize: 'var(--fs-small,12px)', color: 'var(--text-primary)', boxShadow: '0 1px 4px rgba(0,0,0,.07)', wordBreak: 'break-word', lineHeight: 1.35 }}>
+              {m.body ? (m.body.length > 140 ? m.body.slice(0, 140) + '…' : m.body) : (m.attachments || []).length ? '📎 ' + labels.attach : ''}
+            </div>
+          </div>
+        )
+      })}
     </div>
   )
 }
