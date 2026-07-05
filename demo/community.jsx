@@ -47,9 +47,10 @@ const api = {
   async complete(id) { const m = store.messages.find((x) => x.id === id); if (m) m.done = true },
   async anonIdentity() { return { name: '이순신', shape: 'moon' } },
   async polls() { return store.polls },
-  async createPoll({ title, options, deadline }) { store.polls.push({ id: 'p' + (++seq), title, options: options.map((t, i) => ({ id: 'o' + i, text: t, votes: 0 })), my_vote: null, closed: false, deadline, owner: store.meKey }) },
-  async vote(pid, oid) { const p = store.polls.find((x) => x.id === pid); if (p) { if (p.my_vote) { const prev = p.options.find((o) => o.id === p.my_vote); if (prev) prev.votes-- } const o = p.options.find((o) => o.id === oid); if (o) o.votes++; p.my_vote = oid } },
+  async createPoll({ title, options, deadline, named }) { const id = 'p' + (++seq); store.polls.push({ id, title, options: options.map((t, i) => ({ id: 'o' + i, text: t, votes: 0 })), my_vote: null, closed: false, deadline, named: named !== false, owner: store.meKey, _voters: {} }); return { id } },
+  async vote(pid, oid, o) { const p = store.polls.find((x) => x.id === pid); if (p) { if (p.my_vote) { const prev = p.options.find((x) => x.id === p.my_vote); if (prev) prev.votes-- } const opt = p.options.find((x) => x.id === oid); if (opt) opt.votes++; p.my_vote = oid; p._voters = p._voters || {}; p._voters[store.meKey] = { key: store.meKey, option_id: oid, anon: !!(o && o.anonymous), name: o && o.anonymous ? o.anon_name : store.meName, shape: o && o.anonymous ? o.anon_shape : store.meShape, color: o && o.anonymous ? undefined : store.meColor, real_name: o && o.anonymous ? store.meName : undefined } } },
   async closePoll(pid) { const p = store.polls.find((x) => x.id === pid); if (p) p.closed = true },
+  async pollResults(pid) { const p = store.polls.find((x) => x.id === pid); if (!p) return { named: true, options: [] }; const vs = Object.values(p._voters || {}); return { named: p.named !== false, options: p.options.map((o) => ({ id: o.id, text: o.text, voters: p.named === false ? [] : vs.filter((v) => v.option_id === o.id) })) } },
 }
 
 // ── real backend adapter (scripts/templates/community.py) — ?real to use it ──
@@ -75,8 +76,9 @@ const realApi = {
   anonIdentity: () => j('GET', '/api/community/anon-identity'),
   polls: () => j('GET', '/api/community/polls').then((d) => d.polls),
   createPoll: (p) => j('POST', '/api/community/polls', p),
-  vote: (pid, oid) => j('POST', '/api/community/polls/' + pid + '/vote', { option_id: oid }),
+  vote: (pid, oid, o) => j('POST', '/api/community/polls/' + pid + '/vote', { option_id: oid, ...(o || {}) }),
   closePoll: (pid) => j('POST', '/api/community/polls/' + pid + '/close'),
+  pollResults: (pid) => j('GET', '/api/community/polls/' + pid + '/results'),
   anonNames: () => j('GET', '/api/community/anon-names'),
   saveAnonNames: (n) => j('PUT', '/api/community/anon-names', n),
   bots: () => j('GET', '/api/community/bots').then((d) => d.bots),

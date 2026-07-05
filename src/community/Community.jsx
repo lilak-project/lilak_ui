@@ -61,6 +61,7 @@ const DEFAULT_LABELS = {
   vote: '투표', closePoll: '완료', pollClosed: '종료됨', deadline: '마감',
   viewPoll: '투표 보기', noPoll: '진행 중인 투표가 없습니다.',
   closeAfter: '몇 분 후 종료', minutes: '분 후', orDeadline: '또는 마감 시각',
+  pollNamed: '실명', pollAnon: '익명', viewResults: '결과 보기', hideResults: '결과 접기',
   anonHint: '익명으로 작성 중 (관리자만 실명 확인)', revealWho: '누구인지 보기 (관리자)',
 }
 
@@ -188,36 +189,63 @@ function MessageRow({ m, meKey, grouped, isManager, blobURL, onReply, onDelete, 
 const actS = { border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)', padding: 3, borderRadius: 6, display: 'inline-flex' }
 
 /* ── active poll card (docks to the right of the chat) ── */
-function PollCard({ poll, isManager, onVote, onClose, labels, highlight }) {
+function PollCard({ poll, isManager, onVote, onClose, labels, highlight, fetchResults }) {
   const total = poll.options.reduce((s, o) => s + (o.votes || 0), 0)
   const closed = poll.closed
+  const anonPoll = poll.named === false
+  const [res, setRes] = useState(null)     // { options:[{id, voters:[...]}] } or null
+  async function toggleResults() {
+    if (res) { setRes(null); return }
+    try { setRes(await fetchResults(poll.id)) } catch { /* ignore */ }
+  }
+  const votersFor = (oid) => (res && res.options.find((x) => x.id === oid)?.voters) || []
   return (
     <div style={{ border: `1px solid ${highlight ? 'var(--btn-primary-bg)' : 'var(--border-default)'}`, borderRadius: 12, background: 'var(--surface)', padding: 12, boxShadow: highlight ? '0 0 0 2px var(--info-bg)' : '0 1px 2px rgba(0,0,0,.04)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
         <Icon name="chart" size={15} color="var(--btn-primary-bg)" />
         <span style={{ fontWeight: 600, fontSize: 'var(--fs-small,12px)', flex: 1, minWidth: 0 }}>{poll.title}</span>
+        <span style={{ fontSize: 'var(--fs-micro,10px)', padding: '1px 6px', borderRadius: 999, background: 'var(--surface-3)', color: 'var(--text-muted)' }}>{anonPoll ? labels.pollAnon : labels.pollNamed}</span>
         {closed && <span style={{ fontSize: 'var(--fs-micro,10px)', color: 'var(--text-muted)' }}>{labels.pollClosed}</span>}
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         {poll.options.map((o) => {
           const pct = total ? Math.round((o.votes || 0) / total * 100) : 0
           const voted = poll.my_vote === o.id
+          const voters = votersFor(o.id)
           return (
-            <button key={o.id} disabled={closed} onClick={() => onVote(poll.id, o.id)}
-              style={{ position: 'relative', textAlign: 'left', border: `1px solid ${voted ? 'var(--btn-primary-bg)' : 'var(--border-default)'}`, borderRadius: 8, padding: '5px 9px', background: 'var(--surface-2)', cursor: closed ? 'default' : 'pointer', overflow: 'hidden' }}>
-              <div style={{ position: 'absolute', inset: 0, width: `${pct}%`, background: 'var(--info-bg)', zIndex: 0 }} />
-              <div style={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'space-between', fontSize: 'var(--fs-small,12px)' }}>
-                <span>{voted ? '● ' : ''}{o.text}</span>
-                <span style={{ color: 'var(--text-muted)' }}>{o.votes || 0} · {pct}%</span>
-              </div>
-            </button>
+            <div key={o.id}>
+              <button disabled={closed} onClick={() => onVote(poll.id, o.id)}
+                style={{ width: '100%', position: 'relative', textAlign: 'left', border: `1px solid ${voted ? 'var(--btn-primary-bg)' : 'var(--border-default)'}`, borderRadius: 8, padding: '5px 9px', background: 'var(--surface-2)', cursor: closed ? 'default' : 'pointer', overflow: 'hidden' }}>
+                <div style={{ position: 'absolute', inset: 0, width: `${pct}%`, background: 'var(--info-bg)', zIndex: 0 }} />
+                <div style={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'space-between', fontSize: 'var(--fs-small,12px)' }}>
+                  <span>{voted ? '● ' : ''}{o.text}</span>
+                  <span style={{ color: 'var(--text-muted)' }}>{o.votes || 0} · {pct}%</span>
+                </div>
+              </button>
+              {res && voters.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, padding: '4px 4px 2px' }}>
+                  {voters.map((v) => (
+                    <span key={v.key} title={v.real_name ? `실제: ${v.real_name}` : undefined}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 'var(--fs-micro,10px)', color: 'var(--text-secondary)', background: 'var(--surface-2)', borderRadius: 999, padding: '1px 7px 1px 2px' }}>
+                      <Avatar outline={v.anon} icon={v.shape} color={v.color} seed={v.key} size={14} />
+                      {v.name}{v.real_name ? ` (${v.real_name})` : ''}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
           )
         })}
       </div>
       {poll.deadline && <div style={{ fontSize: 'var(--fs-micro,10px)', color: 'var(--text-muted)', marginTop: 6 }}>{labels.deadline}: {new Date(poll.deadline).toLocaleString()}</div>}
-      {isManager && !closed && onClose && (
-        <button onClick={() => onClose(poll.id)} style={{ marginTop: 8, width: '100%', border: '1px solid var(--border-default)', borderRadius: 8, padding: '5px 0', background: 'transparent', cursor: 'pointer', fontSize: 'var(--fs-small,12px)', color: 'var(--text-secondary)' }}>{labels.closePoll}</button>
-      )}
+      <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+        {!anonPoll && fetchResults && (
+          <button onClick={toggleResults} style={{ flex: 1, border: '1px solid var(--border-default)', borderRadius: 8, padding: '5px 0', background: 'transparent', cursor: 'pointer', fontSize: 'var(--fs-small,12px)', color: 'var(--text-secondary)' }}>{res ? labels.hideResults : labels.viewResults}</button>
+        )}
+        {isManager && !closed && onClose && (
+          <button onClick={() => onClose(poll.id)} style={{ flex: 1, border: '1px solid var(--border-default)', borderRadius: 8, padding: '5px 0', background: 'transparent', cursor: 'pointer', fontSize: 'var(--fs-small,12px)', color: 'var(--text-secondary)' }}>{labels.closePoll}</button>
+        )}
+      </div>
     </div>
   )
 }
@@ -319,7 +347,7 @@ export default function Community({ api, role = 'user', features = {}, labels: l
   }
   async function openManage() { const n = !manageOpen; setManageOpen(n); setPlusOpen(false); if (n && api.users) { try { setUsers(await api.users()) } catch {} } }
   async function toggleBan(u) { try { await api.ban(u.user_key, u.name, !u.banned); setUsers((p) => p.map((x) => x.user_key === u.user_key ? { ...x, banned: !x.banned } : x)) } catch (e) { setError(String(e.message || e)) } }
-  async function vote(pid, oid) { try { await api.vote(pid, oid); setPolls(await api.polls()) } catch (e) { setError(String(e.message || e)) } }
+  async function vote(pid, oid) { try { await api.vote(pid, oid, { anonymous: anonOn, anon_name: anonOn ? anon.name : '', anon_shape: anonOn ? anon.shape : '' }); setPolls(await api.polls()) } catch (e) { setError(String(e.message || e)) } }
   async function closePoll(pid) { try { await api.closePoll(pid); setPolls(await api.polls()) } catch (e) { setError(String(e.message || e)) } }
   async function submitPoll() {
     const opts = (pollForm.options || []).map((s) => s.trim()).filter(Boolean)
@@ -329,7 +357,7 @@ export default function Community({ api, role = 'user', features = {}, labels: l
     const mins = Number(pollForm.minutes)
     if (mins > 0) { const d = new Date(Date.now() + mins * 60000); deadline = localIso(d) }
     try {
-      const r = await api.createPoll({ title: pollForm.title.trim(), options: opts, deadline })
+      const r = await api.createPoll({ title: pollForm.title.trim(), options: opts, deadline, named: pollForm.named !== false })
       setPollForm(null); setRightOpen(true)
       if (r && r.id) setActivePollId(r.id)
       setPolls(await api.polls())
@@ -379,7 +407,7 @@ export default function Community({ api, role = 'user', features = {}, labels: l
     F.questions && { id: 'qlist', label: L.questionList, icon: 'menu', on: () => goView('questions') },
     F.questions && { id: 'done', label: L.completedList, icon: 'check', on: () => goView('completed') },
     F.anon && { id: 'anon', label: anonOn ? L.anonOff : L.anonOn, icon: 'eye', active: anonOn, on: toggleAnon },
-    F.polls && isManager && { id: 'poll', label: L.poll, icon: 'chart', on: () => { setPollForm({ title: '', options: ['', ''], deadline: '', minutes: '' }); setRightOpen(true); setPlusOpen(false) } },
+    F.polls && isManager && { id: 'poll', label: L.poll, icon: 'chart', on: () => { setPollForm({ title: '', options: ['', ''], deadline: '', minutes: '', named: true }); setRightOpen(true); setPlusOpen(false) } },
   ].filter(Boolean)
 
   const activePolls = polls.filter((p) => !p.closed)
@@ -570,6 +598,11 @@ export default function Community({ api, role = 'user', features = {}, labels: l
             <div style={{ border: '1px solid var(--border-default)', borderRadius: 12, background: 'var(--surface)', padding: 12 }}>
               <div style={{ fontWeight: 600, fontSize: 'var(--fs-small,12px)', marginBottom: 8 }}>{L.createPoll}</div>
               <input value={pollForm.title} onChange={(e) => setPollForm((f) => ({ ...f, title: e.target.value }))} placeholder={L.pollTitle} style={fieldS} />
+              {/* 실명 / 익명 투표 선택 */}
+              <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+                <button onClick={() => setPollForm((f) => ({ ...f, named: true }))} style={{ ...ghostBtnS, flex: 1, ...(pollForm.named !== false ? activeGhost : {}) }}>{L.pollNamed}</button>
+                <button onClick={() => setPollForm((f) => ({ ...f, named: false }))} style={{ ...ghostBtnS, flex: 1, ...(pollForm.named === false ? activeGhost : {}) }}>{L.pollAnon}</button>
+              </div>
               {pollForm.options.map((o, i) => (
                 <input key={i} value={o} onChange={(e) => setPollForm((f) => ({ ...f, options: f.options.map((x, j) => j === i ? e.target.value : x) }))}
                   placeholder={`${L.pollOption} ${i + 1}`} style={{ ...fieldS, marginTop: 6 }} />
@@ -596,7 +629,7 @@ export default function Community({ api, role = 'user', features = {}, labels: l
           )}
           {!pollForm && activePolls.length === 0 && <div style={{ color: 'var(--text-muted)', fontSize: 'var(--fs-small,12px)' }}>{L.noPoll}</div>}
           {[...activePolls].sort((a, b) => (b.id === activePollId ? 1 : 0) - (a.id === activePollId ? 1 : 0))
-            .map((p) => <PollCard key={p.id} poll={p} highlight={p.id === activePollId} isManager={isManager} onVote={vote} onClose={closePoll} labels={L} />)}
+            .map((p) => <PollCard key={p.id} poll={p} highlight={p.id === activePollId} isManager={isManager} onVote={vote} onClose={closePoll} fetchResults={api.pollResults} labels={L} />)}
         </div>
       )}
       {/* collapsed handle — reopen the panel when polls exist */}
