@@ -25,6 +25,7 @@ import {
   Microscope, TestTube, Dna, Magnet, Gauge, Thermometer, Lightbulb, Wrench, Cpu,
   Hexagon, Shapes, Crosshair, Polygon, Pulse, Waveform, ChartLineUp, Circuitry, Graph,
   Camera, Image as ImageIcon,
+  ToggleLeft, ToggleRight,
 } from '@phosphor-icons/react'
 
 const WEIGHTS = ['thin', 'light', 'regular', 'bold', 'fill', 'duotone']
@@ -65,6 +66,7 @@ export const ICONS = {
   search: MagnifyingGlass, tag: Hash, hash: Hash,
   command: Command, terminal: Terminal, system: Terminal,
   settings: Gear, gear: Gear,
+  'toggle-left': ToggleLeft, 'toggle-right': ToggleRight,
   theme: Sun, sun: Sun, moon: Moon, contrast: CloudSun,
   'caret-down': CaretDown, 'caret-up': CaretUp, 'caret-left': CaretLeft, 'caret-right': CaretRight,
   plus: Plus, trash: Trash, edit: PencilSimple, save: FloppyDisk,
@@ -105,6 +107,61 @@ export const PROJECT_ICONS = [
   'chart-line-up', 'circuitry', 'graph',
 ]
 export const randomProjectIcon = () => PROJECT_ICONS[Math.floor(Math.random() * PROJECT_ICONS.length)]
+
+// ── Extended picker set ───────────────────────────────────────────────────────
+// A larger curated slice of Phosphor for the icon PICKER (not "all ~1500" — that
+// would bloat the bundle). Each is added to the ICONS map under its kebab name, so
+// a service can store any of these and the kit renders it (incl. duotone).
+import {
+  Airplane, Alarm, Alien, Anchor, Aperture, AppWindow, Archive, Atom, Baby, Backpack,
+  Bag, Balloon, Bank, Barbell, Barcode, Basketball, Bathtub, Bed, Bicycle, Binoculars,
+  Bird, Boat, Bomb, Bone, Book, BookOpen, Books, Brain, Bridge, Briefcase,
+  Broadcast, Broom, Bug, Buildings, Bus, Butterfly, Cactus, Cake, Calculator, Campfire,
+  Car, Cardholder, Carrot, Cat, ChartPie, ChatCircle, Circle, Clipboard, Clock, Cloud,
+  Club, Coffee, Coins, Compass, Confetti, Cookie, CreditCard, Crop, Crown, Cube,
+  Database, Desktop, Detective, Diamond, Disc, Dog, Door, Drop, Ear, Egg,
+  Envelope, Eraser, Factory, Faders, Feather, File, FileText, Fingerprint, Fire, FirstAid,
+  Fish, Flag, Flashlight, FlowerLotus, Football, ForkKnife, GameController, Gavel, Ghost, Gift,
+  GitBranch, Globe, GraduationCap, Guitar, Hammer, Hand, Handbag, Handshake, HardDrive, Headphones,
+  Heart, Heartbeat, Horse, Hourglass, IceCream, Keyboard, Ladder, Lamp, Laptop,
+  Leaf, Lifebuoy, Lightning, LinkSimple, Lock, MagicWand, MapPin, Martini, Medal, Megaphone,
+  Microphone, Money, Monitor, Mountains, MusicNote, Newspaper, Notepad, PaintBrush, PaintBucket,
+  Parachute, Path, Pause, PawPrint, Pen, Percent, Person, Phone, PiggyBank, Pill,
+  Pizza, Planet, Plant, Popcorn, Presentation, Printer, Prohibit, PuzzlePiece, QrCode, Rabbit,
+  Radio, Rainbow, Receipt, Recycle, Rocket, RocketLaunch, Ruler, Scales, Scissors, Scroll,
+  Shield, ShieldCheck, ShootingStar, ShoppingCart, Shuffle, SignIn, Siren, Skull, Smiley, Snowflake,
+  SoccerBall, Spade, Sparkle, SpeakerHigh, Spinner, Sunglasses, Swap, Sword, Syringe, Taxi,
+  TennisBall, ThumbsUp, ThumbsDown, Ticket, Timer, Toilet, Toolbox, Tooth, Tornado, Train,
+  Tree, Trophy, Truck, Umbrella, UsersThree, VideoCamera, Wallet, Watch, WifiHigh, Wind, Wine,
+} from '@phosphor-icons/react'
+
+const _EXTRA = {
+  Airplane, Alarm, Alien, Anchor, Aperture, AppWindow, Archive, Atom, Baby, Backpack,
+  Bag, Balloon, Bank, Barbell, Barcode, Basketball, Bathtub, Bed, Bicycle, Binoculars,
+  Bird, Boat, Bomb, Bone, Book, BookOpen, Books, Brain, Bridge, Briefcase,
+  Broadcast, Broom, Bug, Buildings, Bus, Butterfly, Cactus, Cake, Calculator, Campfire,
+  Car, Cardholder, Carrot, Cat, ChartPie, ChatCircle, Circle, Clipboard, Clock, Cloud,
+  Club, Coffee, Coins, Compass, Confetti, Cookie, CreditCard, Crop, Crown, Cube,
+  Database, Desktop, Detective, Diamond, Disc, Dog, Door, Drop, Ear, Egg,
+  Envelope, Eraser, Factory, Faders, Feather, File, FileText, Fingerprint, Fire, FirstAid,
+  Fish, Flag, Flashlight, FlowerLotus, Football, ForkKnife, GameController, Gavel, Ghost, Gift,
+  GitBranch, Globe, GraduationCap, Guitar, Hammer, Hand, Handbag, Handshake, HardDrive, Headphones,
+  Heart, Heartbeat, Horse, Hourglass, IceCream, Keyboard, Ladder, Lamp, Laptop,
+  Leaf, Lifebuoy, Lightning, LinkSimple, Lock, MagicWand, MapPin, Martini, Medal, Megaphone,
+  Microphone, Money, Monitor, Mountains, MusicNote, Newspaper, Notepad, PaintBrush, PaintBucket,
+  Parachute, Path, Pause, PawPrint, Pen, Percent, Person, Phone, PiggyBank, Pill,
+  Pizza, Planet, Plant, Popcorn, Presentation, Printer, Prohibit, PuzzlePiece, QrCode, Rabbit,
+  Radio, Rainbow, Receipt, Recycle, Rocket, RocketLaunch, Ruler, Scales, Scissors, Scroll,
+  Shield, ShieldCheck, ShootingStar, ShoppingCart, Shuffle, SignIn, Siren, Skull, Smiley, Snowflake,
+  SoccerBall, Spade, Sparkle, SpeakerHigh, Spinner, Sunglasses, Swap, Sword, Syringe, Taxi,
+  TennisBall, ThumbsUp, ThumbsDown, Ticket, Timer, Toilet, Toolbox, Tooth, Tornado, Train,
+  Tree, Trophy, Truck, Umbrella, UsersThree, VideoCamera, Wallet, Watch, WifiHigh, Wind, Wine,
+}
+const _kebab = (s) => s.replace(/([a-z0-9])([A-Z])/g, '$1-$2').replace(/([A-Z]+)([A-Z][a-z])/g, '$1-$2').toLowerCase()
+for (const [k, C] of Object.entries(_EXTRA)) { const n = _kebab(k); if (!ICONS[n]) ICONS[n] = C }
+
+// The full pool the icon PICKER offers (curated project marks + the extended set).
+export const PICKER_ICONS = Array.from(new Set([...PROJECT_ICONS, ...Object.keys(_EXTRA).map(_kebab)])).sort()
 
 /**
  * strokeIcon — like customIcon, but for LINE-ART (stroke) marks. Phosphor's

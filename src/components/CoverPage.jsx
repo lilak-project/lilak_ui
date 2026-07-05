@@ -26,17 +26,20 @@ import { Container } from '../layout/index.jsx'
  *   theme      data-theme to re-scope this subtree to (default 'bright')
  */
 export default function CoverPage({
-  icon, iconSize = 36, title, subtitle, actions, note,
-  max = 760, theme = 'bright', style, children, ...rest
+  icon, iconSize = 36, title, subtitle, actions, note, subheader,
+  max = 760, theme = 'bright', fill = false, style, children, ...rest
 }) {
+  // fill: pin the page to the viewport and scroll the BODY internally (header
+  // stays put). A stable scrollbar gutter means switching between short and tall
+  // screens never shifts the layout horizontally.
+  const rootStyle = fill
+    ? { height: '100dvh', overflow: 'hidden', display: 'flex', flexDirection: 'column',
+        backgroundColor: 'var(--app-bg, var(--surface-2))', ...style }
+    : { minHeight: '100vh', backgroundColor: 'var(--app-bg, var(--surface-2))', paddingBottom: 64, ...style }
   return (
-    <div
-      data-theme={theme}
-      style={{ minHeight: '100vh', backgroundColor: 'var(--app-bg, var(--surface-2))', paddingBottom: 64, ...style }}
-      {...rest}
-    >
-      <Container max={max}>
-        <header style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '40px 0 8px' }}>
+    <div data-theme={theme} style={rootStyle} {...rest}>
+      <Container max={max} style={fill ? { display: 'flex', flexDirection: 'column', minHeight: 0, flex: 1 } : undefined}>
+        <header style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '40px 0 8px', flexShrink: 0 }}>
           {icon != null && (
             typeof icon === 'string'
               ? <Icon name={icon} size={iconSize} style={{ height: iconSize, width: 'auto' }} />
@@ -58,12 +61,17 @@ export default function CoverPage({
         </header>
 
         {note && (
-          <div style={{ margin: '8px 0', fontSize: 'var(--fs-small, 12px)', color: 'var(--text-muted)' }}>
+          <div style={{ margin: '8px 0', fontSize: 'var(--fs-small, 12px)', color: 'var(--text-muted)', flexShrink: 0 }}>
             {note}
           </div>
         )}
 
-        {children}
+        {/* subheader stays in the FIXED region (above the scroll body) — e.g. a nav/tab bar. */}
+        {subheader != null && <div style={{ flexShrink: 0 }}>{subheader}</div>}
+
+        {fill
+          ? <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', scrollbarGutter: 'stable', paddingTop: 12, paddingBottom: 32 }}>{children}</div>
+          : children}
       </Container>
     </div>
   )

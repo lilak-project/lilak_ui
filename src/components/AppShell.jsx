@@ -80,8 +80,11 @@ function Section({ label, children }) {
 }
 
 /** Default drawer content: account + theme + language. Styled for the dark
- *  nav-* palette (the drawer reads as the top bar dropping down). */
-function DefaultDrawer({ L, accountName, theme, setTheme, themes, lang, setLang, langs }) {
+ *  nav-* palette (the drawer reads as the top bar dropping down).
+ *  Optional: `accountAvatar` node + `accountMeta` line (e.g. an SSO profile), and
+ *  an `onExit`/`exitLabel` action (e.g. "leave for the portal"). */
+function DefaultDrawer({ L, accountName, accountAvatar, accountMeta, onExit, exitLabel,
+  theme, setTheme, themes, lang, setLang, langs }) {
   const themeOpts = THEMES.filter((t) => themes.includes(t.id))
   return (
     <div style={{ display: 'flex', alignItems: 'stretch', minHeight: '100%' }}>
@@ -93,7 +96,13 @@ function DefaultDrawer({ L, accountName, theme, setTheme, themes, lang, setLang,
       <div style={{ flex: 1, minWidth: 0, paddingLeft: 18, borderLeft: '1px solid var(--nav-border)' }}>
         <Stack gap={14}>
           <Section label={L.account}>
-            <span style={{ fontSize: 'var(--fs-medium, 14px)', fontWeight: 600, color: 'var(--nav-text)' }}>{accountName}</span>
+            <Row gap={14} style={{ alignItems: 'center' }}>
+              {accountAvatar}
+              <Stack gap={3} style={{ minWidth: 0 }}>
+                <span style={{ fontSize: 'var(--fs-large, 18px)', fontWeight: 700, color: 'var(--nav-text)', lineHeight: 1.15 }}>{accountName}</span>
+                {accountMeta && <span style={{ fontSize: 'var(--fs-small, 12px)', color: 'var(--nav-text-muted)', fontFamily: 'var(--font-mono)', overflow: 'hidden', textOverflow: 'ellipsis' }}>{accountMeta}</span>}
+              </Stack>
+            </Row>
           </Section>
           {themeOpts.length > 1 && (
             <Section label={L.theme}>
@@ -108,6 +117,17 @@ function DefaultDrawer({ L, accountName, theme, setTheme, themes, lang, setLang,
                 {langs.map((l) => <Chip key={l} active={lang === l} onClick={() => setLang(l)}>{l.toUpperCase()}</Chip>)}
               </Row>
             </Section>
+          )}
+          {onExit && (
+            <button onClick={onExit}
+              style={{ marginTop: 4, height: 34, padding: '0 14px', borderRadius: 8, cursor: 'pointer',
+                fontSize: 'var(--fs-small, 12px)', fontWeight: 600, border: '1px solid var(--nav-border)',
+                background: 'var(--nav-accent)', color: 'var(--nav-text)', display: 'inline-flex',
+                alignItems: 'center', justifyContent: 'center', gap: 7, alignSelf: 'flex-start' }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--nav-text-muted)' }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--nav-border)' }}>
+              <Icon name="logout" size={15} />{exitLabel || 'Exit'}
+            </button>
           )}
         </Stack>
       </div>
@@ -126,9 +146,17 @@ function AppShellInner({
   onTab,
   status,
   accountName,
+  accountIcon,         // top-bar account button leading node; pass `false` for name-only
+  accountAvatar,       // optional node (e.g. SSO Avatar) shown in the drawer profile
+  accountMeta,         // optional secondary line (e.g. email) in the drawer
   onAccountClick,
+  onExit,              // optional: renders an "exit" action in the default drawer
+  exitLabel,
   drawer,
   drawerHeight = 'half',
+  // Bottom `/` command bar. On by default; pass false to drop it (and its launcher)
+  // entirely — e.g. an app that doesn't want the collapsible bottom bar.
+  commandBar = true,
   // 'auto' (default) folds tabs into a ☰ pick-list on phones; true/false forces it.
   tabsAsMenu = 'auto',
   themes = THEMES.map((t) => t.id),
@@ -237,12 +265,13 @@ function AppShellInner({
       onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent' }}
       title={`${L.system}  ( \\ )`}
     >
-      <Icon name="user" size={15} /><span>{name}</span>
+      {accountIcon === false ? null : (accountIcon || <Icon name="user" size={15} />)}<span>{name}</span>
     </button>
   )
 
   const drawerContent = drawer != null ? drawer : (
-    <DefaultDrawer L={L} accountName={name} theme={theme} setTheme={setTheme} themes={themes}
+    <DefaultDrawer L={L} accountName={name} accountAvatar={accountAvatar} accountMeta={accountMeta}
+      onExit={onExit} exitLabel={exitLabel} theme={theme} setTheme={setTheme} themes={themes}
       lang={lang} setLang={setLang} langs={langs} />
   )
 
@@ -262,15 +291,17 @@ function AppShellInner({
 
       <main style={{ flex: 1, minHeight: 0, overflow: 'auto', paddingBottom: 8 }}>{children}</main>
 
-      <CommandBar
-        collapsible
-        commands={reg?.commands || []}
-        open={barOpen}
-        onOpenChange={setBarOpen}
-        openWith={barLead}
-        onRun={(cmd, raw) => { if (!cmd && raw) reg?.run(raw) }}
-        placeholder={L.command}
-      />
+      {commandBar && (
+        <CommandBar
+          collapsible
+          commands={reg?.commands || []}
+          open={barOpen}
+          onOpenChange={setBarOpen}
+          openWith={barLead}
+          onRun={(cmd, raw) => { if (!cmd && raw) reg?.run(raw) }}
+          placeholder={L.command}
+        />
+      )}
 
       <Drawer open={drawerOpen} onClose={() => setDrawerOpen(false)} height={drawerHeight}>
         {drawerContent}
