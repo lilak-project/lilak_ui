@@ -123,14 +123,15 @@ function Attachment({ att, blobURL }) {
   }
   return (
     <button onClick={download} title={`${att.name} · ${fmtSize(att.size)}`} style={chipBtnS}>
-      <Icon name="download" size={14} /> <span style={{ maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{att.name}</span>
-      <em style={{ color: 'var(--text-muted)', fontStyle: 'normal', fontSize: 'var(--fs-micro,10px)' }}>{fmtSize(att.size)}</em>
+      <span style={{ flexShrink: 0, display: 'inline-flex' }}><Icon name="download" size={14} /></span>
+      <span style={{ flex: '0 1 auto', minWidth: 0, maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{att.name}</span>
+      <em style={{ flexShrink: 0, color: 'var(--text-muted)', fontStyle: 'normal', fontSize: 'var(--fs-micro,10px)' }}>{fmtSize(att.size)}</em>
     </button>
   )
 }
 
 const chipS = { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 8px', borderRadius: 8, background: 'var(--surface-3)', fontSize: 'var(--fs-small,12px)' }
-const chipBtnS = { ...chipS, border: '1px solid var(--border-default)', cursor: 'pointer', color: 'var(--text-primary)' }
+const chipBtnS = { ...chipS, maxWidth: '100%', minWidth: 0, border: '1px solid var(--border-default)', cursor: 'pointer', color: 'var(--text-primary)' }
 
 /* ── a chat row: avatar + author/time + bubble(s). Everyone left-aligned. ── */
 function MessageRow({ m, meKey, grouped, isManager, blobURL, onReply, onEdit, onDelete, onComplete, onRowClick, onPollClick, revealed, onReveal, labels }) {
@@ -949,14 +950,14 @@ function SpatialView({ messages, meKey, blobURL, labels, config }) {
                   <em style={{ fontStyle: 'normal', fontSize: 'var(--fs-micro,10px)', color: 'var(--text-muted)' }}>{timeLabel(m.created_at)}</em>
                 </div>
               )}
-              <div className="cm-plaza-bubble" style={{ maxWidth: 230, padding: emph ? '9px 14px' : '6px 11px', borderRadius: '3px 12px 12px 12px',
+              <div className="cm-plaza-bubble" style={{ maxWidth: 240, minWidth: 0, boxSizing: 'border-box', padding: emph ? '9px 14px' : '6px 11px', borderRadius: '3px 12px 12px 12px',
                 background: isQ ? 'var(--warning-bg)' : mine ? 'var(--info-bg)' : 'var(--surface)',
                 border: `1px solid ${isQ ? 'var(--warning-text)' : mine ? 'var(--btn-primary-bg)' : 'var(--border-default)'}`,
                 fontSize: emph ? 'var(--fs-medium,15px)' : 'var(--fs-body,13px)', fontWeight: emph ? 600 : 400,
                 color: 'var(--text-primary)', boxShadow: '0 1px 4px rgba(0,0,0,.07)', wordBreak: 'break-word', lineHeight: 1.4 }}>
                 {body && <div><ReactMarkdown remarkPlugins={[remarkGfm]} components={CM_MD}>{mdPrep(body)}</ReactMarkdown></div>}
                 {(m.attachments || []).length > 0 && (
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: body ? 5 : 0 }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, maxWidth: '100%', marginTop: body ? 5 : 0 }}>
                     {m.attachments.map((a, k) => <Attachment att={a} key={k} blobURL={blobURL} />)}
                   </div>
                 )}
