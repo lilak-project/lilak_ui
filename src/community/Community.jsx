@@ -62,6 +62,7 @@ const DEFAULT_LABELS = {
   viewPoll: '투표 보기', noPoll: '진행 중인 투표가 없습니다.',
   closeAfter: '몇 분 후 종료', minutes: '분 후', orDeadline: '또는 마감 시각',
   pollNamed: '실명', pollAnon: '익명', viewResults: '결과 보기', hideResults: '결과 접기',
+  showClosedPolls: '완료된 투표 보기', hideClosedPolls: '완료된 투표 숨기기', noClosedPoll: '완료된 투표가 없습니다.',
   anonHint: '익명으로 작성 중 (관리자만 실명 확인)', revealWho: '누구인지 보기 (관리자)',
 }
 
@@ -282,6 +283,7 @@ export default function Community({ api, role = 'user', features = {}, labels: l
   const [bots, setBots] = useState([])
   const [rightOpen, setRightOpen] = useState(false)   // collapsible poll/vote side panel
   const [activePollId, setActivePollId] = useState(null)
+  const [showClosed, setShowClosed] = useState(false)  // reveal completed (closed) polls
 
   const anonOn = !!anon?.on
   const logRef = useRef(null); const inputRef = useRef(null); const stick = useRef(true); const sending = useRef(false)
@@ -411,6 +413,7 @@ export default function Community({ api, role = 'user', features = {}, labels: l
   ].filter(Boolean)
 
   const activePolls = polls.filter((p) => !p.closed)
+  const closedPolls = polls.filter((p) => p.closed)
 
   return (
     <div style={{ display: 'flex', gap: 12, height: '100%', minHeight: 0, fontFamily: 'var(--font-sans)' }}>
@@ -630,13 +633,23 @@ export default function Community({ api, role = 'user', features = {}, labels: l
           {!pollForm && activePolls.length === 0 && <div style={{ color: 'var(--text-muted)', fontSize: 'var(--fs-small,12px)' }}>{L.noPoll}</div>}
           {[...activePolls].sort((a, b) => (b.id === activePollId ? 1 : 0) - (a.id === activePollId ? 1 : 0))
             .map((p) => <PollCard key={p.id} poll={p} highlight={p.id === activePollId} isManager={isManager} onVote={vote} onClose={closePoll} fetchResults={api.pollResults} labels={L} />)}
+          {!pollForm && (closedPolls.length > 0 || showClosed) && (
+            <button onClick={() => setShowClosed((v) => !v)}
+              style={{ ...ghostBtnS, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+              <Icon name={showClosed ? 'caret-up' : 'caret-down'} size={13} />
+              {(showClosed ? L.hideClosedPolls : L.showClosedPolls) + (closedPolls.length ? ` (${closedPolls.length})` : '')}
+            </button>
+          )}
+          {!pollForm && showClosed && closedPolls.length === 0 && <div style={{ color: 'var(--text-muted)', fontSize: 'var(--fs-small,12px)' }}>{L.noClosedPoll}</div>}
+          {!pollForm && showClosed && closedPolls
+            .map((p) => <PollCard key={p.id} poll={p} highlight={p.id === activePollId} isManager={isManager} onVote={vote} onClose={closePoll} fetchResults={api.pollResults} labels={L} />)}
         </div>
       )}
       {/* collapsed handle — reopen the panel when polls exist */}
-      {F.polls && !rightOpen && !pollForm && activePolls.length > 0 && (
+      {F.polls && !rightOpen && !pollForm && polls.length > 0 && (
         <button onClick={() => setRightOpen(true)} title={L.poll}
           style={{ alignSelf: 'flex-start', display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 3, padding: '8px 6px', border: '1px solid var(--border-default)', borderRadius: 10, background: 'var(--surface)', cursor: 'pointer', color: 'var(--btn-primary-bg)' }}>
-          <Icon name="chart" size={16} /><span style={{ fontSize: 'var(--fs-micro,10px)', color: 'var(--text-secondary)' }}>{activePolls.length}</span>
+          <Icon name="chart" size={16} /><span style={{ fontSize: 'var(--fs-micro,10px)', color: 'var(--text-secondary)' }}>{activePolls.length || closedPolls.length}</span>
         </button>
       )}
     </div>
