@@ -59,6 +59,7 @@ const DEFAULT_LABELS = {
   banned: '커뮤니티 이용이 제한된 계정입니다.', drop: '📎 파일을 여기에 놓으세요',
   pollTitle: '투표 제목', pollOption: '항목', addOption: '항목 추가', createPoll: '투표 만들기',
   vote: '투표', closePoll: '완료', pollClosed: '종료됨', deadline: '마감',
+  viewPoll: '투표 보기', noPoll: '진행 중인 투표가 없습니다.',
   anonHint: '익명으로 작성 중 (관리자만 실명 확인)', revealWho: '누구인지 보기 (관리자)',
 }
 
@@ -112,50 +113,59 @@ const chipS = { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '
 const chipBtnS = { ...chipS, border: '1px solid var(--border-default)', cursor: 'pointer', color: 'var(--text-primary)' }
 
 /* ── a chat row: avatar + author/time + bubble(s). Everyone left-aligned. ── */
-function MessageRow({ m, meKey, grouped, isManager, blobURL, onReply, onDelete, onComplete, revealed, onReveal, labels }) {
+function MessageRow({ m, meKey, grouped, isManager, blobURL, onReply, onDelete, onComplete, onRowClick, onPollClick, revealed, onReveal, labels }) {
   const isQ = m.kind === 'question'
+  const isPoll = m.kind === 'poll'
   const mine = m.author_key === meKey
+  const bg = isQ ? 'var(--warning-bg)' : isPoll ? 'var(--info-bg)' : 'var(--surface-2)'
+  const bd = isQ ? 'var(--warning-text)' : isPoll ? 'var(--info-text)' : 'var(--border-subtle)'
   return (
-    <div style={{ display: 'flex', gap: 8, padding: '2px 4px', alignItems: 'flex-start' }}>
-      <div style={{ width: 30, flexShrink: 0 }}>
-        {!grouped && <Avatar outline={m.anon} icon={m.author_shape} color={m.anon ? undefined : m.author_color} seed={m.author_key} size={30} title={m.author_name} />}
+    <div style={{ display: 'flex', gap: 7, padding: '1px 4px', alignItems: 'flex-start', cursor: onRowClick ? 'pointer' : 'default' }}
+      onClick={onRowClick ? () => onRowClick(m) : undefined}>
+      <div style={{ width: 26, flexShrink: 0 }}>
+        {!grouped && <Avatar outline={m.anon} icon={m.author_shape} color={m.anon ? undefined : m.author_color} seed={m.author_key} size={26} title={m.author_name} />}
       </div>
       <div style={{ minWidth: 0, flex: 1 }}>
         {!grouped && (
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 2 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 1 }}>
             <span style={{ fontWeight: 600, fontSize: 'var(--fs-small,12px)', color: 'var(--text-primary)' }}>{mine ? labels.me : m.author_name}</span>
             {m.anon && m.real_name && isManager && (revealed
-              ? <em title="숨기기" onClick={onReveal} style={{ cursor: 'pointer', fontStyle: 'normal', fontSize: 'var(--fs-micro,10px)', color: 'var(--info-text)', background: 'var(--info-bg)', padding: '0 5px', borderRadius: 6 }}>{m.real_name}</em>
-              : <button title={labels.revealWho} onClick={onReveal} style={{ border: 'none', background: 'var(--surface-3)', borderRadius: 6, cursor: 'pointer', fontSize: 'var(--fs-micro,10px)', color: 'var(--text-muted)', padding: '0 5px' }}>?</button>)}
+              ? <em title="숨기기" onClick={(e) => { e.stopPropagation(); onReveal() }} style={{ cursor: 'pointer', fontStyle: 'normal', fontSize: 'var(--fs-micro,10px)', color: 'var(--info-text)', background: 'var(--info-bg)', padding: '0 5px', borderRadius: 6 }}>{m.real_name}</em>
+              : <button title={labels.revealWho} onClick={(e) => { e.stopPropagation(); onReveal() }} style={{ border: 'none', background: 'var(--surface-3)', borderRadius: 6, cursor: 'pointer', fontSize: 'var(--fs-micro,10px)', color: 'var(--text-muted)', padding: '0 5px' }}>?</button>)}
             <em style={{ fontStyle: 'normal', fontSize: 'var(--fs-micro,10px)', color: 'var(--text-muted)' }}>{timeLabel(m.created_at)}</em>
           </div>
         )}
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6, group: 'row' }}
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}
           onMouseEnter={(e) => { const a = e.currentTarget.querySelector('.cm-actions'); if (a) a.style.opacity = 1 }}
           onMouseLeave={(e) => { const a = e.currentTarget.querySelector('.cm-actions'); if (a) a.style.opacity = 0 }}>
           <div style={{
-            maxWidth: 560, borderRadius: 10, padding: '7px 11px',
-            background: isQ ? 'var(--warning-bg)' : 'var(--surface-2)',
-            border: isQ ? '1px solid var(--warning-text)' : '1px solid var(--border-subtle)',
-            fontSize: 'var(--fs-body,13px)', color: 'var(--text-primary)',
-          }}>
-            {isQ && <span style={{ display: 'inline-block', fontSize: 'var(--fs-micro,10px)', fontWeight: 700, color: 'var(--warning-text)', marginBottom: 3 }}>질문{m.done ? ' · 완료' : ''}</span>}
+            position: 'relative', maxWidth: 440,
+            // first bubble of a run gets a small tail toward the profile (elog style)
+            borderRadius: grouped ? 12 : '3px 12px 12px 12px',
+            padding: '5px 10px', background: bg, border: `1px solid ${bd}`,
+            fontSize: 'var(--fs-small,12px)', color: 'var(--text-primary)',
+            cursor: isPoll && onPollClick ? 'pointer' : undefined,
+          }}
+            onClick={isPoll && onPollClick ? (e) => { e.stopPropagation(); onPollClick(m.poll_id) } : undefined}>
+            {!grouped && !isPoll && <span aria-hidden style={{ position: 'absolute', left: -5, top: 7, width: 0, height: 0, borderTop: '4px solid transparent', borderBottom: '5px solid transparent', borderRight: `6px solid ${bg}` }} />}
+            {isQ && <span style={{ display: 'inline-block', fontSize: 'var(--fs-micro,10px)', fontWeight: 700, color: 'var(--warning-text)', marginBottom: 2 }}>{labels.question}{m.done ? ' · ' + labels.done : ''}</span>}
+            {isPoll && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 'var(--fs-small,12px)', fontWeight: 600, color: 'var(--info-text)' }}><Icon name="chart" size={14} /> {m.body} <span style={{ fontWeight: 400, color: 'var(--text-muted)', fontSize: 'var(--fs-micro,10px)' }}>· {labels.viewPoll}</span></span>}
             {m.reply_to_id ? (
-              <div style={{ borderLeft: '2px solid var(--border-strong)', paddingLeft: 6, margin: '0 0 4px', fontSize: 'var(--fs-small,12px)', color: 'var(--text-secondary)' }}>
+              <div style={{ borderLeft: '2px solid var(--border-strong)', paddingLeft: 6, margin: '0 0 3px', fontSize: 'var(--fs-tiny,11px)', color: 'var(--text-secondary)' }}>
                 <b>{m.reply_to_author}</b> {String(m.reply_to_body || '').slice(0, 60)}
               </div>
             ) : null}
-            {m.body && <div style={{ lineHeight: 1.5, wordBreak: 'break-word' }} className="cm-md"><ReactMarkdown remarkPlugins={[remarkGfm]}>{mdPrep(m.body)}</ReactMarkdown></div>}
+            {m.body && !isPoll && <div style={{ lineHeight: 1.45, wordBreak: 'break-word' }} className="cm-md"><ReactMarkdown remarkPlugins={[remarkGfm]}>{mdPrep(m.body)}</ReactMarkdown></div>}
             {(m.attachments || []).length > 0 && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: m.body ? 6 : 0 }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: m.body ? 5 : 0 }}>
                 {m.attachments.map((a, k) => <Attachment att={a} key={k} blobURL={blobURL} />)}
               </div>
             )}
           </div>
-          <div className="cm-actions" style={{ display: 'flex', gap: 2, opacity: 0, transition: 'opacity .1s', flexShrink: 0, paddingTop: 4 }}>
-            {onReply && <button title={labels.reply} onClick={() => onReply(m)} style={actS}><Icon name="reply" size={13} /></button>}
-            {isManager && isQ && !m.done && onComplete && <button title={labels.done} onClick={() => onComplete(m)} style={actS}><Icon name="check" size={13} /></button>}
-            {isManager && onDelete && <button title={labels.del} onClick={() => onDelete(m)} style={{ ...actS, color: 'var(--danger-text)' }}><Icon name="trash" size={13} /></button>}
+          <div className="cm-actions" style={{ display: 'flex', gap: 2, opacity: 0, transition: 'opacity .1s', flexShrink: 0, paddingTop: 2 }}>
+            {onReply && <button title={labels.reply} onClick={(e) => { e.stopPropagation(); onReply(m) }} style={actS}><Icon name="reply" size={13} /></button>}
+            {isManager && isQ && !m.done && onComplete && <button title={labels.done} onClick={(e) => { e.stopPropagation(); onComplete(m) }} style={actS}><Icon name="check" size={13} /></button>}
+            {isManager && onDelete && <button title={labels.del} onClick={(e) => { e.stopPropagation(); onDelete(m) }} style={{ ...actS, color: 'var(--danger-text)' }}><Icon name="trash" size={13} /></button>}
           </div>
         </div>
       </div>
@@ -165,11 +175,11 @@ function MessageRow({ m, meKey, grouped, isManager, blobURL, onReply, onDelete, 
 const actS = { border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)', padding: 3, borderRadius: 6, display: 'inline-flex' }
 
 /* ── active poll card (docks to the right of the chat) ── */
-function PollCard({ poll, isManager, onVote, onClose, labels }) {
+function PollCard({ poll, isManager, onVote, onClose, labels, highlight }) {
   const total = poll.options.reduce((s, o) => s + (o.votes || 0), 0)
   const closed = poll.closed
   return (
-    <div style={{ border: '1px solid var(--border-default)', borderRadius: 12, background: 'var(--surface)', padding: 12, boxShadow: '0 1px 2px rgba(0,0,0,.04)' }}>
+    <div style={{ border: `1px solid ${highlight ? 'var(--btn-primary-bg)' : 'var(--border-default)'}`, borderRadius: 12, background: 'var(--surface)', padding: 12, boxShadow: highlight ? '0 0 0 2px var(--info-bg)' : '0 1px 2px rgba(0,0,0,.04)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
         <Icon name="chart" size={15} color="var(--btn-primary-bg)" />
         <span style={{ fontWeight: 600, fontSize: 'var(--fs-small,12px)', flex: 1, minWidth: 0 }}>{poll.title}</span>
@@ -229,6 +239,8 @@ export default function Community({ api, role = 'user', features = {}, labels: l
   const [admin, setAdmin] = useState(null)         // 'names' | 'bots' | null (in manage drawer)
   const [names, setNames] = useState(null)         // { surnames, given }
   const [bots, setBots] = useState([])
+  const [rightOpen, setRightOpen] = useState(false)   // collapsible poll/vote side panel
+  const [activePollId, setActivePollId] = useState(null)
 
   const anonOn = !!anon?.on
   const logRef = useRef(null); const inputRef = useRef(null); const stick = useRef(true); const sending = useRef(false)
@@ -299,8 +311,12 @@ export default function Community({ api, role = 'user', features = {}, labels: l
   async function submitPoll() {
     const opts = (pollForm.options || []).map((s) => s.trim()).filter(Boolean)
     if (!pollForm.title.trim() || !opts.length) return
-    try { await api.createPoll({ title: pollForm.title.trim(), options: opts, deadline: pollForm.deadline || null }); setPollForm(null); setPolls(await api.polls()) }
-    catch (e) { setError(String(e.message || e)) }
+    try {
+      const r = await api.createPoll({ title: pollForm.title.trim(), options: opts, deadline: pollForm.deadline || null })
+      setPollForm(null); setRightOpen(true)
+      if (r && r.id) setActivePollId(r.id)
+      setPolls(await api.polls())
+    } catch (e) { setError(String(e.message || e)) }
   }
 
   // ── @mention autocomplete ──
@@ -311,8 +327,12 @@ export default function Community({ api, role = 'user', features = {}, labels: l
     return (online || []).filter((u) => u.name && !seen.has(u.name) && seen.add(u.name) && u.name.toLowerCase().includes(q)).slice(0, 6)
   }, [mention, online])
   function onTextChange(e) {
-    const v = e.target.value; setText(v)
-    const upto = v.slice(0, e.target.selectionStart)
+    let v = e.target.value
+    // "/질문 " or "/q " at the start toggles question mode (same as the button)
+    const qm = /^\/(질문|q)\s/.exec(v)
+    if (F.questions && qm) { setQMode(true); v = v.slice(qm[0].length) }
+    setText(v)
+    const upto = v.slice(0, e.target.selectionStart != null ? Math.min(e.target.selectionStart, v.length) : v.length)
     const m = /(^|\s)@([A-Za-z0-9_가-힣]*)$/.exec(upto)
     setMention(m ? { q: m[2], idx: 0 } : null)
   }
@@ -342,14 +362,18 @@ export default function Community({ api, role = 'user', features = {}, labels: l
     F.questions && { id: 'qlist', label: L.questionList, icon: 'menu', on: () => goView('questions') },
     F.questions && { id: 'done', label: L.completedList, icon: 'check', on: () => goView('completed') },
     F.anon && { id: 'anon', label: anonOn ? L.anonOff : L.anonOn, icon: 'eye', active: anonOn, on: toggleAnon },
-    F.polls && isManager && { id: 'poll', label: L.poll, icon: 'chart', on: () => { setPollForm({ title: '', options: ['', ''], deadline: '' }); setPlusOpen(false) } },
+    F.polls && isManager && { id: 'poll', label: L.poll, icon: 'chart', on: () => { setPollForm({ title: '', options: ['', ''], deadline: '' }); setRightOpen(true); setPlusOpen(false) } },
   ].filter(Boolean)
 
   const activePolls = polls.filter((p) => !p.closed)
 
   return (
     <div style={{ display: 'flex', gap: 12, height: '100%', minHeight: 0, fontFamily: 'var(--font-sans)' }}>
-      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', border: '1px solid var(--border-default)', borderRadius: 12, background: 'var(--surface)', overflow: 'hidden' }}>
+      <div style={{ flex: 1, minWidth: 0, position: 'relative', display: 'flex', flexDirection: 'column', border: '1px solid var(--border-default)', borderRadius: 12, background: 'var(--surface)', overflow: 'hidden' }}
+        onDragOver={!banned && F.attachments ? (e) => { e.preventDefault(); setDrag(true) } : undefined}
+        onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setDrag(false) }}
+        onDrop={!banned && F.attachments ? (e) => { e.preventDefault(); setDrag(false); if (e.dataTransfer?.files?.length) { if (view !== 'chat') setView('chat'); uploadFiles(e.dataTransfer.files) } } : undefined}>
+        {drag && <div style={{ position: 'absolute', inset: 6, border: '2px dashed var(--btn-primary-bg)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--info-bg)', color: 'var(--info-text)', zIndex: 20, pointerEvents: 'none', fontSize: 'var(--fs-medium,14px)', fontWeight: 600 }}>{L.drop}</div>}
         {/* header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 14px', borderBottom: '1px solid var(--border-subtle)', background: 'var(--surface-2)' }}>
           <Icon name="community" size={17} />
@@ -363,20 +387,18 @@ export default function Community({ api, role = 'user', features = {}, labels: l
               </span>}
         </div>
 
-        {/* message list (also the drop zone) */}
+        {/* message list */}
         <div ref={logRef} onScroll={() => { const el = logRef.current; if (el) stick.current = el.scrollHeight - el.scrollTop - el.clientHeight < 60 }}
-          onDragOver={view === 'chat' && !banned ? (e) => { e.preventDefault(); setDrag(true) } : undefined}
-          onDragLeave={(e) => { if (e.currentTarget === e.target) setDrag(false) }}
-          onDrop={view === 'chat' && !banned ? (e) => { e.preventDefault(); setDrag(false); if (e.dataTransfer?.files?.length) uploadFiles(e.dataTransfer.files) } : undefined}
-          style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 10, position: 'relative', display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {drag && <div style={{ position: 'absolute', inset: 8, border: '2px dashed var(--btn-primary-bg)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--info-bg)', color: 'var(--info-text)', zIndex: 5, pointerEvents: 'none' }}>{L.drop}</div>}
+          style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 10, display: 'flex', flexDirection: 'column', gap: 2 }}>
           {activeList.length === 0 && <div style={{ margin: 'auto', color: 'var(--text-muted)', fontSize: 'var(--fs-small,12px)' }}>{view === 'completed' ? L.emptyDone : view === 'questions' ? L.emptyQ : L.empty}</div>}
           {activeList.map((m, i) => (
             <MessageRow key={m.id} m={m} meKey={meKey} isManager={isManager} blobURL={api.blobURL}
-              grouped={view === 'chat' && i > 0 && activeList[i - 1].author_key === m.author_key && activeList[i - 1].kind !== 'question' && m.kind !== 'question'}
+              grouped={view === 'chat' && i > 0 && activeList[i - 1].author_key === m.author_key && (activeList[i - 1].kind || 'msg') === 'msg' && (m.kind || 'msg') === 'msg'}
               onReply={view === 'chat' ? (mm) => { setReply(mm); inputRef.current?.focus() } : null}
               onDelete={F.moderation && isManager ? deleteMsg : null}
               onComplete={completeQ}
+              onRowClick={view !== 'chat' ? () => setView('chat') : null}
+              onPollClick={(pid) => { setActivePollId(pid); setRightOpen(true) }}
               revealed={revealed.has(m.id)} onReveal={() => setRevealed((s) => { const n = new Set(s); n.has(m.id) ? n.delete(m.id) : n.add(m.id); return n })}
               labels={L} />
           ))}
@@ -436,6 +458,11 @@ export default function Community({ api, role = 'user', features = {}, labels: l
         {/* input bar: [+]  [textarea]  [send] */}
         {!banned && (
           <div style={{ borderTop: '1px solid var(--border-subtle)', padding: 10 }}>
+            {view !== 'chat' && (
+              <div style={{ display: 'flex', marginBottom: 6 }}>
+                <button onClick={() => setView('chat')} style={{ marginLeft: 'auto', ...ghostBtnS }}>{L.back}</button>
+              </div>
+            )}
             {reply && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 'var(--fs-small,12px)', color: 'var(--text-secondary)', marginBottom: 6 }}>
                 <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>↩ <b>{reply.author_name}</b>: {(reply.body || '첨부').slice(0, 60)}</span>
@@ -514,14 +541,18 @@ export default function Community({ api, role = 'user', features = {}, labels: l
         )}
       </div>
 
-      {/* right dock: active polls */}
-      {F.polls && (activePolls.length > 0 || pollForm) && (
-        <div style={{ width: 240, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 10, overflowY: 'auto' }}>
+      {/* right dock: collapsible poll/vote panel (opened by a poll bubble or the + menu) */}
+      {F.polls && (rightOpen || pollForm) && (
+        <div style={{ width: 250, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 10, overflowY: 'auto' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Icon name="chart" size={15} color="var(--btn-primary-bg)" />
+            <span style={{ fontWeight: 600, fontSize: 'var(--fs-small,12px)', flex: 1 }}>{L.poll}</span>
+            <button onClick={() => { setRightOpen(false); setPollForm(null) }} title="닫기" style={actS}><Icon name="close" size={15} /></button>
+          </div>
           {pollForm && (
             <div style={{ border: '1px solid var(--border-default)', borderRadius: 12, background: 'var(--surface)', padding: 12 }}>
               <div style={{ fontWeight: 600, fontSize: 'var(--fs-small,12px)', marginBottom: 8 }}>{L.createPoll}</div>
-              <input value={pollForm.title} onChange={(e) => setPollForm((f) => ({ ...f, title: e.target.value }))} placeholder={L.pollTitle}
-                style={fieldS} />
+              <input value={pollForm.title} onChange={(e) => setPollForm((f) => ({ ...f, title: e.target.value }))} placeholder={L.pollTitle} style={fieldS} />
               {pollForm.options.map((o, i) => (
                 <input key={i} value={o} onChange={(e) => setPollForm((f) => ({ ...f, options: f.options.map((x, j) => j === i ? e.target.value : x) }))}
                   placeholder={`${L.pollOption} ${i + 1}`} style={{ ...fieldS, marginTop: 6 }} />
@@ -529,13 +560,22 @@ export default function Community({ api, role = 'user', features = {}, labels: l
               <button onClick={() => setPollForm((f) => ({ ...f, options: [...f.options, ''] }))} style={{ ...ghostBtnS, marginTop: 6, width: '100%' }}>+ {L.addOption}</button>
               <input type="datetime-local" value={pollForm.deadline} onChange={(e) => setPollForm((f) => ({ ...f, deadline: e.target.value }))} style={{ ...fieldS, marginTop: 6 }} />
               <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-                <button onClick={submitPoll} style={{ flex: 1, border: 'none', borderRadius: 8, padding: '6px 0', background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', cursor: 'pointer', fontSize: 'var(--fs-small,12px)' }}>{L.createPoll}</button>
+                <button onClick={submitPoll} style={{ flex: 1, ...primaryBtnS, padding: '6px 0' }}>{L.createPoll}</button>
                 <button onClick={() => setPollForm(null)} style={ghostBtnS}><Icon name="close" size={14} /></button>
               </div>
             </div>
           )}
-          {activePolls.map((p) => <PollCard key={p.id} poll={p} isManager={isManager} onVote={vote} onClose={closePoll} labels={L} />)}
+          {!pollForm && activePolls.length === 0 && <div style={{ color: 'var(--text-muted)', fontSize: 'var(--fs-small,12px)' }}>{L.noPoll}</div>}
+          {[...activePolls].sort((a, b) => (b.id === activePollId ? 1 : 0) - (a.id === activePollId ? 1 : 0))
+            .map((p) => <PollCard key={p.id} poll={p} highlight={p.id === activePollId} isManager={isManager} onVote={vote} onClose={closePoll} labels={L} />)}
         </div>
+      )}
+      {/* collapsed handle — reopen the panel when polls exist */}
+      {F.polls && !rightOpen && !pollForm && activePolls.length > 0 && (
+        <button onClick={() => setRightOpen(true)} title={L.poll}
+          style={{ alignSelf: 'flex-start', display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 3, padding: '8px 6px', border: '1px solid var(--border-default)', borderRadius: 10, background: 'var(--surface)', cursor: 'pointer', color: 'var(--btn-primary-bg)' }}>
+          <Icon name="chart" size={16} /><span style={{ fontSize: 'var(--fs-micro,10px)', color: 'var(--text-secondary)' }}>{activePolls.length}</span>
+        </button>
       )}
     </div>
   )
