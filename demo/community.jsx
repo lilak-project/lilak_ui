@@ -77,6 +77,11 @@ const realApi = {
   createPoll: (p) => j('POST', '/api/community/polls', p),
   vote: (pid, oid) => j('POST', '/api/community/polls/' + pid + '/vote', { option_id: oid }),
   closePoll: (pid) => j('POST', '/api/community/polls/' + pid + '/close'),
+  anonNames: () => j('GET', '/api/community/anon-names'),
+  saveAnonNames: (n) => j('PUT', '/api/community/anon-names', n),
+  bots: () => j('GET', '/api/community/bots').then((d) => d.bots),
+  saveBot: (b) => j('POST', '/api/community/bots', b),
+  delBot: (name) => j('DELETE', '/api/community/bots/' + name),
 }
 const USE_REAL = new URLSearchParams(location.search).has('real')
 const activeApi = USE_REAL ? realApi : api

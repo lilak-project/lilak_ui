@@ -225,6 +225,10 @@ export default function Community({ api, role = 'user', features = {}, labels: l
   const [revealed, setRevealed] = useState(() => new Set())
   const [polls, setPolls] = useState([])
   const [pollForm, setPollForm] = useState(null)  // { title, options:[] } | null
+  const [mention, setMention] = useState(null)    // { q, idx } | null  — @autocomplete
+  const [admin, setAdmin] = useState(null)         // 'names' | 'bots' | null (in manage drawer)
+  const [names, setNames] = useState(null)         // { surnames, given }
+  const [bots, setBots] = useState([])
 
   const anonOn = !!anon?.on
   const logRef = useRef(null); const inputRef = useRef(null); const stick = useRef(true); const sending = useRef(false)
@@ -299,6 +303,36 @@ export default function Community({ api, role = 'user', features = {}, labels: l
     catch (e) { setError(String(e.message || e)) }
   }
 
+  // ── @mention autocomplete ──
+  const mentionUsers = useMemo(() => {
+    if (!mention) return []
+    const q = (mention.q || '').toLowerCase()
+    const seen = new Set()
+    return (online || []).filter((u) => u.name && !seen.has(u.name) && seen.add(u.name) && u.name.toLowerCase().includes(q)).slice(0, 6)
+  }, [mention, online])
+  function onTextChange(e) {
+    const v = e.target.value; setText(v)
+    const upto = v.slice(0, e.target.selectionStart)
+    const m = /(^|\s)@([A-Za-z0-9_가-힣]*)$/.exec(upto)
+    setMention(m ? { q: m[2], idx: 0 } : null)
+  }
+  function applyMention(name) {
+    setText((v) => v.replace(/(^|\s)@([A-Za-z0-9_가-힣]*)$/, (all, pre) => `${pre}@${name} `))
+    setMention(null); inputRef.current?.focus()
+  }
+
+  // ── manager: anon-name pool + bots (in the chat-manage drawer) ──
+  async function openAdmin(which) {
+    setAdmin(which)
+    try {
+      if (which === 'names' && api.anonNames) setNames(await api.anonNames())
+      if (which === 'bots' && api.bots) setBots(await api.bots())
+    } catch (e) { setError(String(e.message || e)) }
+  }
+  async function saveNames() { try { setNames(await api.saveAnonNames(names)); setAdmin(null) } catch (e) { setError(String(e.message || e)) } }
+  async function saveBot(b) { try { await api.saveBot(b); setBots(await api.bots()) } catch (e) { setError(String(e.message || e)) } }
+  async function delBot(name) { try { await api.delBot(name); setBots(await api.bots()) } catch (e) { setError(String(e.message || e)) } }
+
   // ── the + menu items (filtered by features + role) ──
   const menu = [
     F.attachments && { id: 'attach', label: L.attach, icon: 'attach', on: () => { setPlusOpen(false); document.getElementById('cm-file')?.click() } },
@@ -370,6 +404,32 @@ export default function Community({ api, role = 'user', features = {}, labels: l
                 </span>
               ))}
             </div>
+            {(api.anonNames || api.bots) && (
+              <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                {F.anon && api.anonNames && <button onClick={() => openAdmin(admin === 'names' ? null : 'names')} style={{ ...ghostBtnS, ...(admin === 'names' ? activeGhost : {}) }}>익명 이름 목록</button>}
+                {api.bots && <button onClick={() => openAdmin(admin === 'bots' ? null : 'bots')} style={{ ...ghostBtnS, ...(admin === 'bots' ? activeGhost : {}) }}>봇 관리</button>}
+              </div>
+            )}
+            {admin === 'names' && names && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 8, marginTop: 8 }}>
+                <div><div style={lblS}>성씨 ({names.surnames.length})</div><textarea value={names.surnames.join(' ')} onChange={(e) => setNames((n) => ({ ...n, surnames: e.target.value.split(/[\s,]+/).filter(Boolean) }))} rows={3} style={taS} /></div>
+                <div><div style={lblS}>이름 ({names.given.length})</div><textarea value={names.given.join(' ')} onChange={(e) => setNames((n) => ({ ...n, given: e.target.value.split(/[\s,]+/).filter(Boolean) }))} rows={3} style={taS} /></div>
+                <div style={{ gridColumn: '1 / -1' }}><button onClick={saveNames} style={primaryBtnS}>저장 · {names.surnames.length}×{names.given.length} 조합</button></div>
+              </div>
+            )}
+            {admin === 'bots' && (
+              <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {bots.map((b) => (
+                  <div key={b.name} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 'var(--fs-small,12px)' }}>
+                    <Avatar icon="robot" color="#8b5cf6" seed={b.name} size={20} /> <b>@{b.name}</b>
+                    <span style={{ color: 'var(--text-muted)' }}>{b.provider}{b.model ? ` · ${b.model}` : ''}</span>
+                    <button onClick={() => saveBot({ ...b, enabled: !b.enabled })} style={{ ...ghostBtnS, marginLeft: 'auto' }}>{b.enabled ? 'on' : 'off'}</button>
+                    <button onClick={() => delBot(b.name)} style={{ ...actS, color: 'var(--danger-text)' }}><Icon name="trash" size={13} /></button>
+                  </div>
+                ))}
+                <BotAdd onSave={saveBot} />
+              </div>
+            )}
           </div>
         )}
 
@@ -396,7 +456,7 @@ export default function Community({ api, role = 'user', features = {}, labels: l
                 <Avatar outline icon={anon.shape} seed={anon.name} size={18} /> {anon.name} · {L.anonHint}
               </div>
             )}
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, position: 'relative' }}>
               {/* + button + upward popup menu */}
               <div style={{ position: 'relative', flexShrink: 0 }}>
                 {plusOpen && (
@@ -418,10 +478,29 @@ export default function Community({ api, role = 'user', features = {}, labels: l
                 </button>
               </div>
               <input id="cm-file" type="file" multiple hidden onChange={(e) => { uploadFiles(e.target.files); e.target.value = '' }} />
+              {/* @mention autocomplete */}
+              {F.mentions && mention && mentionUsers.length > 0 && (
+                <div style={{ position: 'absolute', bottom: 'calc(100% + 6px)', left: 52, zIndex: 41, minWidth: 180, background: 'var(--surface)', border: '1px solid var(--border-default)', borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,.18)', padding: 4 }}>
+                  {mentionUsers.map((u, i) => (
+                    <button key={u.key} onMouseDown={(e) => { e.preventDefault(); applyMention(u.name) }} onMouseEnter={() => setMention((m) => ({ ...m, idx: i }))}
+                      style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '5px 8px', borderRadius: 7, border: 'none', cursor: 'pointer', textAlign: 'left', fontSize: 'var(--fs-small,12px)', background: i === mention.idx ? 'var(--info-bg)' : 'transparent', color: i === mention.idx ? 'var(--info-text)' : 'var(--text-primary)' }}>
+                      <Avatar icon={u.shape} color={u.color} seed={u.key} size={18} /> {u.name}
+                    </button>
+                  ))}
+                </div>
+              )}
               <textarea ref={inputRef} rows={1} value={text}
-                onChange={(e) => setText(e.target.value)}
+                onChange={onTextChange}
                 onPaste={(e) => { const f = Array.from(e.clipboardData?.files || []); if (f.length) { e.preventDefault(); uploadFiles(f) } }}
-                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && e.keyCode !== 229) { e.preventDefault(); doSend() } }}
+                onKeyDown={(e) => {
+                  if (F.mentions && mention && mentionUsers.length) {
+                    if (e.key === 'ArrowDown') { e.preventDefault(); setMention((m) => ({ ...m, idx: (m.idx + 1) % mentionUsers.length })); return }
+                    if (e.key === 'ArrowUp') { e.preventDefault(); setMention((m) => ({ ...m, idx: (m.idx - 1 + mentionUsers.length) % mentionUsers.length })); return }
+                    if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); applyMention(mentionUsers[mention.idx].name); return }
+                    if (e.key === 'Escape') { e.preventDefault(); setMention(null); return }
+                  }
+                  if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && e.keyCode !== 229) { e.preventDefault(); doSend() }
+                }}
                 placeholder={qMode ? '질문을 입력하고 전송하세요…' : L.placeholder}
                 style={{ flex: 1, resize: 'none', maxHeight: 120, minHeight: 36, padding: '8px 11px', borderRadius: 10, fontFamily: 'inherit', fontSize: 'var(--fs-body,13px)', lineHeight: 1.4, outline: 'none', background: 'var(--input-bg,var(--surface))', color: 'var(--text-primary)',
                   border: qMode ? '2px solid var(--warning-text)' : '1px solid var(--border-default)' }} />
@@ -463,4 +542,23 @@ export default function Community({ api, role = 'user', features = {}, labels: l
 }
 
 const ghostBtnS = { border: '1px solid var(--border-default)', background: 'transparent', borderRadius: 8, padding: '4px 10px', cursor: 'pointer', fontSize: 'var(--fs-small,12px)', color: 'var(--text-secondary)' }
+const activeGhost = { background: 'var(--info-bg)', color: 'var(--info-text)', borderColor: 'var(--info-text)' }
 const fieldS = { width: '100%', boxSizing: 'border-box', padding: '6px 9px', borderRadius: 8, border: '1px solid var(--border-default)', background: 'var(--input-bg,var(--surface))', color: 'var(--text-primary)', fontSize: 'var(--fs-small,12px)', outline: 'none' }
+const taS = { ...fieldS, resize: 'vertical', fontFamily: 'inherit' }
+const lblS = { fontSize: 'var(--fs-micro,10px)', color: 'var(--text-muted)', marginBottom: 3 }
+const primaryBtnS = { border: 'none', borderRadius: 8, padding: '6px 12px', background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', cursor: 'pointer', fontSize: 'var(--fs-small,12px)' }
+
+function BotAdd({ onSave }) {
+  const [f, setF] = useState({ name: '', provider: 'echo', model: '', api_key: '', system: '' })
+  return (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center', paddingTop: 6, borderTop: '1px solid var(--border-subtle)' }}>
+      <input value={f.name} onChange={(e) => setF((s) => ({ ...s, name: e.target.value }))} placeholder="봇 이름 (@)" style={{ ...fieldS, width: 110 }} />
+      <select value={f.provider} onChange={(e) => setF((s) => ({ ...s, provider: e.target.value }))} style={{ ...fieldS, width: 110 }}>
+        <option value="echo">echo</option><option value="openai">openai</option><option value="anthropic">anthropic</option>
+      </select>
+      <input value={f.model} onChange={(e) => setF((s) => ({ ...s, model: e.target.value }))} placeholder="model" style={{ ...fieldS, width: 130 }} />
+      <input value={f.api_key} onChange={(e) => setF((s) => ({ ...s, api_key: e.target.value }))} placeholder="api key" type="password" style={{ ...fieldS, width: 120 }} />
+      <button onClick={() => { if (f.name.trim()) { onSave({ ...f, enabled: 1 }); setF({ name: '', provider: 'echo', model: '', api_key: '', system: '' }) } }} style={primaryBtnS}>추가</button>
+    </div>
+  )
+}
