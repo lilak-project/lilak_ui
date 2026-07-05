@@ -52,20 +52,49 @@ const api = {
   async closePoll(pid) { const p = store.polls.find((x) => x.id === pid); if (p) p.closed = true },
 }
 
+// ── real backend adapter (scripts/templates/community.py) — ?real to use it ──
+const BASE = 'http://localhost:8188'
+async function j(method, path, body) {
+  const res = await fetch(BASE + path, { method, headers: body ? { 'Content-Type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined })
+  if (res.status === 204) return null
+  if (!res.ok) throw new Error(res.status + ' ' + await res.text())
+  return res.json()
+}
+const realApi = {
+  poll: () => j('GET', '/api/community/messages'),
+  send: (p) => j('POST', '/api/community/messages', p),
+  upload: async (fd) => (await fetch(BASE + '/api/community/upload', { method: 'POST', body: fd })).json(),
+  blobURL: (url) => Promise.resolve(/^https?:/.test(url) ? url : BASE + url),
+  del: (id) => j('DELETE', '/api/community/messages/' + id),
+  clearAll: () => j('POST', '/api/community/clear'),
+  users: () => j('GET', '/api/community/users').then((d) => d.users),
+  ban: (k, n, b) => j('POST', '/api/community/ban', { user_key: k, name: n, banned: b }),
+  questions: () => j('GET', '/api/community/questions').then((d) => d.questions),
+  completed: () => j('GET', '/api/community/completed').then((d) => d.questions),
+  complete: (id) => j('POST', '/api/community/complete/' + id),
+  anonIdentity: () => j('GET', '/api/community/anon-identity'),
+  polls: () => j('GET', '/api/community/polls').then((d) => d.polls),
+  createPoll: (p) => j('POST', '/api/community/polls', p),
+  vote: (pid, oid) => j('POST', '/api/community/polls/' + pid + '/vote', { option_id: oid }),
+  closePoll: (pid) => j('POST', '/api/community/polls/' + pid + '/close'),
+}
+const USE_REAL = new URLSearchParams(location.search).has('real')
+const activeApi = USE_REAL ? realApi : api
+
 function Harness() {
   const [role, setRole] = useState('manager')
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', padding: 16, boxSizing: 'border-box', gap: 10, background: 'var(--app-bg)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <strong>Community demo</strong>
-        <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>mock backend · features all on</span>
+        <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>{USE_REAL ? 'REAL backend (community.py · SQLite)' : 'mock backend'} · features all on</span>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
           <Button size="sm" variant={role === 'manager' ? 'primary' : 'secondary'} onClick={() => setRole('manager')}>manager</Button>
           <Button size="sm" variant={role === 'user' ? 'primary' : 'secondary'} onClick={() => setRole('user')}>user</Button>
         </div>
       </div>
       <div style={{ flex: 1, minHeight: 0 }}>
-        <Community api={api} role={role} onOpenFiles={() => alert('→ files 탭으로 이동 (서비스가 제공)')}
+        <Community api={activeApi} role={role} onOpenFiles={() => alert('→ files 탭으로 이동 (서비스가 제공)')}
           features={{ attachments: true, questions: true, anon: true, polls: true, mentions: true, moderation: true }} />
       </div>
     </div>
