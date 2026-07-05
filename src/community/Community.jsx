@@ -60,12 +60,25 @@ const DEFAULT_LABELS = {
   pollTitle: '투표 제목', pollOption: '항목', addOption: '항목 추가', createPoll: '투표 만들기',
   vote: '투표', closePoll: '완료', pollClosed: '종료됨', deadline: '마감',
   viewPoll: '투표 보기', noPoll: '진행 중인 투표가 없습니다.',
+  closeAfter: '몇 분 후 종료', minutes: '분 후', orDeadline: '또는 마감 시각',
   anonHint: '익명으로 작성 중 (관리자만 실명 확인)', revealWho: '누구인지 보기 (관리자)',
 }
 
+const pad2 = (n) => String(n).padStart(2, '0')
+// local "YYYY-MM-DDTHH:MM:SS" (matches the backend's naive local timestamps)
+const localIso = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`
 const isImg = (t, name) => /^image\//.test(t || '') || /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(name || '')
 const fmtSize = (n) => (n > 1e6 ? (n / 1e6).toFixed(1) + 'MB' : n > 1e3 ? Math.round(n / 1e3) + 'KB' : (n || 0) + 'B')
 const timeLabel = (iso) => { try { return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) } catch { return '' } }
+
+// react-markdown wraps text in <p> (1em top/bottom margin) — that's the "extra
+// whitespace" inside a bubble. Render paragraphs margin-free so the bubble hugs
+// the text (nptoy-tight); keep a small gap only between multiple paragraphs.
+const CM_MD = {
+  p: (props) => <p style={{ margin: 0 }} {...props} />,
+  ul: (props) => <ul style={{ margin: '2px 0', paddingLeft: 18 }} {...props} />,
+  ol: (props) => <ol style={{ margin: '2px 0', paddingLeft: 18 }} {...props} />,
+}
 
 // #123 / @user → light markdown emphasis; keep line breaks.
 function mdPrep(text) {
@@ -142,8 +155,8 @@ function MessageRow({ m, meKey, grouped, isManager, blobURL, onReply, onDelete, 
             position: 'relative', maxWidth: 440,
             // first bubble of a run gets a small tail toward the profile (elog style)
             borderRadius: grouped ? 12 : '3px 12px 12px 12px',
-            padding: '5px 10px', background: bg, border: `1px solid ${bd}`,
-            fontSize: 'var(--fs-small,12px)', color: 'var(--text-primary)',
+            padding: '6px 11px', background: bg, border: `1px solid ${bd}`,
+            fontSize: 'var(--fs-body,13px)', color: 'var(--text-primary)',
             cursor: isPoll && onPollClick ? 'pointer' : undefined,
           }}
             onClick={isPoll && onPollClick ? (e) => { e.stopPropagation(); onPollClick(m.poll_id) } : undefined}>
@@ -155,7 +168,7 @@ function MessageRow({ m, meKey, grouped, isManager, blobURL, onReply, onDelete, 
                 <b>{m.reply_to_author}</b> {String(m.reply_to_body || '').slice(0, 60)}
               </div>
             ) : null}
-            {m.body && !isPoll && <div style={{ lineHeight: 1.45, wordBreak: 'break-word' }} className="cm-md"><ReactMarkdown remarkPlugins={[remarkGfm]}>{mdPrep(m.body)}</ReactMarkdown></div>}
+            {m.body && !isPoll && <div style={{ lineHeight: 1.4, wordBreak: 'break-word' }}><ReactMarkdown remarkPlugins={[remarkGfm]} components={CM_MD}>{mdPrep(m.body)}</ReactMarkdown></div>}
             {(m.attachments || []).length > 0 && (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: m.body ? 5 : 0 }}>
                 {m.attachments.map((a, k) => <Attachment att={a} key={k} blobURL={blobURL} />)}
@@ -311,8 +324,12 @@ export default function Community({ api, role = 'user', features = {}, labels: l
   async function submitPoll() {
     const opts = (pollForm.options || []).map((s) => s.trim()).filter(Boolean)
     if (!pollForm.title.trim() || !opts.length) return
+    // "N minutes from now" wins over an explicit deadline; format as local ISO (no TZ)
+    let deadline = pollForm.deadline || null
+    const mins = Number(pollForm.minutes)
+    if (mins > 0) { const d = new Date(Date.now() + mins * 60000); deadline = localIso(d) }
     try {
-      const r = await api.createPoll({ title: pollForm.title.trim(), options: opts, deadline: pollForm.deadline || null })
+      const r = await api.createPoll({ title: pollForm.title.trim(), options: opts, deadline })
       setPollForm(null); setRightOpen(true)
       if (r && r.id) setActivePollId(r.id)
       setPolls(await api.polls())
@@ -362,7 +379,7 @@ export default function Community({ api, role = 'user', features = {}, labels: l
     F.questions && { id: 'qlist', label: L.questionList, icon: 'menu', on: () => goView('questions') },
     F.questions && { id: 'done', label: L.completedList, icon: 'check', on: () => goView('completed') },
     F.anon && { id: 'anon', label: anonOn ? L.anonOff : L.anonOn, icon: 'eye', active: anonOn, on: toggleAnon },
-    F.polls && isManager && { id: 'poll', label: L.poll, icon: 'chart', on: () => { setPollForm({ title: '', options: ['', ''], deadline: '' }); setRightOpen(true); setPlusOpen(false) } },
+    F.polls && isManager && { id: 'poll', label: L.poll, icon: 'chart', on: () => { setPollForm({ title: '', options: ['', ''], deadline: '', minutes: '' }); setRightOpen(true); setPlusOpen(false) } },
   ].filter(Boolean)
 
   const activePolls = polls.filter((p) => !p.closed)
@@ -558,7 +575,19 @@ export default function Community({ api, role = 'user', features = {}, labels: l
                   placeholder={`${L.pollOption} ${i + 1}`} style={{ ...fieldS, marginTop: 6 }} />
               ))}
               <button onClick={() => setPollForm((f) => ({ ...f, options: [...f.options, ''] }))} style={{ ...ghostBtnS, marginTop: 6, width: '100%' }}>+ {L.addOption}</button>
-              <input type="datetime-local" value={pollForm.deadline} onChange={(e) => setPollForm((f) => ({ ...f, deadline: e.target.value }))} style={{ ...fieldS, marginTop: 6 }} />
+              {/* close after N minutes (overrides the deadline below) */}
+              <div style={{ marginTop: 8, fontSize: 'var(--fs-tiny,11px)', color: 'var(--text-muted)', marginBottom: 3 }}>{L.closeAfter}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <input type="number" min="1" value={pollForm.minutes} placeholder="분"
+                  onChange={(e) => setPollForm((f) => ({ ...f, minutes: e.target.value }))} style={{ ...fieldS, width: 70 }} />
+                <span style={{ fontSize: 'var(--fs-tiny,11px)', color: 'var(--text-muted)' }}>{L.minutes}</span>
+                {[5, 10, 30, 60].map((mm) => (
+                  <button key={mm} onClick={() => setPollForm((f) => ({ ...f, minutes: String(mm) }))}
+                    style={{ ...ghostBtnS, padding: '3px 8px', ...(String(mm) === pollForm.minutes ? activeGhost : {}) }}>{mm}</button>
+                ))}
+              </div>
+              <div style={{ marginTop: 8, fontSize: 'var(--fs-tiny,11px)', color: 'var(--text-muted)', marginBottom: 3 }}>{L.orDeadline}</div>
+              <input type="datetime-local" value={pollForm.deadline} onChange={(e) => setPollForm((f) => ({ ...f, deadline: e.target.value, minutes: '' }))} style={fieldS} />
               <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
                 <button onClick={submitPoll} style={{ flex: 1, ...primaryBtnS, padding: '6px 0' }}>{L.createPoll}</button>
                 <button onClick={() => setPollForm(null)} style={ghostBtnS}><Icon name="close" size={14} /></button>
