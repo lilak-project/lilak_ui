@@ -202,7 +202,7 @@ function AppShellInner({
 
   useShortcut('[', () => moveTab(-1), [moveTab], 'prev tab')
   useShortcut(']', () => moveTab(1), [moveTab], 'next tab')
-  useShortcut('/', () => setBarOpen((o) => { if (!o) setBarLead('/'); return !o }), [], 'command bar')
+  useShortcut('/', () => { if (commandBar) setBarOpen((o) => { if (!o) setBarLead('/'); return !o }) }, [commandBar], 'command bar')
   useShortcut('\\', () => setDrawerOpen((o) => !o), [], 'system panel')
   useShortcut('?', () => setShortcutsOpen((s) => !s), [], 'shortcuts help')
 
