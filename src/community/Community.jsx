@@ -58,6 +58,7 @@ const DEFAULT_LABELS = {
   listMode: '목록', spatialMode: '광장', spatialHint: '메시지가 광장에 떠오릅니다 · 마우스를 올리면 프로필',
   plazaManage: '광장 관리', plazaLifetime: '말풍선 유지 시간(초, 0=계속)', plazaMax: '최대 말풍선 수',
   plazaPerAccount: '계정당 표시 수', plazaShowNames: '이름 표시', plazaReplay: '다시 재생', banAll: '전체 이용제한', unbanAll: '전체 해제',
+  plazaClear: '화면 비우기', plazaDragHint: '프로필을 끌어 옮기기',
   question: '질문', questionList: '질문 목록', completedList: '완료 목록',
   anonOn: '익명으로 전환', anonOff: '익명 끄기', poll: '설문 / 투표',
   clearAll: '채팅 전체 삭제', confirmClear: '정말 전체 삭제?', ban: '이용제한', unban: '해제',
@@ -95,7 +96,7 @@ function mdPrep(text) {
 }
 
 /* ── one attachment: inline image (blob-fetched so the token travels) or a file chip ── */
-function Attachment({ att, blobURL }) {
+function Attachment({ att, blobURL, imgMax = 240 }) {
   const [src, setSrc] = useState('')
   const image = isImg(att.type, att.name)
   useEffect(() => {
@@ -118,8 +119,8 @@ function Attachment({ att, blobURL }) {
   if (image) {
     return src
       ? <img src={src} alt={att.name} onClick={download} title={att.name}
-          style={{ maxWidth: 240, maxHeight: 260, width: 'auto', height: 'auto', objectFit: 'contain', borderRadius: 8, cursor: 'pointer', display: 'block', border: '1px solid var(--border-subtle)' }} />
-      : <div style={{ ...chipS, opacity: 0.6 }}>🖼 {att.name}</div>
+          style={{ maxWidth: imgMax, maxHeight: 260, width: 'auto', height: 'auto', objectFit: 'contain', borderRadius: 8, cursor: 'pointer', display: 'block', border: '1px solid var(--border-subtle)' }} />
+      : <div style={{ ...chipS, opacity: 0.6 }}><Icon name="image" size={14} /> {att.name}</div>
   }
   return (
     <button onClick={download} title={`${att.name} · ${fmtSize(att.size)}`} style={chipBtnS}>
@@ -174,7 +175,6 @@ function MessageRow({ m, meKey, grouped, isManager, blobURL, onReply, onEdit, on
             cursor: isPoll && onPollClick ? 'pointer' : undefined,
           }}
             onClick={isPoll && onPollClick ? (e) => { e.stopPropagation(); onPollClick(m.poll_id) } : undefined}>
-            {!grouped && !isPoll && <span aria-hidden style={{ position: 'absolute', left: -5, top: 7, width: 0, height: 0, borderTop: '4px solid transparent', borderBottom: '5px solid transparent', borderRight: `6px solid ${bg}` }} />}
             {isQ && <span style={{ display: 'inline-block', fontSize: 'var(--fs-micro,10px)', fontWeight: 700, color: 'var(--warning-text)', marginBottom: 2 }}>{labels.question}{m.done ? ' · ' + labels.done : ''}</span>}
             {isPoll && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 'var(--fs-small,12px)', fontWeight: 600, color: 'var(--info-text)' }}><Icon name="chart" size={14} /> {m.body} <span style={{ fontWeight: 400, color: 'var(--text-muted)', fontSize: 'var(--fs-micro,10px)' }}>· {labels.viewPoll}</span></span>}
             {m.reply_to_id ? (
@@ -307,7 +307,8 @@ export default function Community({ api, role = 'user', features = {}, labels: l
   const [names, setNames] = useState(null)         // { surnames, given }
   const [nameDraft, setNameDraft] = useState({ surnames: '', given: '' })  // raw text (keeps spaces!)
   const [bots, setBots] = useState([])
-  const [plaza, setPlaza] = useState({ lifetime: 0, max: 30, per_account: 3, show_names: true })
+  const [plaza, setPlaza] = useState({ lifetime: 30, max: 30, per_account: 3, show_names: true })
+  const [clearScreen, setClearScreen] = useState(0)   // bump → 광장 clears on-screen bubbles
   const [activePollId, setActivePollId] = useState(null)
   const [showClosed, setShowClosed] = useState(false)  // reveal completed (closed) polls
 
@@ -475,7 +476,7 @@ export default function Community({ api, role = 'user', features = {}, labels: l
     F.questions && { id: 'completed', label: L.completedList, icon: 'check' },
     F.attachments && { id: 'files', label: L.attachList, icon: 'attach' },
     F.moderation && isManager && { id: 'manage', label: L.chatManage, icon: 'gear' },
-    F.moderation && isManager && { id: 'plaza', label: L.plazaManage, icon: 'map' },
+    F.moderation && isManager && { id: 'plaza', label: L.plazaManage, icon: 'cheers' },
   ].filter(Boolean)
 
   const activePolls = polls.filter((p) => !p.closed)
@@ -510,7 +511,7 @@ export default function Community({ api, role = 'user', features = {}, labels: l
 
         {/* message area: list (scrolling rows) or spatial (floating canvas) */}
         {mode === 'spatial' ? (
-          <SpatialView messages={messages} meKey={meKey} blobURL={api.blobURL} labels={L} config={plaza} />
+          <SpatialView messages={messages} meKey={meKey} blobURL={api.blobURL} labels={L} config={plaza} clearSignal={clearScreen} />
         ) : (
           <div ref={logRef} onScroll={() => { const el = logRef.current; if (el) stick.current = el.scrollHeight - el.scrollTop - el.clientHeight < 60 }}
             style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 10, display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -544,8 +545,10 @@ export default function Community({ api, role = 'user', features = {}, labels: l
             {pending.length > 0 && (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 6 }}>
                 {pending.map((a, k) => (
-                  <span key={k} style={chipS}>{isImg(a.type, a.name) ? '🖼' : '📎'} {a.name}
-                    <button onClick={() => setPending((p) => p.filter((_, j) => j !== k))} style={{ ...actS, padding: 0 }}><Icon name="close" size={12} /></button>
+                  <span key={k} style={{ ...chipS, maxWidth: '100%', minWidth: 0 }}>
+                    <Icon name={isImg(a.type, a.name) ? 'image' : 'file'} size={14} />
+                    <span style={{ minWidth: 0, maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</span>
+                    <button onClick={() => setPending((p) => p.filter((_, j) => j !== k))} style={{ ...actS, padding: 0, flexShrink: 0 }}><Icon name="close" size={12} /></button>
                   </span>
                 ))}
               </div>
@@ -749,8 +752,8 @@ export default function Community({ api, role = 'user', features = {}, labels: l
 
             {/* ── 광장(plaza) 관리 (manager) ── */}
             {panel === 'plaza' && isManager && <>
-              <button onClick={clearAll} style={{ ...ghostBtnS, alignSelf: 'flex-start', color: confirmClear ? 'var(--danger-text)' : 'var(--text-secondary)', borderColor: confirmClear ? 'var(--danger-text)' : 'var(--border-default)' }}>
-                {confirmClear ? L.confirmClear : L.clearAll}
+              <button onClick={() => setClearScreen((n) => n + 1)} style={{ ...ghostBtnS, alignSelf: 'flex-start' }}>
+                <Icon name="eye-off" size={13} /> {L.plazaClear}
               </button>
               <label style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                 <span style={lblS}>{L.plazaLifetime}</span>
@@ -825,13 +828,18 @@ const STAGGER_MS = 110          // ≥0.1s between two bubbles appearing
 const SPATIAL_CSS = `
 @keyframes cmProfIn { from { opacity:0; transform: scale(.5) } to { opacity:1; transform: scale(1) } }
 @keyframes cmGrow { 0% { opacity:0; transform: scale(.18) } 70% { opacity:1; transform: scale(1.06) } 100% { transform: scale(1) } }
-.cm-plaza-prof { animation: cmProfIn .16s ease both; }
+.cm-plaza-prof { animation: cmProfIn .16s ease both; cursor: grab; }
+.cm-plaza-prof:active { cursor: grabbing; }
 .cm-plaza-bubble { animation: cmGrow .25s cubic-bezier(.34,1.4,.5,1) .08s both; transform-origin: left center; }
+.cm-plaza-info { opacity: 0; transition: opacity .15s; pointer-events: none; }
+.cm-plaza-unit:hover .cm-plaza-info { opacity: 1; }
 .cm-plaza-unit:hover { z-index: 8; }
 `
 function hashInt(s) { let x = 2166136261 >>> 0; for (let i = 0; i < s.length; i++) { x ^= s.charCodeAt(i); x = Math.imul(x, 16777619) >>> 0 } return x }
-// stable id-hashed cell centers (non-overlapping grid, small organic jitter)
-function placeSpatial(list, w, h) {
+// id+salt-hashed cell centers (non-overlapping grid, organic jitter). The salt
+// changes each 다시 재생, so positions are freshly random per replay while staying
+// stable as new messages arrive within a session.
+function placeSpatial(list, w, h, salt) {
   if (!list.length || w < 60 || h < 60) return new Map()
   const pad = 44
   const cols = Math.max(2, Math.floor((w - pad) / 220))
@@ -841,13 +849,13 @@ function placeSpatial(list, w, h) {
   const recent = list.slice(-cap)
   const used = new Set(); const out = new Map()
   recent.forEach((m) => {
-    let cell = hashInt(String(m.id)) % cap, tries = 0
+    let cell = hashInt(salt + ':' + m.id) % cap, tries = 0
     while (used.has(cell) && tries < cap) { cell = (cell + 1) % cap; tries++ }
     used.add(cell)
     const col = cell % cols, row = Math.floor(cell / cols)
-    const s2 = hashInt('j' + m.id)
-    const jx = ((s2 % 100) / 100 - 0.5) * cw * 0.22
-    const jy = (((s2 >> 7) % 100) / 100 - 0.5) * ch * 0.22
+    const s2 = hashInt(salt + 'j' + m.id)
+    const jx = ((s2 % 100) / 100 - 0.5) * cw * 0.34
+    const jy = (((s2 >> 7) % 100) / 100 - 0.5) * ch * 0.34
     out.set(m.id, { x: pad / 2 + cw * (col + 0.5) + jx, y: pad / 2 + ch * (row + 0.5) + jy })
   })
   return out
@@ -867,13 +875,17 @@ function plazaVisible(messages, cfg) {
   return kept.slice(-Math.max(1, cfg.max || 30))
 }
 
-function SpatialView({ messages, meKey, blobURL, labels, config }) {
-  const cfg = config || { lifetime: 0, max: 30, per_account: 3, show_names: true }
+function SpatialView({ messages, meKey, blobURL, labels, config, clearSignal }) {
+  const cfg = config || { lifetime: 30, max: 30, per_account: 3, show_names: true }
   const ref = useRef(null)
   const [size, setSize] = useState({ w: 800, h: 500 })
   const [revealed, setRevealed] = useState(() => new Set())
+  const [salt, setSalt] = useState(() => Math.random().toString(36).slice(2))   // randomises placement
+  const [dragPos, setDragPos] = useState(() => new Map())    // id → dragged {x,y} override
   const appeared = useRef(new Map())    // id -> appear timestamp (for lifetime fade)
+  const dismissed = useRef(new Set())   // ids hidden by 화면 비우기 (message stays, bubble goes)
   const queue = useRef([])
+  const dragRef = useRef(null)
   const [, tick] = useState(0)
 
   useEffect(() => {
@@ -884,11 +896,11 @@ function SpatialView({ messages, meKey, blobURL, labels, config }) {
 
   const visible = plazaVisible(messages, cfg)
   const ids = visible.map((m) => m.id).join(',')
-  const layout = useMemo(() => placeSpatial(visible, size.w, size.h), [ids, size.w, size.h])
+  const layout = useMemo(() => placeSpatial(visible, size.w, size.h, salt), [ids, size.w, size.h, salt])
 
-  // enqueue any newly-visible bubble that hasn't appeared yet
+  // enqueue any newly-visible bubble that hasn't appeared or been dismissed yet
   useEffect(() => {
-    const known = new Set([...revealed, ...queue.current])
+    const known = new Set([...revealed, ...queue.current, ...dismissed.current])
     for (const m of visible) if (!known.has(m.id)) queue.current.push(m.id)
   }, [ids]) // eslint-disable-line
 
@@ -910,10 +922,32 @@ function SpatialView({ messages, meKey, blobURL, labels, config }) {
     return () => clearInterval(t)
   }, [cfg.lifetime])
 
+  // 화면 비우기: drop every on-screen bubble (the messages themselves stay)
+  useEffect(() => {
+    if (!clearSignal) return
+    setRevealed((cur) => { cur.forEach((id) => dismissed.current.add(id)); return new Set() })
+  }, [clearSignal])
+
   function replay() {
-    queue.current = visible.map((m) => m.id)
+    dismissed.current = new Set()
     appeared.current = new Map()
+    queue.current = visible.map((m) => m.id)
+    setDragPos(new Map())
+    setSalt(Math.random().toString(36).slice(2))    // new random layout
     setRevealed(new Set())
+  }
+
+  // drag a bubble by its profile to reposition it
+  function startDrag(e, id) {
+    e.preventDefault(); e.stopPropagation()
+    const cur = dragPos.get(id) || layout.get(id); if (!cur) return
+    dragRef.current = { id, cx: e.clientX, cy: e.clientY, bx: cur.x, by: cur.y }
+    const move = (ev) => {
+      const d = dragRef.current; if (!d) return
+      setDragPos((mp) => { const n = new Map(mp); n.set(d.id, { x: d.bx + (ev.clientX - d.cx), y: d.by + (ev.clientY - d.cy) }); return n })
+    }
+    const up = () => { dragRef.current = null; window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up) }
+    window.addEventListener('mousemove', move); window.addEventListener('mouseup', up)
   }
 
   const now = Date.now()
@@ -925,27 +959,27 @@ function SpatialView({ messages, meKey, blobURL, labels, config }) {
         <Icon name="refresh" size={13} /> {labels.plazaReplay}
       </button>
       {visible.map((m) => {
-        if (!revealed.has(m.id)) return null
-        const pos = layout.get(m.id); if (!pos) return null
-        // lifetime: fade out after N seconds since it appeared
-        if (cfg.lifetime > 0) {
+        if (!revealed.has(m.id) || dismissed.current.has(m.id)) return null
+        const pos = dragPos.get(m.id) || layout.get(m.id); if (!pos) return null
+        // lifetime: fade out after N seconds since it appeared (not while being dragged)
+        if (cfg.lifetime > 0 && !dragPos.has(m.id)) {
           const age = (now - (appeared.current.get(m.id) || now)) / 1000
           if (age > cfg.lifetime + 0.6) return null
         }
         const age = (now - (appeared.current.get(m.id) || now)) / 1000
-        const expiring = cfg.lifetime > 0 && age > cfg.lifetime
+        const expiring = cfg.lifetime > 0 && !dragPos.has(m.id) && age > cfg.lifetime
         const mine = m.author_key === meKey
         const isQ = m.kind === 'question'
         const emph = /!/.test(m.body || '')     // "!" → a slightly louder bubble
         const body = m.body || ''
         return (
-          <div key={m.id} className="cm-plaza-unit" style={{ position: 'absolute', left: pos.x, top: pos.y, transform: 'translate(-50%,-50%)', display: 'flex', alignItems: 'flex-start', gap: 6, width: 'max-content', maxWidth: 260, opacity: expiring ? 0 : 1, transition: 'opacity .6s ease' }}>
-            <div className="cm-plaza-prof" style={{ flexShrink: 0 }}>
+          <div key={m.id} className="cm-plaza-unit" style={{ position: 'absolute', left: pos.x, top: pos.y, transform: 'translate(-50%,-50%)', display: 'flex', alignItems: 'flex-start', gap: 6, width: 'max-content', maxWidth: 280, opacity: expiring ? 0 : 1, transition: 'opacity .6s ease' }}>
+            <div className="cm-plaza-prof" style={{ flexShrink: 0 }} onMouseDown={(e) => startDrag(e, m.id)} title={labels.plazaDragHint}>
               <Avatar outline={m.anon} icon={m.author_shape} color={m.anon ? undefined : m.author_color} seed={m.author_username || m.author_key} size={26} title={m.author_name} />
             </div>
             <div style={{ minWidth: 0 }}>
               {cfg.show_names && (
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 1 }}>
+                <div className="cm-plaza-info" style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 1 }}>
                   <span style={{ fontWeight: 600, fontSize: 'var(--fs-small,12px)', color: 'var(--text-primary)' }}>{mine ? labels.me : m.author_name}</span>
                   <em style={{ fontStyle: 'normal', fontSize: 'var(--fs-micro,10px)', color: 'var(--text-muted)' }}>{timeLabel(m.created_at)}</em>
                 </div>
@@ -958,7 +992,7 @@ function SpatialView({ messages, meKey, blobURL, labels, config }) {
                 {body && <div><ReactMarkdown remarkPlugins={[remarkGfm]} components={CM_MD}>{mdPrep(body)}</ReactMarkdown></div>}
                 {(m.attachments || []).length > 0 && (
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, maxWidth: '100%', marginTop: body ? 5 : 0 }}>
-                    {m.attachments.map((a, k) => <Attachment att={a} key={k} blobURL={blobURL} />)}
+                    {m.attachments.map((a, k) => <Attachment att={a} key={k} blobURL={blobURL} imgMax={206} />)}
                   </div>
                 )}
               </div>

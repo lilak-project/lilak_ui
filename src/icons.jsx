@@ -26,6 +26,7 @@ import {
   Hexagon, Shapes, Crosshair, Polygon, Pulse, Waveform, ChartLineUp, Circuitry, Graph,
   Camera, Image as ImageIcon,
   ToggleLeft, ToggleRight,
+  Cheers, File as FileIcon,
 } from '@phosphor-icons/react'
 
 const WEIGHTS = ['thin', 'light', 'regular', 'bold', 'fill', 'duotone']
@@ -79,6 +80,7 @@ export const ICONS = {
   download: DownloadSimple, upload: UploadSimple, 'file-download': FileArrowDown,
   filter: Funnel, tagFill: Tag, link: Link, pin: PushPin,
   eye: Eye, 'eye-off': EyeSlash, help: Question, 'question-mark': Question, question: Question,
+  cheers: Cheers, file: FileIcon,
   // tab / nav glyphs
   flask: Flask, experiment: Flask, notebook: Notebook, logs: Notebook,
   images: Images, browse: Images, chats: ChatsCircle, community: ChatsCircle,

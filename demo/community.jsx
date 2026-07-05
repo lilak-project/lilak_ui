@@ -53,7 +53,7 @@ const api = {
   async vote(pid, oid, o) { const p = store.polls.find((x) => x.id === pid); if (p) { if (p.my_vote) { const prev = p.options.find((x) => x.id === p.my_vote); if (prev) prev.votes-- } const opt = p.options.find((x) => x.id === oid); if (opt) opt.votes++; p.my_vote = oid; p._voters = p._voters || {}; p._voters[store.meKey] = { key: store.meKey, option_id: oid, anon: !!(o && o.anonymous), name: o && o.anonymous ? o.anon_name : store.meName, shape: o && o.anonymous ? o.anon_shape : store.meShape, color: o && o.anonymous ? undefined : store.meColor, real_name: o && o.anonymous ? store.meName : undefined } } },
   async closePoll(pid) { const p = store.polls.find((x) => x.id === pid); if (p) p.closed = true },
   async pollResults(pid) { const p = store.polls.find((x) => x.id === pid); if (!p) return { named: true, options: [] }; const vs = Object.values(p._voters || {}); return { named: p.named !== false, options: p.options.map((o) => ({ id: o.id, text: o.text, voters: p.named === false ? [] : vs.filter((v) => v.option_id === o.id) })) } },
-  async plazaConfig() { return store.plaza || (store.plaza = { lifetime: 0, max: 30, per_account: 3, show_names: true }) },
+  async plazaConfig() { return store.plaza || (store.plaza = { lifetime: 30, max: 30, per_account: 3, show_names: true }) },
   async savePlazaConfig(c) { store.plaza = { ...(store.plaza || {}), ...c }; return store.plaza },
 }
 
@@ -87,7 +87,7 @@ const realApi = {
   anonNames: () => j('GET', '/api/community/anon-names'),
   saveAnonNames: (n) => j('PUT', '/api/community/anon-names', n),
   plazaConfig: () => j('GET', '/api/community/plaza-config'),
-  savePlazaConfig: (c) => j('PUT', '/api/community/plaza-config', c),
+  savePlazaConfig: (c) => j('POST', '/api/community/plaza-config', c),
   bots: () => j('GET', '/api/community/bots').then((d) => d.bots),
   saveBot: (b) => j('POST', '/api/community/bots', b),
   delBot: (name) => j('DELETE', '/api/community/bots/' + name),
