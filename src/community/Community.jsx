@@ -873,15 +873,6 @@ const SQUARE_CSS = `
 .cm-plaza-unit:hover .cm-plaza-info { opacity: 1; }
 .cm-plaza-unit:hover { z-index: 8; }
 `
-// grid geometry for the current canvas size
-function gridGeom(w, h) {
-  if (w < 60 || h < 60) return null
-  const pad = 44
-  const cols = Math.max(2, Math.floor((w - pad) / 220))
-  const rows = Math.max(2, Math.floor((h - pad) / 112))
-  return { pad, cols, rows, cap: cols * rows, cw: (w - pad) / cols, ch: (h - pad) / rows }
-}
-
 // apply the room config: keep the last per_account per author, then the last max overall
 function squareVisible(messages, cfg) {
   const list = messages.filter((m) => m.kind !== 'poll')
@@ -907,7 +898,7 @@ function SquareView({ messages, meKey, blobURL, labels, config, clearSignal }) {
   const [positions, setPositions] = useState(() => new Map())   // id → {x,y} (computed from cells)
   const [nonce, setNonce] = useState(0)                         // bump → re-place everything (replay)
   const [dragPos, setDragPos] = useState(() => new Map())        // id → dragged {x,y} override
-  const cellCache = useRef(new Map())   // id → {cell, jx, jy} — PERSISTENT, so a bubble never moves
+  const posCache = useRef(new Map())    // id → {fx, fy} fractional canvas coords — PERSISTENT (never moves)
   const appeared = useRef(new Map())    // id -> appear timestamp (for lifetime fade)
   const dismissed = useRef(new Set())   // ids hidden by 화면 비우기 (message stays, bubble goes)
   const queue = useRef([])
@@ -923,30 +914,39 @@ function SquareView({ messages, meKey, blobURL, labels, config, clearSignal }) {
   const visible = squareVisible(messages, cfg)
   const ids = visible.map((m) => m.id).join(',')
 
-  // Assign positions OUTSIDE render. A cached id keeps its cell (never moves);
-  // a NEW id gets a uniformly-random EMPTY cell (Math.random), or — when every
-  // cell is taken — a random cell (overlap is fine, per the room being busy).
+  // Assign positions OUTSIDE render. A cached id keeps its coords (never moves);
+  // a NEW id is scattered by rejection sampling: try random spots and take the
+  // first that's ≥ minDist from every placed bubble (Poisson-disk-ish) — no grid,
+  // so nothing clumps at fixed points. When the canvas is crowded, take the spot
+  // that's simply the farthest from others (graceful overlap).
   useEffect(() => {
-    const g = gridGeom(size.w, size.h); if (!g) return
-    const cache = cellCache.current
-    const used = new Set()
-    for (const m of visible) { const e = cache.get(m.id); if (e) used.add(e.cell) }
+    const w = size.w, h = size.h
+    if (w < 60 || h < 60) return
+    const cache = posCache.current
+    const minDist = 150 * scale
+    const rx = () => HALF_W + Math.random() * Math.max(1, w - 2 * HALF_W)
+    const ry = () => HALF_H + Math.random() * Math.max(1, h - 2 * HALF_H)
+    const placed = []
+    for (const m of visible) { const e = cache.get(m.id); if (e) placed.push([e.fx * w, e.fy * h]) }
     for (const m of visible) {
       if (cache.has(m.id)) continue
-      const free = []
-      for (let c = 0; c < g.cap; c++) if (!used.has(c)) free.push(c)
-      const cell = free.length ? free[Math.floor(Math.random() * free.length)] : Math.floor(Math.random() * g.cap)
-      cache.set(m.id, { cell, jx: Math.random() - 0.5, jy: Math.random() - 0.5 })
-      used.add(cell)
+      let best = null, bestD = -1
+      for (let k = 0; k < 40; k++) {
+        const x = rx(), y = ry()
+        let d2 = Infinity
+        for (const p of placed) { const dd = (p[0] - x) ** 2 + (p[1] - y) ** 2; if (dd < d2) d2 = dd }
+        const d = Math.sqrt(d2)
+        if (d >= minDist) { best = [x, y]; break }
+        if (d > bestD) { bestD = d; best = [x, y] }
+      }
+      if (!best) best = [rx(), ry()]
+      cache.set(m.id, { fx: best[0] / w, fy: best[1] / h })
+      placed.push(best)
     }
     const out = new Map()
-    const cx = (v) => Math.max(HALF_W, Math.min(size.w - HALF_W, v))   // keep the whole unit on-screen
-    const cy = (v) => Math.max(HALF_H, Math.min(size.h - HALF_H, v))
-    for (const m of visible) {
-      const e = cache.get(m.id); if (!e) continue
-      const col = e.cell % g.cols, row = Math.floor(e.cell / g.cols)
-      out.set(m.id, { x: cx(g.pad / 2 + g.cw * (col + 0.5) + e.jx * g.cw * 0.42), y: cy(g.pad / 2 + g.ch * (row + 0.5) + e.jy * g.ch * 0.42) })
-    }
+    const cx = (v) => Math.max(HALF_W, Math.min(w - HALF_W, v))   // keep the whole unit on-screen
+    const cy = (v) => Math.max(HALF_H, Math.min(h - HALF_H, v))
+    for (const m of visible) { const e = cache.get(m.id); if (!e) continue; out.set(m.id, { x: cx(e.fx * w), y: cy(e.fy * h) }) }
     setPositions(out)
   }, [ids, size.w, size.h, nonce, scale])
 
@@ -983,7 +983,7 @@ function SquareView({ messages, meKey, blobURL, labels, config, clearSignal }) {
   function replay() {
     dismissed.current = new Set()
     appeared.current = new Map()
-    cellCache.current = new Map()                    // forget all cells → re-place at random
+    posCache.current = new Map()                     // forget all coords → re-scatter at random
     queue.current = visible.map((m) => m.id)
     setDragPos(new Map())
     setNonce((n) => n + 1)                           // re-run the placement effect
