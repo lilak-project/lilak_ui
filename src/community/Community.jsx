@@ -38,7 +38,7 @@
  *        body, kind:'msg'|'question', done, reply_to_id, reply_to_author, reply_to_body,
  *        attachments:[att], created_at }
  */
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import Icon from '../icons.jsx'
 import Avatar from '../components/Avatar.jsx'
 import ReactMarkdown from 'react-markdown'
@@ -55,7 +55,7 @@ const DEFAULT_LABELS = {
   edit: '수정', save: '저장', cancel: '취소', edited: '수정됨',
   attach: '첨부파일', attachManage: '첨부파일 관리', chatManage: '채팅창 관리',
   attachList: '첨부 목록', noAttach: '첨부파일이 없습니다.',
-  listMode: '목록', spatialMode: '광장', spatialHint: '메시지가 광장에 떠오릅니다 · 마우스를 올리면 프로필',
+  listMode: '시간순', spatialMode: '광장', spatialHint: '메시지가 광장에 떠오릅니다 · 마우스를 올리면 프로필',
   plazaManage: '광장 관리', plazaLifetime: '말풍선 유지 시간(초, 0=계속)', plazaMax: '최대 말풍선 수',
   plazaPerAccount: '계정당 표시 수', plazaShowNames: '이름 표시', plazaReplay: '다시 재생', banAll: '전체 이용제한', unbanAll: '전체 해제',
   plazaClear: '화면 비우기', plazaDragHint: '프로필을 끌어 옮기기',
@@ -291,7 +291,7 @@ export default function Community({ api, role = 'user', features = {}, labels: l
   const [reply, setReply] = useState(null)
   const [uploading, setUploading] = useState(false)
   const [drag, setDrag] = useState(false)
-  const [mode, setMode] = useState('list')        // list | spatial  (display mode)
+  const [mode, setMode] = useState('list')        // list(시간순) | square(광장)  (display mode)
   const [panel, setPanel] = useState(null)        // right dock: null|poll|questions|completed|files|manage
   const [panelList, setPanelList] = useState([])  // questions/completed rows for the right dock
   const [qMode, setQMode] = useState(false)       // next send goes up as a question
@@ -337,7 +337,8 @@ export default function Community({ api, role = 'user', features = {}, labels: l
   // load room-wide 광장(plaza) display config
   useEffect(() => { if (api.plazaConfig) api.plazaConfig().then((c) => c && setPlaza(c)).catch(() => {}) }, [])
 
-  useEffect(() => { const el = logRef.current; if (el && stick.current && mode === 'list') el.scrollTop = el.scrollHeight }, [messages, mode])
+  // scroll to the newest BEFORE paint so 시간순 opens already at the bottom (no visible jump)
+  useLayoutEffect(() => { const el = logRef.current; if (el && stick.current && mode === 'list') el.scrollTop = el.scrollHeight }, [messages, mode])
 
   // ── entering the community: land the cursor in the chat input, and let a bare
   //    Enter (when not already typing) jump straight to it. ──
@@ -497,9 +498,9 @@ export default function Community({ api, role = 'user', features = {}, labels: l
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 'var(--fs-tiny,11px)', color: 'var(--text-muted)' }}>
             <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--success-text)' }} />{L.online(online.length)}
           </span>
-          {/* display-mode toggle: 목록 ↔ 공간(Spatial) */}
+          {/* display-mode toggle: 시간순(list) ↔ 광장/square-view */}
           <div style={{ display: 'inline-flex', border: '1px solid var(--border-default)', borderRadius: 8, overflow: 'hidden' }}>
-            {[['list', 'menu', L.listMode], ['spatial', 'map', L.spatialMode]].map(([mv, ic, lb]) => (
+            {[['list', 'menu', L.listMode], ['square', 'map', L.spatialMode]].map(([mv, ic, lb]) => (
               <button key={mv} onClick={() => setMode(mv)} title={lb}
                 style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 9px', border: 'none', cursor: 'pointer', fontSize: 'var(--fs-tiny,11px)',
                   background: mode === mv ? 'var(--btn-primary-bg)' : 'transparent', color: mode === mv ? 'var(--btn-primary-text)' : 'var(--text-secondary)' }}>
@@ -509,9 +510,9 @@ export default function Community({ api, role = 'user', features = {}, labels: l
           </div>
         </div>
 
-        {/* message area: list (scrolling rows) or spatial (floating canvas) */}
-        {mode === 'spatial' ? (
-          <SpatialView messages={messages} meKey={meKey} blobURL={api.blobURL} labels={L} config={plaza} clearSignal={clearScreen} />
+        {/* message area: list=시간순 (scrolling rows) or square view=광장 (floating canvas) */}
+        {mode === 'square' ? (
+          <SquareView messages={messages} meKey={meKey} blobURL={api.blobURL} labels={L} config={plaza} clearSignal={clearScreen} />
         ) : (
           <div ref={logRef} onScroll={() => { const el = logRef.current; if (el) stick.current = el.scrollHeight - el.scrollTop - el.clientHeight < 60 }}
             style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 10, display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -819,13 +820,14 @@ function BotAdd({ onSave }) {
   )
 }
 
-/* ── 광장(plaza) mode: messages float in a fixed canvas (no scroll). Bubbles are
-   pinned to a stable cell (id-hashed → no jitter), revealed one-at-a-time on a
-   staggered queue (profile first, then the bubble grows out with an overshoot),
-   and can auto-expire / cap / per-account-limit per the room config. A living
-   광장 rather than a time-ordered feed. ── */
+/* ── 광장 / square view: messages float in a fixed canvas (no scroll). Each bubble
+   is assigned a grid CELL the first time it appears and KEEPS it — new messages
+   never shuffle existing ones (a fresh bubble takes a random empty cell, or
+   overlaps a random cell when the grid is full). Revealed on a staggered queue
+   (profile first, then the bubble grows out), auto-expire / cap / per-account
+   per room config. A living 광장 rather than a time-ordered feed. ── */
 const STAGGER_MS = 110          // ≥0.1s between two bubbles appearing
-const SPATIAL_CSS = `
+const SQUARE_CSS = `
 @keyframes cmProfIn { from { opacity:0; transform: scale(.5) } to { opacity:1; transform: scale(1) } }
 @keyframes cmGrow { 0% { opacity:0; transform: scale(.18) } 70% { opacity:1; transform: scale(1.06) } 100% { transform: scale(1) } }
 .cm-plaza-prof { animation: cmProfIn .16s ease both; cursor: grab; }
@@ -835,34 +837,17 @@ const SPATIAL_CSS = `
 .cm-plaza-unit:hover .cm-plaza-info { opacity: 1; }
 .cm-plaza-unit:hover { z-index: 8; }
 `
-function hashInt(s) { let x = 2166136261 >>> 0; for (let i = 0; i < s.length; i++) { x ^= s.charCodeAt(i); x = Math.imul(x, 16777619) >>> 0 } return x }
-// id+salt-hashed cell centers (non-overlapping grid, organic jitter). The salt
-// changes each 다시 재생, so positions are freshly random per replay while staying
-// stable as new messages arrive within a session.
-function placeSpatial(list, w, h, salt) {
-  if (!list.length || w < 60 || h < 60) return new Map()
+// grid geometry for the current canvas size
+function gridGeom(w, h) {
+  if (w < 60 || h < 60) return null
   const pad = 44
   const cols = Math.max(2, Math.floor((w - pad) / 220))
   const rows = Math.max(2, Math.floor((h - pad) / 112))
-  const cap = cols * rows
-  const cw = (w - pad) / cols, ch = (h - pad) / rows
-  const recent = list.slice(-cap)
-  const used = new Set(); const out = new Map()
-  recent.forEach((m) => {
-    let cell = hashInt(salt + ':' + m.id) % cap, tries = 0
-    while (used.has(cell) && tries < cap) { cell = (cell + 1) % cap; tries++ }
-    used.add(cell)
-    const col = cell % cols, row = Math.floor(cell / cols)
-    const s2 = hashInt(salt + 'j' + m.id)
-    const jx = ((s2 % 100) / 100 - 0.5) * cw * 0.34
-    const jy = (((s2 >> 7) % 100) / 100 - 0.5) * ch * 0.34
-    out.set(m.id, { x: pad / 2 + cw * (col + 0.5) + jx, y: pad / 2 + ch * (row + 0.5) + jy })
-  })
-  return out
+  return { pad, cols, rows, cap: cols * rows, cw: (w - pad) / cols, ch: (h - pad) / rows }
 }
 
 // apply the room config: keep the last per_account per author, then the last max overall
-function plazaVisible(messages, cfg) {
+function squareVisible(messages, cfg) {
   const list = messages.filter((m) => m.kind !== 'poll')
   const perAcc = Math.max(1, cfg.per_account || 3)
   const counts = new Map(); const kept = []
@@ -875,13 +860,15 @@ function plazaVisible(messages, cfg) {
   return kept.slice(-Math.max(1, cfg.max || 30))
 }
 
-function SpatialView({ messages, meKey, blobURL, labels, config, clearSignal }) {
+function SquareView({ messages, meKey, blobURL, labels, config, clearSignal }) {
   const cfg = config || { lifetime: 30, max: 30, per_account: 3, show_names: true }
   const ref = useRef(null)
   const [size, setSize] = useState({ w: 800, h: 500 })
   const [revealed, setRevealed] = useState(() => new Set())
-  const [salt, setSalt] = useState(() => Math.random().toString(36).slice(2))   // randomises placement
-  const [dragPos, setDragPos] = useState(() => new Map())    // id → dragged {x,y} override
+  const [positions, setPositions] = useState(() => new Map())   // id → {x,y} (computed from cells)
+  const [nonce, setNonce] = useState(0)                         // bump → re-place everything (replay)
+  const [dragPos, setDragPos] = useState(() => new Map())        // id → dragged {x,y} override
+  const cellCache = useRef(new Map())   // id → {cell, jx, jy} — PERSISTENT, so a bubble never moves
   const appeared = useRef(new Map())    // id -> appear timestamp (for lifetime fade)
   const dismissed = useRef(new Set())   // ids hidden by 화면 비우기 (message stays, bubble goes)
   const queue = useRef([])
@@ -894,9 +881,33 @@ function SpatialView({ messages, meKey, blobURL, labels, config, clearSignal }) 
     ro.observe(el); return () => ro.disconnect()
   }, [])
 
-  const visible = plazaVisible(messages, cfg)
+  const visible = squareVisible(messages, cfg)
   const ids = visible.map((m) => m.id).join(',')
-  const layout = useMemo(() => placeSpatial(visible, size.w, size.h, salt), [ids, size.w, size.h, salt])
+
+  // Assign positions OUTSIDE render. A cached id keeps its cell (never moves);
+  // a NEW id gets a uniformly-random EMPTY cell (Math.random), or — when every
+  // cell is taken — a random cell (overlap is fine, per the room being busy).
+  useEffect(() => {
+    const g = gridGeom(size.w, size.h); if (!g) return
+    const cache = cellCache.current
+    const used = new Set()
+    for (const m of visible) { const e = cache.get(m.id); if (e) used.add(e.cell) }
+    for (const m of visible) {
+      if (cache.has(m.id)) continue
+      const free = []
+      for (let c = 0; c < g.cap; c++) if (!used.has(c)) free.push(c)
+      const cell = free.length ? free[Math.floor(Math.random() * free.length)] : Math.floor(Math.random() * g.cap)
+      cache.set(m.id, { cell, jx: Math.random() - 0.5, jy: Math.random() - 0.5 })
+      used.add(cell)
+    }
+    const out = new Map()
+    for (const m of visible) {
+      const e = cache.get(m.id); if (!e) continue
+      const col = e.cell % g.cols, row = Math.floor(e.cell / g.cols)
+      out.set(m.id, { x: g.pad / 2 + g.cw * (col + 0.5) + e.jx * g.cw * 0.42, y: g.pad / 2 + g.ch * (row + 0.5) + e.jy * g.ch * 0.42 })
+    }
+    setPositions(out)
+  }, [ids, size.w, size.h, nonce])
 
   // enqueue any newly-visible bubble that hasn't appeared or been dismissed yet
   useEffect(() => {
@@ -931,16 +942,17 @@ function SpatialView({ messages, meKey, blobURL, labels, config, clearSignal }) 
   function replay() {
     dismissed.current = new Set()
     appeared.current = new Map()
+    cellCache.current = new Map()                    // forget all cells → re-place at random
     queue.current = visible.map((m) => m.id)
     setDragPos(new Map())
-    setSalt(Math.random().toString(36).slice(2))    // new random layout
+    setNonce((n) => n + 1)                           // re-run the placement effect
     setRevealed(new Set())
   }
 
   // drag a bubble by its profile to reposition it
   function startDrag(e, id) {
     e.preventDefault(); e.stopPropagation()
-    const cur = dragPos.get(id) || layout.get(id); if (!cur) return
+    const cur = dragPos.get(id) || positions.get(id); if (!cur) return
     dragRef.current = { id, cx: e.clientX, cy: e.clientY, bx: cur.x, by: cur.y }
     const move = (ev) => {
       const d = dragRef.current; if (!d) return
@@ -953,14 +965,14 @@ function SpatialView({ messages, meKey, blobURL, labels, config, clearSignal }) 
   const now = Date.now()
   return (
     <div ref={ref} style={{ flex: 1, minHeight: 0, position: 'relative', overflow: 'hidden', background: 'var(--surface-2)' }}>
-      <style>{SPATIAL_CSS}</style>
+      <style>{SQUARE_CSS}</style>
       {visible.length === 0 && <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: 'var(--fs-small,12px)' }}>{labels.empty}</div>}
       <button onClick={replay} title={labels.plazaReplay} style={{ position: 'absolute', top: 10, right: 12, zIndex: 10, display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 10px', border: '1px solid var(--border-default)', borderRadius: 999, background: 'var(--surface)', cursor: 'pointer', fontSize: 'var(--fs-tiny,11px)', color: 'var(--text-secondary)' }}>
         <Icon name="refresh" size={13} /> {labels.plazaReplay}
       </button>
       {visible.map((m) => {
         if (!revealed.has(m.id) || dismissed.current.has(m.id)) return null
-        const pos = dragPos.get(m.id) || layout.get(m.id); if (!pos) return null
+        const pos = dragPos.get(m.id) || positions.get(m.id); if (!pos) return null
         // lifetime: fade out after N seconds since it appeared (not while being dragged)
         if (cfg.lifetime > 0 && !dragPos.has(m.id)) {
           const age = (now - (appeared.current.get(m.id) || now)) / 1000
