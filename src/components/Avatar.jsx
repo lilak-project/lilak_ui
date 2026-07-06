@@ -103,9 +103,26 @@ export function avatarFor(seed) {
   }
 }
 
-export default function Avatar({ icon, color, seed, size = 36, weight = 'fill', title, style, ...rest }) {
+export default function Avatar({ icon, color, seed, size = 36, weight = 'fill', title, style, outline = false, ...rest }) {
   const det = avatarFor(seed)
   const Cmp = ICONS[icon] || AVATAR_ICON_MAP[icon] || ICONS[det.profile_shape] || AVATAR_ICON_MAP[det.profile_shape]
+  // outline = a ghost/anonymous profile: no fill, just a bordered circle + line-colour icon.
+  if (outline) {
+    const line = 'var(--text-secondary, #6b7280)'
+    return (
+      <span
+        title={title}
+        style={{
+          width: size, height: size, borderRadius: '50%', flexShrink: 0,
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+          background: 'transparent', border: `1.5px solid ${line}`, color: line, ...style,
+        }}
+        {...rest}
+      >
+        <Cmp size={Math.round(size * 0.54)} weight="regular" color="currentColor" />
+      </span>
+    )
+  }
   const bg = color || det.profile_color
   const fg = iconColorFor(bg)
   return (
