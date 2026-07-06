@@ -1012,18 +1012,20 @@ function SquareView({ messages, meKey, blobURL, labels, config, clearSignal }) {
     const others = visible.filter((m) => m.id !== focusId)
     const availX = Math.max(1, w / 2 - HALF_W), availY = Math.max(1, h / 2 - HALF_H)
     const minR = 150 * scale               // never cover the focused centre bubble
-    const perRing = Math.max(8, Math.round((2 * (availX + availY)) / (150 * scale)))
+    // ONE big ellipse hugging the border (≈98% of the available half-extent), so
+    // everyone rides near the walls — sides included — and it reads as a ring.
+    // Bubbles may overlap each other on the ring (fine). Only spill to an inner
+    // ring when there are too many to fit on the perimeter.
+    const perRing = Math.max(12, Math.round((Math.PI * (availX + availY)) / (135 * scale)))
     others.forEach((m, i) => {
       const ring = Math.floor(i / perRing), inRing = i % perRing
       const count = Math.min(perRing, others.length - ring * perRing)
-      const ang = (inRing / count) * Math.PI * 2 + ring * 0.55 + 0.15
-      const ca = Math.cos(ang), sa = Math.sin(ang)
-      // shove each bubble out to the canvas RECTANGLE edge along its ray (so the
-      // far left/right walls get used, not just an inner ellipse)
-      const tEdge = Math.min(availX / Math.max(0.001, Math.abs(ca)), availY / Math.max(0.001, Math.abs(sa)))
-      const f = Math.max(0.5, 0.97 - ring * 0.26)   // outer ring hugs the wall
-      const r = Math.max(minR, tEdge * f)
-      const x = ccx + ca * r, y = ccy + sa * r
+      const ang = (inRing / count) * Math.PI * 2 + ring * 0.4 + 0.3
+      const f = Math.max(0.6, 0.98 - ring * 0.32)   // outer ring rides the wall
+      let x = ccx + Math.cos(ang) * availX * f
+      let y = ccy + Math.sin(ang) * availY * f
+      const dx = x - ccx, dy = y - ccy, d = Math.hypot(dx, dy) || 1
+      if (d < minR) { x = ccx + (dx / d) * minR; y = ccy + (dy / d) * minR }   // keep off the centre
       map.set(m.id, { x: Math.max(HALF_W, Math.min(w - HALF_W, x)), y: Math.max(HALF_H, Math.min(h - HALF_H, y)) })
     })
     return map
