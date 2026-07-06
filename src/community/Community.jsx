@@ -60,6 +60,8 @@ const DEFAULT_LABELS = {
   plazaPerAccount: '계정당 표시 수', plazaShowNames: '이름 표시', plazaReplay: '다시 재생', banAll: '전체 이용제한', unbanAll: '전체 해제',
   plazaClear: '화면 비우기', plazaDragHint: '프로필을 끌어 옮기기',
   question: '질문', questionList: '질문 목록', completedList: '완료 목록',
+  notice: '공지', noticePost: '공지', setNotice: '공지로 설정', unsetNotice: '공지 해제', noticeEmpty: '공지가 없습니다.',
+  plazaBubbleSize: '말풍선 크기',
   anonOn: '익명으로 전환', anonOff: '익명 끄기', poll: '설문 / 투표',
   clearAll: '채팅 전체 삭제', confirmClear: '정말 전체 삭제?', ban: '이용제한', unban: '해제',
   banned: '커뮤니티 이용이 제한된 계정입니다.', drop: '📎 파일을 여기에 놓으세요',
@@ -135,13 +137,14 @@ const chipS = { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '
 const chipBtnS = { ...chipS, maxWidth: '100%', minWidth: 0, border: '1px solid var(--border-default)', cursor: 'pointer', color: 'var(--text-primary)' }
 
 /* ── a chat row: avatar + author/time + bubble(s). Everyone left-aligned. ── */
-function MessageRow({ m, meKey, grouped, isManager, blobURL, onReply, onEdit, onDelete, onComplete, onRowClick, onPollClick, revealed, onReveal, labels }) {
+function MessageRow({ m, meKey, grouped, isManager, blobURL, onReply, onEdit, onDelete, onComplete, onNotice, onRowClick, onPollClick, revealed, onReveal, labels }) {
   const isQ = m.kind === 'question'
   const isPoll = m.kind === 'poll'
+  const isNotice = !!m.notice
   const mine = m.author_key === meKey
-  const bg = isQ ? 'var(--warning-bg)' : isPoll ? 'var(--info-bg)' : 'var(--surface-2)'
+  const bg = isNotice ? 'var(--warning-bg)' : isQ ? 'var(--warning-bg)' : isPoll ? 'var(--info-bg)' : 'var(--surface-2)'
   // every bubble gets a slightly-darker-than-bg outline; my own chat is themed.
-  const bd = isQ ? 'var(--warning-text)' : isPoll ? 'var(--info-text)' : mine ? 'var(--btn-primary-bg)' : 'var(--border-default)'
+  const bd = isNotice ? 'var(--warning-text)' : isQ ? 'var(--warning-text)' : isPoll ? 'var(--info-text)' : mine ? 'var(--btn-primary-bg)' : 'var(--border-default)'
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState('')
   const canEdit = mine && onEdit && !isPoll
@@ -175,6 +178,7 @@ function MessageRow({ m, meKey, grouped, isManager, blobURL, onReply, onEdit, on
             cursor: isPoll && onPollClick ? 'pointer' : undefined,
           }}
             onClick={isPoll && onPollClick ? (e) => { e.stopPropagation(); onPollClick(m.poll_id) } : undefined}>
+            {isNotice && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 'var(--fs-micro,10px)', fontWeight: 700, color: 'var(--warning-text)', marginBottom: 2 }}><Icon name="megaphone" size={11} /> {labels.notice}</span>}
             {isQ && <span style={{ display: 'inline-block', fontSize: 'var(--fs-micro,10px)', fontWeight: 700, color: 'var(--warning-text)', marginBottom: 2 }}>{labels.question}{m.done ? ' · ' + labels.done : ''}</span>}
             {isPoll && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 'var(--fs-small,12px)', fontWeight: 600, color: 'var(--info-text)' }}><Icon name="chart" size={14} /> {m.body} <span style={{ fontWeight: 400, color: 'var(--text-muted)', fontSize: 'var(--fs-micro,10px)' }}>· {labels.viewPoll}</span></span>}
             {m.reply_to_id ? (
@@ -204,6 +208,7 @@ function MessageRow({ m, meKey, grouped, isManager, blobURL, onReply, onEdit, on
           <div className="cm-actions" style={{ display: 'flex', gap: 2, opacity: 0, transition: 'opacity .1s', flexShrink: 0, paddingTop: 2 }}>
             {onReply && <button title={labels.reply} onClick={(e) => { e.stopPropagation(); onReply(m) }} style={actS}><Icon name="reply" size={13} /></button>}
             {isManager && isQ && !m.done && onComplete && <button title={labels.done} onClick={(e) => { e.stopPropagation(); onComplete(m) }} style={actS}><Icon name="check" size={13} /></button>}
+            {isManager && onNotice && !isPoll && <button title={isNotice ? labels.unsetNotice : labels.setNotice} onClick={(e) => { e.stopPropagation(); onNotice(m, !isNotice) }} style={{ ...actS, color: isNotice ? 'var(--warning-text)' : 'var(--text-muted)' }}><Icon name="megaphone" size={13} weight={isNotice ? 'fill' : 'regular'} /></button>}
             {canEdit && <button title={labels.edit} onClick={(e) => { e.stopPropagation(); setDraft(m.body || ''); setEditing(true) }} style={actS}><Icon name="edit" size={13} /></button>}
             {canDelete && <button title={labels.del} onClick={(e) => { e.stopPropagation(); onDelete(m) }} style={{ ...actS, color: 'var(--danger-text)' }}><Icon name="trash" size={13} /></button>}
           </div>
@@ -295,6 +300,7 @@ export default function Community({ api, role = 'user', features = {}, labels: l
   const [panel, setPanel] = useState(null)        // right dock: null|poll|questions|completed|files|manage
   const [panelList, setPanelList] = useState([])  // questions/completed rows for the right dock
   const [qMode, setQMode] = useState(false)       // next send goes up as a question
+  const [noticeMode, setNoticeMode] = useState(false)  // next send is a 공지 (manager)
   const [plusOpen, setPlusOpen] = useState(false)
   const [users, setUsers] = useState([])
   const [confirmClear, setConfirmClear] = useState(false)
@@ -307,7 +313,7 @@ export default function Community({ api, role = 'user', features = {}, labels: l
   const [names, setNames] = useState(null)         // { surnames, given }
   const [nameDraft, setNameDraft] = useState({ surnames: '', given: '' })  // raw text (keeps spaces!)
   const [bots, setBots] = useState([])
-  const [plaza, setPlaza] = useState({ lifetime: 30, max: 30, per_account: 3, show_names: true })
+  const [plaza, setPlaza] = useState({ lifetime: 30, max: 30, per_account: 3, show_names: true, bubble_scale: 1 })
   const [clearScreen, setClearScreen] = useState(0)   // bump → 광장 clears on-screen bubbles
   const [activePollId, setActivePollId] = useState(null)
   const [showClosed, setShowClosed] = useState(false)  // reveal completed (closed) polls
@@ -382,9 +388,9 @@ export default function Community({ api, role = 'user', features = {}, labels: l
     const body = text.trim()
     if ((!body && !pending.length) || sending.current || banned) return
     sending.current = true
-    const payload = { body, kind: qMode ? 'question' : 'msg', reply_to_id: reply?.id || 0, attachments: pending,
+    const payload = { body, kind: qMode ? 'question' : 'msg', notice: noticeMode && isManager, reply_to_id: reply?.id || 0, attachments: pending,
       anonymous: anonOn, anon_name: anonOn ? anon.name : '', anon_shape: anonOn ? anon.shape : '' }
-    setText(''); setPending([]); setReply(null); setQMode(false)
+    setText(''); setPending([]); setReply(null); setQMode(false); setNoticeMode(false)
     try {
       const m = await api.send(payload); stick.current = true
       setMessages((p) => (p.some((x) => x.id === m.id) ? p : [...p, m]))
@@ -398,6 +404,7 @@ export default function Community({ api, role = 'user', features = {}, labels: l
   }
   async function deleteMsg(m) { try { await api.del(m.id); setMessages((p) => p.filter((x) => x.id !== m.id)); setPanelList((p) => p.filter((x) => x.id !== m.id)) } catch (e) { setError(String(e.message || e)) } }
   async function editMsg(m, body) { try { const u = await api.edit(m.id, body); setMessages((p) => p.map((x) => x.id === m.id ? { ...x, ...u } : x)); setPanelList((p) => p.map((x) => x.id === m.id ? { ...x, ...u } : x)) } catch (e) { setError(String(e.message || e)) } }
+  async function setNotice(m, on) { try { const u = await api.setNotice(m.id, on); setMessages((p) => p.map((x) => x.id === m.id ? { ...x, ...u } : x)) } catch (e) { setError(String(e.message || e)) } }
   async function completeQ(m) { try { await api.complete(m.id); setMessages((p) => p.map((x) => x.id === m.id ? { ...x, done: true } : x)); reloadPanel() } catch (e) { setError(String(e.message || e)) } }
   async function clearAll() {
     if (!confirmClear) { setConfirmClear(true); setTimeout(() => setConfirmClear(false), 3000); return }
@@ -433,6 +440,9 @@ export default function Community({ api, role = 'user', features = {}, labels: l
     // "/질문 " or "/q " at the start toggles question mode (same as the button)
     const qm = /^\/(질문|q)\s/.exec(v)
     if (F.questions && qm) { setQMode(true); v = v.slice(qm[0].length) }
+    // "/공식 " → 공지 (manager only)
+    const nm = /^\/(공식|공지|notice)\s/.exec(v)
+    if (isManager && nm) { setNoticeMode(true); v = v.slice(nm[0].length) }
     setText(v)
     const upto = v.slice(0, e.target.selectionStart != null ? Math.min(e.target.selectionStart, v.length) : v.length)
     const m = /(^|\s)@([A-Za-z0-9_가-힣]*)$/.exec(upto)
@@ -467,6 +477,7 @@ export default function Community({ api, role = 'user', features = {}, labels: l
     F.attachments && { id: 'attach', label: L.attach, icon: 'attach', on: () => { setPlusOpen(false); document.getElementById('cm-file')?.click() } },
     F.attachments && isManager && onOpenFiles && { id: 'attachManage', label: L.attachManage, icon: 'browse', on: () => { setPlusOpen(false); onOpenFiles() } },
     F.questions && { id: 'question', label: L.question, icon: 'chats', active: qMode, on: () => { setQMode((v) => !v); setPlusOpen(false); inputRef.current?.focus() } },
+    isManager && { id: 'notice', label: L.noticePost, icon: 'megaphone', active: noticeMode, on: () => { setNoticeMode((v) => !v); setPlusOpen(false); inputRef.current?.focus() } },
     F.anon && { id: 'anon', label: anonOn ? L.anonOff : L.anonOn, icon: 'eye', active: anonOn, on: toggleAnon },
   ].filter(Boolean)
 
@@ -477,12 +488,13 @@ export default function Community({ api, role = 'user', features = {}, labels: l
     F.questions && { id: 'completed', label: L.completedList, icon: 'check' },
     F.attachments && { id: 'files', label: L.attachList, icon: 'attach' },
     F.moderation && isManager && { id: 'manage', label: L.chatManage, icon: 'gear' },
-    F.moderation && isManager && { id: 'plaza', label: L.plazaManage, icon: 'cheers' },
+    F.moderation && isManager && { id: 'plaza', label: L.plazaManage, icon: 'beer-stein' },
   ].filter(Boolean)
 
   const activePolls = polls.filter((p) => !p.closed)
   const closedPolls = polls.filter((p) => p.closed)
   const allAttachments = useMemo(() => messages.flatMap((m) => (m.attachments || []).map((a) => ({ att: a, from: m.author_name, at: m.created_at, mid: m.id }))), [messages])
+  const notices = messages.filter((m) => m.notice)
 
   return (
     <div style={{ display: 'flex', gap: 12, height: '100%', minHeight: 0, fontFamily: 'var(--font-sans)' }}>
@@ -510,6 +522,21 @@ export default function Community({ api, role = 'user', features = {}, labels: l
           </div>
         </div>
 
+        {/* 공지 box — pinned announcements right under the title bar */}
+        {notices.length > 0 && (
+          <div style={{ borderBottom: '1px solid var(--border-subtle)', background: 'var(--warning-bg)', padding: '7px 12px', display: 'flex', flexDirection: 'column', gap: 5, maxHeight: 140, overflowY: 'auto' }}>
+            {notices.map((m) => (
+              <div key={m.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 7, fontSize: 'var(--fs-small,12px)' }}>
+                <Icon name="megaphone" size={14} color="var(--warning-text)" style={{ flexShrink: 0, marginTop: 1 }} />
+                <div style={{ flex: 1, minWidth: 0, color: 'var(--text-primary)', wordBreak: 'break-word' }}>
+                  <b style={{ color: 'var(--warning-text)' }}>{m.author_name}</b> · <span>{m.body}</span>
+                </div>
+                {isManager && <button onClick={() => setNotice(m, false)} title={L.unsetNotice} style={{ ...actS, flexShrink: 0, color: 'var(--text-muted)' }}><Icon name="close" size={13} /></button>}
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* message area: list=시간순 (scrolling rows) or square view=광장 (floating canvas) */}
         {mode === 'square' ? (
           <SquareView messages={messages} meKey={meKey} blobURL={api.blobURL} labels={L} config={plaza} clearSignal={clearScreen} />
@@ -524,6 +551,7 @@ export default function Community({ api, role = 'user', features = {}, labels: l
                 onEdit={editMsg}
                 onDelete={deleteMsg}
                 onComplete={completeQ}
+                onNotice={setNotice}
                 onPollClick={(pid) => { setActivePollId(pid); setPanel('poll') }}
                 revealed={revealed.has(m.id)} onReveal={() => setRevealed((s) => { const n = new Set(s); n.has(m.id) ? n.delete(m.id) : n.add(m.id); return n })}
                 labels={L} />
@@ -604,9 +632,9 @@ export default function Community({ api, role = 'user', features = {}, labels: l
                   }
                   if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && e.keyCode !== 229) { e.preventDefault(); doSend() }
                 }}
-                placeholder={qMode ? '질문을 입력하고 전송하세요…' : L.placeholder}
+                placeholder={noticeMode ? '공지를 입력하고 전송하세요…' : qMode ? '질문을 입력하고 전송하세요…' : L.placeholder}
                 style={{ flex: 1, resize: 'none', maxHeight: 120, minHeight: 36, padding: '8px 11px', borderRadius: 10, fontFamily: 'inherit', fontSize: 'var(--fs-body,13px)', lineHeight: 1.4, outline: 'none', background: 'var(--input-bg,var(--surface))', color: 'var(--text-primary)',
-                  border: qMode ? '2px solid var(--warning-text)' : '1px solid var(--border-default)' }} />
+                  border: (qMode || noticeMode) ? '2px solid var(--warning-text)' : '1px solid var(--border-default)' }} />
               <button onClick={doSend} disabled={!text.trim() && !pending.length} title={L.send}
                 style={{ width: 36, height: 36, borderRadius: 10, border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                   background: (text.trim() || pending.length) ? 'var(--btn-primary-bg)' : 'var(--surface-3)', color: (text.trim() || pending.length) ? 'var(--btn-primary-text)' : 'var(--text-muted)' }}>
@@ -771,6 +799,14 @@ export default function Community({ api, role = 'user', features = {}, labels: l
               <button onClick={() => savePlaza({ show_names: !plaza.show_names })} style={{ ...ghostBtnS, alignSelf: 'flex-start', ...(plaza.show_names ? activeGhost : {}) }}>
                 <Icon name={plaza.show_names ? 'eye' : 'eye-off'} size={13} /> {L.plazaShowNames}: {plaza.show_names ? 'on' : 'off'}
               </button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <span style={lblS}>{L.plazaBubbleSize} · {Math.round((plaza.bubble_scale || 1) * 100)}%</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <button onClick={() => savePlaza({ bubble_scale: Math.max(0.6, Math.round(((plaza.bubble_scale || 1) - 0.1) * 10) / 10) })} style={{ ...ghostBtnS, padding: '2px 10px' }}>−</button>
+                  <input type="range" min="0.6" max="2.5" step="0.1" value={plaza.bubble_scale || 1} onChange={(e) => savePlaza({ bubble_scale: Number(e.target.value) })} style={{ flex: 1 }} />
+                  <button onClick={() => savePlaza({ bubble_scale: Math.min(2.5, Math.round(((plaza.bubble_scale || 1) + 0.1) * 10) / 10) })} style={{ ...ghostBtnS, padding: '2px 10px' }}>+</button>
+                </div>
+              </div>
             </>}
           </div>
         </div>
@@ -862,8 +898,11 @@ function squareVisible(messages, cfg) {
 
 function SquareView({ messages, meKey, blobURL, labels, config, clearSignal }) {
   const cfg = config || { lifetime: 30, max: 30, per_account: 3, show_names: true }
+  const scale = Math.min(2.5, Math.max(0.6, cfg.bubble_scale || 1))   // 광장 관리 말풍선 크기
+  const HALF_W = 150 * scale, HALF_H = 48 * scale                     // clamp margins (keep units on-screen)
   const ref = useRef(null)
   const [size, setSize] = useState({ w: 800, h: 500 })
+  const [focusId, setFocusId] = useState(null)   // double-clicked profile → centred, others ring around it
   const [revealed, setRevealed] = useState(() => new Set())
   const [positions, setPositions] = useState(() => new Map())   // id → {x,y} (computed from cells)
   const [nonce, setNonce] = useState(0)                         // bump → re-place everything (replay)
@@ -901,13 +940,15 @@ function SquareView({ messages, meKey, blobURL, labels, config, clearSignal }) {
       used.add(cell)
     }
     const out = new Map()
+    const cx = (v) => Math.max(HALF_W, Math.min(size.w - HALF_W, v))   // keep the whole unit on-screen
+    const cy = (v) => Math.max(HALF_H, Math.min(size.h - HALF_H, v))
     for (const m of visible) {
       const e = cache.get(m.id); if (!e) continue
       const col = e.cell % g.cols, row = Math.floor(e.cell / g.cols)
-      out.set(m.id, { x: g.pad / 2 + g.cw * (col + 0.5) + e.jx * g.cw * 0.42, y: g.pad / 2 + g.ch * (row + 0.5) + e.jy * g.ch * 0.42 })
+      out.set(m.id, { x: cx(g.pad / 2 + g.cw * (col + 0.5) + e.jx * g.cw * 0.42), y: cy(g.pad / 2 + g.ch * (row + 0.5) + e.jy * g.ch * 0.42) })
     }
     setPositions(out)
-  }, [ids, size.w, size.h, nonce])
+  }, [ids, size.w, size.h, nonce, scale])
 
   // enqueue any newly-visible bubble that hasn't appeared or been dismissed yet
   useEffect(() => {
@@ -949,6 +990,31 @@ function SquareView({ messages, meKey, blobURL, labels, config, clearSignal }) {
     setRevealed(new Set())
   }
 
+  // clear focus if the focused message scrolled out of the visible set
+  useEffect(() => { if (focusId && !visible.some((m) => m.id === focusId)) setFocusId(null) }, [ids]) // eslint-disable-line
+
+  // focus layout: focused bubble at centre, everyone else on ring(s) hugging it
+  // (near the outside — not pushed to the screen edges; may overlap each other).
+  const focusMap = useMemo(() => {
+    const map = new Map()
+    if (!focusId) return map
+    const w = size.w, h = size.h, ccx = w / 2, ccy = h / 2
+    map.set(focusId, { x: ccx, y: ccy })
+    const others = visible.filter((m) => m.id !== focusId)
+    const perRing = Math.max(7, Math.round(w / (170 * scale)))
+    const baseR = 155 * scale
+    others.forEach((m, i) => {
+      const ring = Math.floor(i / perRing), inRing = i % perRing
+      const count = Math.min(perRing, others.length - ring * perRing)
+      const ang = (inRing / count) * Math.PI * 2 + ring * 0.6
+      const R = baseR + ring * (120 * scale)
+      const x = Math.max(HALF_W, Math.min(w - HALF_W, ccx + Math.cos(ang) * R * 1.5))  // canvas is wide
+      const y = Math.max(HALF_H, Math.min(h - HALF_H, ccy + Math.sin(ang) * R))
+      map.set(m.id, { x, y })
+    })
+    return map
+  }, [focusId, ids, size.w, size.h, scale]) // eslint-disable-line
+
   // drag a bubble by its profile to reposition it
   function startDrag(e, id) {
     e.preventDefault(); e.stopPropagation()
@@ -964,7 +1030,7 @@ function SquareView({ messages, meKey, blobURL, labels, config, clearSignal }) {
 
   const now = Date.now()
   return (
-    <div ref={ref} style={{ flex: 1, minHeight: 0, position: 'relative', overflow: 'hidden', background: 'var(--surface-2)' }}>
+    <div ref={ref} onDoubleClick={() => setFocusId(null)} style={{ flex: 1, minHeight: 0, position: 'relative', overflow: 'hidden', background: 'var(--surface-2)' }}>
       <style>{SQUARE_CSS}</style>
       {visible.length === 0 && <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: 'var(--fs-small,12px)' }}>{labels.empty}</div>}
       <button onClick={replay} title={labels.plazaReplay} style={{ position: 'absolute', top: 10, right: 12, zIndex: 10, display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 10px', border: '1px solid var(--border-default)', borderRadius: 999, background: 'var(--surface)', cursor: 'pointer', fontSize: 'var(--fs-tiny,11px)', color: 'var(--text-secondary)' }}>
@@ -972,39 +1038,46 @@ function SquareView({ messages, meKey, blobURL, labels, config, clearSignal }) {
       </button>
       {visible.map((m) => {
         if (!revealed.has(m.id) || dismissed.current.has(m.id)) return null
-        const pos = dragPos.get(m.id) || positions.get(m.id); if (!pos) return null
-        // lifetime: fade out after N seconds since it appeared (not while being dragged)
-        if (cfg.lifetime > 0 && !dragPos.has(m.id)) {
+        const pos = focusId ? (focusMap.get(m.id) || positions.get(m.id)) : (dragPos.get(m.id) || positions.get(m.id))
+        if (!pos) return null
+        const frozen = dragPos.has(m.id) || !!focusId   // don't expire while dragging / focusing
+        if (cfg.lifetime > 0 && !frozen) {
           const age = (now - (appeared.current.get(m.id) || now)) / 1000
           if (age > cfg.lifetime + 0.6) return null
         }
         const age = (now - (appeared.current.get(m.id) || now)) / 1000
-        const expiring = cfg.lifetime > 0 && !dragPos.has(m.id) && age > cfg.lifetime
+        const expiring = cfg.lifetime > 0 && !frozen && age > cfg.lifetime
         const mine = m.author_key === meKey
         const isQ = m.kind === 'question'
-        const emph = /!/.test(m.body || '')     // "!" → a slightly louder bubble
+        const isNotice = !!m.notice
+        const emph = /!/.test(m.body || '')     // "!" → a slightly BIGGER bubble (no bold)
+        const focused = focusId === m.id
+        const bScale = scale * (focused ? 1.14 : 1)
         const body = m.body || ''
+        const px = (n) => Math.round(n * bScale)
         return (
-          <div key={m.id} className="cm-plaza-unit" style={{ position: 'absolute', left: pos.x, top: pos.y, transform: 'translate(-50%,-50%)', display: 'flex', alignItems: 'flex-start', gap: 6, width: 'max-content', maxWidth: 280, opacity: expiring ? 0 : 1, transition: 'opacity .6s ease' }}>
-            <div className="cm-plaza-prof" style={{ flexShrink: 0 }} onMouseDown={(e) => startDrag(e, m.id)} title={labels.plazaDragHint}>
-              <Avatar outline={m.anon} icon={m.author_shape} color={m.anon ? undefined : m.author_color} seed={m.author_username || m.author_key} size={26} title={m.author_name} />
+          <div key={m.id} className="cm-plaza-unit" style={{ position: 'absolute', left: pos.x, top: pos.y, transform: 'translate(-50%,-50%)', display: 'flex', alignItems: 'flex-start', gap: px(6), width: 'max-content', maxWidth: px(300), zIndex: focused ? 7 : undefined,
+            opacity: expiring ? 0 : (focusId && !focused ? 0.9 : 1), transition: dragPos.has(m.id) ? 'opacity .5s ease' : 'left .3s ease, top .3s ease, opacity .5s ease' }}>
+            <div className="cm-plaza-prof" style={{ flexShrink: 0 }} onMouseDown={(e) => startDrag(e, m.id)} onDoubleClick={(e) => { e.stopPropagation(); setFocusId((f) => f === m.id ? null : m.id) }} title={labels.plazaDragHint}>
+              <Avatar outline={m.anon} icon={m.author_shape} color={m.anon ? undefined : m.author_color} seed={m.author_username || m.author_key} size={px(26)} title={m.author_name} />
             </div>
             <div style={{ minWidth: 0 }}>
               {cfg.show_names && (
                 <div className="cm-plaza-info" style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 1 }}>
-                  <span style={{ fontWeight: 600, fontSize: 'var(--fs-small,12px)', color: 'var(--text-primary)' }}>{mine ? labels.me : m.author_name}</span>
-                  <em style={{ fontStyle: 'normal', fontSize: 'var(--fs-micro,10px)', color: 'var(--text-muted)' }}>{timeLabel(m.created_at)}</em>
+                  <span style={{ fontWeight: 600, fontSize: px(12), color: 'var(--text-primary)' }}>{mine ? labels.me : m.author_name}</span>
+                  <em style={{ fontStyle: 'normal', fontSize: px(10), color: 'var(--text-muted)' }}>{timeLabel(m.created_at)}</em>
                 </div>
               )}
-              <div className="cm-plaza-bubble" style={{ maxWidth: 240, minWidth: 0, boxSizing: 'border-box', padding: emph ? '9px 14px' : '6px 11px', borderRadius: '3px 12px 12px 12px',
-                background: isQ ? 'var(--warning-bg)' : mine ? 'var(--info-bg)' : 'var(--surface)',
-                border: `1px solid ${isQ ? 'var(--warning-text)' : mine ? 'var(--btn-primary-bg)' : 'var(--border-default)'}`,
-                fontSize: emph ? 'var(--fs-medium,15px)' : 'var(--fs-body,13px)', fontWeight: emph ? 600 : 400,
-                color: 'var(--text-primary)', boxShadow: '0 1px 4px rgba(0,0,0,.07)', wordBreak: 'break-word', lineHeight: 1.4 }}>
+              <div className="cm-plaza-bubble" style={{ maxWidth: px(240), minWidth: 0, boxSizing: 'border-box', padding: emph ? `${px(9)}px ${px(14)}px` : `${px(6)}px ${px(11)}px`, borderRadius: '3px 12px 12px 12px',
+                background: (isNotice || isQ) ? 'var(--warning-bg)' : mine ? 'var(--info-bg)' : 'var(--surface)',
+                border: `1px solid ${(isNotice || isQ) ? 'var(--warning-text)' : mine ? 'var(--btn-primary-bg)' : 'var(--border-default)'}`,
+                fontSize: px(emph ? 15 : 13), fontWeight: 400,
+                color: 'var(--text-primary)', boxShadow: focused ? '0 4px 16px rgba(0,0,0,.16)' : '0 1px 4px rgba(0,0,0,.07)', wordBreak: 'break-word', lineHeight: 1.4 }}>
+                {isNotice && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: px(10), fontWeight: 700, color: 'var(--warning-text)', marginBottom: 2 }}><Icon name="megaphone" size={px(11)} /> {labels.notice}</span>}
                 {body && <div><ReactMarkdown remarkPlugins={[remarkGfm]} components={CM_MD}>{mdPrep(body)}</ReactMarkdown></div>}
                 {(m.attachments || []).length > 0 && (
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, maxWidth: '100%', marginTop: body ? 5 : 0 }}>
-                    {m.attachments.map((a, k) => <Attachment att={a} key={k} blobURL={blobURL} imgMax={206} />)}
+                    {m.attachments.map((a, k) => <Attachment att={a} key={k} blobURL={blobURL} imgMax={px(206)} />)}
                   </div>
                 )}
               </div>
