@@ -281,7 +281,12 @@ function PollCard({ poll, isManager, onVote, onClose, labels, highlight, fetchRe
   )
 }
 
-export default function Community({ api, role = 'user', features = {}, labels: labelsProp, onOpenFiles }) {
+export default function Community({ api, role = 'user', features = {}, labels: labelsProp, onOpenFiles, storageKey = 'default' }) {
+  // 광장 settings are PER-USER and live in the browser (localStorage), so they
+  // survive logout and every account tunes their own view (no server round-trip).
+  const PLAZA_KEY = 'lilak-plaza:' + storageKey
+  const PLAZA_DEFAULTS = { lifetime: 30, max: 30, per_account: 3, show_names: true, bubble_scale: 1 }
+  const loadPlaza = () => { try { const s = localStorage.getItem(PLAZA_KEY); if (s) return { ...PLAZA_DEFAULTS, ...JSON.parse(s) } } catch { /* ignore */ } return PLAZA_DEFAULTS }
   const L = { ...DEFAULT_LABELS, ...(labelsProp || {}) }
   const F = { attachments: true, questions: true, anon: true, polls: true, mentions: true, moderation: true, ...features }
   const isManager = role === 'manager'
@@ -313,7 +318,7 @@ export default function Community({ api, role = 'user', features = {}, labels: l
   const [names, setNames] = useState(null)         // { surnames, given }
   const [nameDraft, setNameDraft] = useState({ surnames: '', given: '' })  // raw text (keeps spaces!)
   const [bots, setBots] = useState([])
-  const [plaza, setPlaza] = useState({ lifetime: 30, max: 30, per_account: 3, show_names: true, bubble_scale: 1 })
+  const [plaza, setPlaza] = useState(loadPlaza)
   const [clearScreen, setClearScreen] = useState(0)   // bump → 광장 clears on-screen bubbles
   const [activePollId, setActivePollId] = useState(null)
   const [showClosed, setShowClosed] = useState(false)  // reveal completed (closed) polls
@@ -340,8 +345,6 @@ export default function Community({ api, role = 'user', features = {}, labels: l
   // assign an anon identity on mount (kept until this component unmounts / login changes)
   useEffect(() => { if (F.anon && api.anonIdentity) api.anonIdentity().then((a) => setAnon((cur) => cur || { ...a, on: false })).catch(() => {}) }, [])
 
-  // load room-wide 광장(plaza) display config
-  useEffect(() => { if (api.plazaConfig) api.plazaConfig().then((c) => c && setPlaza(c)).catch(() => {}) }, [])
 
   // scroll to the newest BEFORE paint so 시간순 opens already at the bottom (no visible jump)
   useLayoutEffect(() => { const el = logRef.current; if (el && stick.current && mode === 'list') el.scrollTop = el.scrollHeight }, [messages, mode])
@@ -469,7 +472,7 @@ export default function Community({ api, role = 'user', features = {}, labels: l
   async function saveBot(b) { try { await api.saveBot(b); setBots(await api.bots()) } catch (e) { setError(String(e.message || e)) } }
   async function delBot(name) { try { await api.delBot(name); setBots(await api.bots()) } catch (e) { setError(String(e.message || e)) } }
   async function banAll(b) { try { await Promise.all(users.map((u) => api.ban(u.user_key, u.name, b))); setUsers((p) => p.map((u) => ({ ...u, banned: b }))) } catch (e) { setError(String(e.message || e)) } }
-  async function savePlaza(patch) { const next = { ...plaza, ...patch }; setPlaza(next); try { if (api.savePlazaConfig) setPlaza(await api.savePlazaConfig(next)) } catch (e) { setError(String(e.message || e)) } }
+  function savePlaza(patch) { setPlaza((cur) => { const next = { ...cur, ...patch }; try { localStorage.setItem(PLAZA_KEY, JSON.stringify(next)) } catch { /* ignore */ } return next }) }
 
   // ── the + menu: only compose actions (attach, question-mode, anon).
   //    Lists & management moved to the right dock (see rail below). ──
@@ -488,7 +491,7 @@ export default function Community({ api, role = 'user', features = {}, labels: l
     F.questions && { id: 'completed', label: L.completedList, icon: 'check' },
     F.attachments && { id: 'files', label: L.attachList, icon: 'attach' },
     F.moderation && isManager && { id: 'manage', label: L.chatManage, icon: 'gear' },
-    F.moderation && isManager && { id: 'plaza', label: L.plazaManage, icon: 'beer-stein' },
+    { id: 'plaza', label: L.plazaManage, icon: 'beer-stein' },   // per-user 광장 settings — open to everyone
   ].filter(Boolean)
 
   const activePolls = polls.filter((p) => !p.closed)
@@ -780,7 +783,7 @@ export default function Community({ api, role = 'user', features = {}, labels: l
             </>}
 
             {/* ── 광장(plaza) 관리 (manager) ── */}
-            {panel === 'plaza' && isManager && <>
+            {panel === 'plaza' && <>
               <button onClick={() => setClearScreen((n) => n + 1)} style={{ ...ghostBtnS, alignSelf: 'flex-start' }}>
                 <Icon name="eye-off" size={13} /> {L.plazaClear}
               </button>
