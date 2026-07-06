@@ -985,6 +985,7 @@ function SquareView({ messages, meKey, blobURL, labels, config, clearSignal }) {
     appeared.current = new Map()
     posCache.current = new Map()                     // forget all coords → re-scatter at random
     queue.current = visible.map((m) => m.id)
+    setFocusId(null)                                 // 다시 재생 → exit focus
     setDragPos(new Map())
     setNonce((n) => n + 1)                           // re-run the placement effect
     setRevealed(new Set())
@@ -1001,16 +1002,19 @@ function SquareView({ messages, meKey, blobURL, labels, config, clearSignal }) {
     const w = size.w, h = size.h, ccx = w / 2, ccy = h / 2
     map.set(focusId, { x: ccx, y: ccy })
     const others = visible.filter((m) => m.id !== focusId)
-    const perRing = Math.max(7, Math.round(w / (170 * scale)))
-    const baseR = 155 * scale
+    const availX = Math.max(1, w / 2 - HALF_W), availY = Math.max(1, h / 2 - HALF_H)
+    const minR = 150 * scale               // never cover the focused centre bubble
+    const perRing = Math.max(8, Math.round((2 * Math.PI * availX) / (150 * scale)))
     others.forEach((m, i) => {
       const ring = Math.floor(i / perRing), inRing = i % perRing
       const count = Math.min(perRing, others.length - ring * perRing)
-      const ang = (inRing / count) * Math.PI * 2 + ring * 0.6
-      const R = baseR + ring * (120 * scale)
-      const x = Math.max(HALF_W, Math.min(w - HALF_W, ccx + Math.cos(ang) * R * 1.5))  // canvas is wide
-      const y = Math.max(HALF_H, Math.min(h - HALF_H, ccy + Math.sin(ang) * R))
-      map.set(m.id, { x, y })
+      const ang = (inRing / count) * Math.PI * 2 + ring * 0.5
+      const f = Math.max(0.55, 0.98 - ring * 0.24)   // outermost ring hugs the border
+      let x = ccx + Math.cos(ang) * availX * f
+      let y = ccy + Math.sin(ang) * availY * f
+      const dx = x - ccx, dy = y - ccy, d = Math.hypot(dx, dy) || 1
+      if (d < minR) { x = ccx + (dx / d) * minR; y = ccy + (dy / d) * minR }   // push off the centre
+      map.set(m.id, { x: Math.max(HALF_W, Math.min(w - HALF_W, x)), y: Math.max(HALF_H, Math.min(h - HALF_H, y)) })
     })
     return map
   }, [focusId, ids, size.w, size.h, scale]) // eslint-disable-line
@@ -1018,7 +1022,7 @@ function SquareView({ messages, meKey, blobURL, labels, config, clearSignal }) {
   // drag a bubble by its profile to reposition it
   function startDrag(e, id) {
     e.preventDefault(); e.stopPropagation()
-    const cur = dragPos.get(id) || positions.get(id); if (!cur) return
+    const cur = dragPos.get(id) || (focusId ? focusMap.get(id) : null) || positions.get(id); if (!cur) return
     dragRef.current = { id, cx: e.clientX, cy: e.clientY, bx: cur.x, by: cur.y }
     const move = (ev) => {
       const d = dragRef.current; if (!d) return
@@ -1038,7 +1042,7 @@ function SquareView({ messages, meKey, blobURL, labels, config, clearSignal }) {
       </button>
       {visible.map((m) => {
         if (!revealed.has(m.id) || dismissed.current.has(m.id)) return null
-        const pos = focusId ? (focusMap.get(m.id) || positions.get(m.id)) : (dragPos.get(m.id) || positions.get(m.id))
+        const pos = dragPos.get(m.id) || (focusId ? focusMap.get(m.id) : null) || positions.get(m.id)
         if (!pos) return null
         const frozen = dragPos.has(m.id) || !!focusId   // don't expire while dragging / focusing
         if (cfg.lifetime > 0 && !frozen) {
