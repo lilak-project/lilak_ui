@@ -320,7 +320,8 @@ export default function Community({ api, role = 'user', features = {}, labels: l
   const [polls, setPolls] = useState([])
   const [pollForm, setPollForm] = useState(null)  // { title, options:[] } | null
   const [mention, setMention] = useState(null)    // { q, idx } | null  — @autocomplete
-  const [admin, setAdmin] = useState(null)         // 'names' | 'bots' | null (in manage drawer)
+  const [admin, setAdmin] = useState(null)         // 'names' | 'bots' | 'anonmap' | 'stats' | null (manage drawer)
+  const [report, setReport] = useState([])         // per-user report (익명 이름 보기 / 통계 보기)
   const [names, setNames] = useState(null)         // { surnames, given }
   const [nameDraft, setNameDraft] = useState({ surnames: '', given: '' })  // raw text (keeps spaces!)
   const [bots, setBots] = useState([])
@@ -539,6 +540,7 @@ export default function Community({ api, role = 'user', features = {}, labels: l
     try {
       if (which === 'names' && api.anonNames) { const n = await api.anonNames(); setNames(n); setNameDraft({ surnames: (n.surnames || []).join(' '), given: (n.given || []).join(' ') }) }
       if (which === 'bots' && api.bots) setBots(await api.bots())
+      if ((which === 'anonmap' || which === 'stats') && api.userReport) setReport(await api.userReport())
     } catch (e) { setError(String(e.message || e)) }
   }
   // parse the raw draft only on save, so spaces stay typable while editing
@@ -861,9 +863,11 @@ export default function Community({ api, role = 'user', features = {}, labels: l
                   </div>
                 ))}
               </div>
-              {(api.anonNames || api.bots) && (
-                <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
+              {(api.anonNames || api.bots || api.userReport) && (
+                <div style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
                   {F.anon && api.anonNames && <button onClick={() => openAdmin(admin === 'names' ? null : 'names')} style={{ ...ghostBtnS, ...(admin === 'names' ? activeGhost : {}) }}>익명 이름 목록</button>}
+                  {F.anon && api.userReport && <button onClick={() => openAdmin(admin === 'anonmap' ? null : 'anonmap')} style={{ ...ghostBtnS, ...(admin === 'anonmap' ? activeGhost : {}) }}>익명 이름 보기</button>}
+                  {api.userReport && <button onClick={() => openAdmin(admin === 'stats' ? null : 'stats')} style={{ ...ghostBtnS, ...(admin === 'stats' ? activeGhost : {}) }}>통계 보기</button>}
                   {api.bots && <button onClick={() => openAdmin(admin === 'bots' ? null : 'bots')} style={{ ...ghostBtnS, ...(admin === 'bots' ? activeGhost : {}) }}>봇 관리</button>}
                 </div>
               )}
@@ -872,6 +876,37 @@ export default function Community({ api, role = 'user', features = {}, labels: l
                   <div><div style={lblS}>성씨 ({parseNames(nameDraft.surnames).length})</div><textarea value={nameDraft.surnames} onChange={(e) => setNameDraft((n) => ({ ...n, surnames: e.target.value }))} rows={3} style={taS} /></div>
                   <div><div style={lblS}>이름 ({parseNames(nameDraft.given).length})</div><textarea value={nameDraft.given} onChange={(e) => setNameDraft((n) => ({ ...n, given: e.target.value }))} rows={3} style={taS} /></div>
                   <button onClick={saveNames} style={primaryBtnS}>저장 · {parseNames(nameDraft.surnames).length}×{parseNames(nameDraft.given).length} 조합</button>
+                </div>
+              )}
+              {admin === 'anonmap' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  {report.length === 0 && <div style={{ color: 'var(--text-muted)', fontSize: 'var(--fs-small,12px)' }}>표시할 사용자가 없습니다.</div>}
+                  {report.map((u) => (
+                    <div key={u.key} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 'var(--fs-small,12px)', padding: '4px 0', borderTop: '1px solid var(--border-subtle)' }}>
+                      <b style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.name}</b>
+                      <span style={{ color: 'var(--text-muted)', marginLeft: 'auto' }}>→</span>
+                      {u.anon_name
+                        ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><Avatar outline icon={u.anon_shape} size={18} /><span>{u.anon_name}</span></span>
+                        : <span style={{ color: 'var(--text-muted)' }}>—</span>}
+                    </div>
+                  ))}
+                </div>
+              )}
+              {admin === 'stats' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  {report.length === 0 && <div style={{ color: 'var(--text-muted)', fontSize: 'var(--fs-small,12px)' }}>표시할 사용자가 없습니다.</div>}
+                  {report.length > 0 && (
+                    <div style={{ display: 'flex', fontSize: 'var(--fs-micro,10px)', color: 'var(--text-muted)', padding: '0 0 2px' }}>
+                      <span style={{ flex: 1 }}>사용자</span><span style={{ width: 52, textAlign: 'right' }}>채팅</span><span style={{ width: 52, textAlign: 'right' }}>질문</span>
+                    </div>
+                  )}
+                  {report.map((u) => (
+                    <div key={u.key} style={{ display: 'flex', alignItems: 'center', fontSize: 'var(--fs-small,12px)', padding: '4px 0', borderTop: '1px solid var(--border-subtle)' }}>
+                      <b style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.name}</b>
+                      <span style={{ width: 52, textAlign: 'right' }}>{u.msgs}</span>
+                      <span style={{ width: 52, textAlign: 'right', color: 'var(--info-text)' }}>{u.questions}</span>
+                    </div>
+                  ))}
                 </div>
               )}
               {admin === 'bots' && (
