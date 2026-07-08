@@ -84,13 +84,14 @@ function Section({ label, children }) {
  *  Optional: `accountAvatar` node + `accountMeta` line (e.g. an SSO profile), and
  *  an `onExit`/`exitLabel` action (e.g. "leave for the portal"). */
 function DefaultDrawer({ L, accountName, accountAvatar, accountMeta, onExit, exitLabel,
-  theme, setTheme, themes, lang, setLang, langs }) {
+  theme, setTheme, themes, lang, setLang, langs, notifications }) {
   const themeOpts = THEMES.filter((t) => themes.includes(t.id))
   return (
     <div style={{ display: 'flex', alignItems: 'stretch', minHeight: '100%' }}>
       <div style={{ flex: 2, minWidth: 0, paddingRight: 18 }}>
         <Section label={L.notifications}>
-          <div style={{ padding: 24, textAlign: 'center', color: 'var(--nav-text-muted)', fontSize: 'var(--fs-body, 13px)' }}>—</div>
+          {notifications != null ? notifications
+            : <div style={{ padding: 24, textAlign: 'center', color: 'var(--nav-text-muted)', fontSize: 'var(--fs-body, 13px)' }}>—</div>}
         </Section>
       </div>
       <div style={{ flex: 1, minWidth: 0, paddingLeft: 18, borderLeft: '1px solid var(--nav-border)' }}>
@@ -153,6 +154,7 @@ function AppShellInner({
   onExit,              // optional: renders an "exit" action in the default drawer
   exitLabel,
   drawer,
+  notifications,       // optional node rendered in the default drawer's Notifications section
   drawerHeight = 'half',
   // Bottom `/` command bar. On by default; pass false to drop it (and its launcher)
   // entirely — e.g. an app that doesn't want the collapsible bottom bar.
@@ -272,7 +274,7 @@ function AppShellInner({
   const drawerContent = drawer != null ? drawer : (
     <DefaultDrawer L={L} accountName={name} accountAvatar={accountAvatar} accountMeta={accountMeta}
       onExit={onExit} exitLabel={exitLabel} theme={theme} setTheme={setTheme} themes={themes}
-      lang={lang} setLang={setLang} langs={langs} />
+      lang={lang} setLang={setLang} langs={langs} notifications={notifications} />
   )
 
   return (

@@ -325,6 +325,9 @@ export default function Community({ api, role = 'user', features = {}, labels: l
 
   const anonOn = !!anon?.on
   const logRef = useRef(null); const inputRef = useRef(null); const stick = useRef(true); const sending = useRef(false)
+  const rootRef = useRef(null)          // component root — number keys act only when visible
+  const railRef = useRef([])            // current rail panel ids (for command-mode number keys)
+  const openPanelRef = useRef(null)     // current openPanel fn
 
   // ── poll the room ──
   useEffect(() => {
@@ -362,6 +365,25 @@ export default function Community({ api, role = 'user', features = {}, labels: l
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [banned])
+
+  // ── command-mode number keys: 1..N open/close the rail panels top-to-bottom,
+  //    0 closes the open one. Only when this component is on-screen and not typing
+  //    in a field (press Esc first to leave the chat box). ──
+  useEffect(() => {
+    const onKey = (e) => {
+      if (!rootRef.current || rootRef.current.offsetParent === null) return
+      const t = e.target, tag = t && t.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (t && t.isContentEditable)) return
+      if (e.metaKey || e.ctrlKey || e.altKey) return
+      if (e.key === '0') { openPanelRef.current && setPanel(null); return }
+      if (e.key >= '1' && e.key <= '9') {
+        const id = railRef.current[Number(e.key) - 1]
+        if (id) { e.preventDefault(); e.stopImmediatePropagation(); openPanelRef.current && openPanelRef.current(id) }
+      }
+    }
+    window.addEventListener('keydown', onKey, true)
+    return () => window.removeEventListener('keydown', onKey, true)
+  }, [])
 
   // ── right dock panels (poll / questions / completed / files / manage) ──
   async function openPanel(p) {
@@ -484,15 +506,18 @@ export default function Community({ api, role = 'user', features = {}, labels: l
     F.anon && { id: 'anon', label: anonOn ? L.anonOff : L.anonOn, icon: 'eye', active: anonOn, on: toggleAnon },
   ].filter(Boolean)
 
-  // ── the right icon rail: each opens a "커뮤니티 채팅"-style box beside the chat ──
+  // ── the left icon rail (dock): each opens a "커뮤니티 채팅"-style box beside the chat.
+  //    `short` is the compact label shown under the icon in the vertical dock. ──
   const rail = [
-    F.polls && { id: 'poll', label: L.poll, icon: 'chart', badge: polls.filter((p) => !p.closed).length || null },
-    F.questions && { id: 'questions', label: L.questionList, icon: 'question-mark' },
-    F.questions && { id: 'completed', label: L.completedList, icon: 'check' },
-    F.attachments && { id: 'files', label: L.attachList, icon: 'attach' },
-    F.moderation && isManager && { id: 'manage', label: L.chatManage, icon: 'gear' },
-    { id: 'plaza', label: L.plazaManage, icon: 'beer-stein' },   // per-user 광장 settings — open to everyone
+    F.polls && { id: 'poll', label: L.poll, short: '투표', icon: 'chart', badge: polls.filter((p) => !p.closed).length || null },
+    F.questions && { id: 'questions', label: L.questionList, short: '질문', icon: 'question-mark' },
+    F.questions && { id: 'completed', label: L.completedList, short: '완료', icon: 'check' },
+    F.attachments && { id: 'files', label: L.attachList, short: '첨부', icon: 'attach' },
+    F.moderation && isManager && { id: 'manage', label: L.chatManage, short: '관리', icon: 'gear' },
+    { id: 'plaza', label: L.plazaManage, short: '광장', icon: 'beer-stein' },   // per-user 광장 settings — open to everyone
   ].filter(Boolean)
+  railRef.current = rail.map((r) => r.id)   // keep command-mode number keys in sync
+  openPanelRef.current = openPanel
 
   const activePolls = polls.filter((p) => !p.closed)
   const closedPolls = polls.filter((p) => p.closed)
@@ -500,8 +525,28 @@ export default function Community({ api, role = 'user', features = {}, labels: l
   const notices = messages.filter((m) => m.notice)
 
   return (
-    <div style={{ display: 'flex', gap: 12, height: '100%', minHeight: 0, fontFamily: 'var(--font-sans)' }}>
-      <div style={{ flex: 1, minWidth: 0, position: 'relative', display: 'flex', flexDirection: 'column', border: '1px solid var(--border-default)', borderRadius: 12, background: 'var(--surface)', overflow: 'hidden' }}
+    <div ref={rootRef} style={{ display: 'flex', gap: 12, height: '100%', minHeight: 0, fontFamily: 'var(--font-sans)' }}>
+      {/* left icon rail (dock) — unified with the other tabs: a floating box of
+          icon+label buttons. Each opens its panel beside the chat. */}
+      <div style={{ flexShrink: 0, alignSelf: 'flex-start', display: 'flex', flexDirection: 'column', gap: 4, padding: 6, border: '1px solid var(--border-default)', borderRadius: 12, background: 'var(--surface-2)', boxShadow: '0 1px 3px rgba(0,0,0,.06)' }}>
+        {rail.map((it) => {
+          const on = panel === it.id
+          return (
+            <button key={it.id} onClick={() => openPanel(it.id)} title={it.label}
+              onMouseEnter={(e) => { if (!on) { e.currentTarget.style.background = 'var(--surface-3)'; e.currentTarget.style.color = 'var(--text-primary)' } }}
+              onMouseLeave={(e) => { if (!on) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)' } }}
+              style={{ position: 'relative', width: 52, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, padding: '8px 2px',
+                border: '1px solid transparent', borderRadius: 10, cursor: 'pointer', transition: 'background .12s, color .12s',
+                background: on ? 'var(--btn-primary-bg)' : 'transparent', color: on ? 'var(--btn-primary-text)' : 'var(--text-secondary)' }}>
+              <Icon name={it.icon} size={19} weight={on ? 'fill' : 'regular'} />
+              <span style={{ fontSize: 9.5, letterSpacing: '0.02em', lineHeight: 1.1, textAlign: 'center' }}>{it.short || it.label}</span>
+              {it.badge ? <span style={{ position: 'absolute', top: -3, right: -3, minWidth: 16, height: 16, padding: '0 4px', borderRadius: 999, background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', fontSize: 9, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>{it.badge}</span> : null}
+            </button>
+          )
+        })}
+      </div>
+
+      <div style={{ flex: 1, order: 2, minWidth: 0, position: 'relative', display: 'flex', flexDirection: 'column', border: '1px solid var(--border-default)', borderRadius: 12, background: 'var(--surface)', overflow: 'hidden' }}
         onDragOver={!banned && F.attachments ? (e) => { e.preventDefault(); setDrag(true) } : undefined}
         onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setDrag(false) }}
         onDrop={!banned && F.attachments ? (e) => { e.preventDefault(); setDrag(false); if (e.dataTransfer?.files?.length) uploadFiles(e.dataTransfer.files) } : undefined}>
@@ -618,7 +663,7 @@ export default function Community({ api, role = 'user', features = {}, labels: l
                   {mentionUsers.map((u, i) => (
                     <button key={u.key} onMouseDown={(e) => { e.preventDefault(); applyMention(u.name) }} onMouseEnter={() => setMention((m) => ({ ...m, idx: i }))}
                       style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '5px 8px', borderRadius: 7, border: 'none', cursor: 'pointer', textAlign: 'left', fontSize: 'var(--fs-small,12px)', background: i === mention.idx ? 'var(--info-bg)' : 'transparent', color: i === mention.idx ? 'var(--info-text)' : 'var(--text-primary)' }}>
-                      <Avatar icon={u.shape} color={u.color} seed={u.key} size={18} /> {u.name}
+                      <Avatar icon={u.shape} color={u.color} seed={u.username || u.key} size={18} /> {u.name}
                     </button>
                   ))}
                 </div>
@@ -648,9 +693,9 @@ export default function Community({ api, role = 'user', features = {}, labels: l
         )}
       </div>
 
-      {/* right dock: a "커뮤니티 채팅"-style box hosting the active rail panel */}
+      {/* panel dock — opens attached to the rail on the LEFT (order:1), pushing the chat aside */}
       {panel && (
-        <div style={{ width: 288, flexShrink: 0, display: 'flex', flexDirection: 'column', border: '1px solid var(--border-default)', borderRadius: 12, background: 'var(--surface)', overflow: 'hidden' }}>
+        <div style={{ width: 288, order: 1, flexShrink: 0, display: 'flex', flexDirection: 'column', border: '1px solid var(--border-default)', borderRadius: 12, background: 'var(--surface)', overflow: 'hidden' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', borderBottom: '1px solid var(--border-subtle)', background: 'var(--surface-2)' }}>
             <Icon name={(rail.find((r) => r.id === panel) || {}).icon || 'community'} size={16} color="var(--btn-primary-bg)" />
             <span style={{ fontWeight: 600, fontSize: 'var(--fs-small,12px)', flex: 1 }}>{PANEL_TITLES(L)[panel]}</span>
@@ -815,21 +860,6 @@ export default function Community({ api, role = 'user', features = {}, labels: l
         </div>
       )}
 
-      {/* right icon rail — each opens its box beside the chat (chat stays visible) */}
-      <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
-        {rail.map((it) => {
-          const on = panel === it.id
-          return (
-            <button key={it.id} onClick={() => openPanel(it.id)} title={it.label}
-              style={{ position: 'relative', width: 44, height: 44, display: 'inline-flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2,
-                border: `1px solid ${on ? 'var(--btn-primary-bg)' : 'var(--border-default)'}`, borderRadius: 10, cursor: 'pointer',
-                background: on ? 'var(--info-bg)' : 'var(--surface)', color: on ? 'var(--btn-primary-bg)' : 'var(--text-secondary)' }}>
-              <Icon name={it.icon} size={18} weight={on ? 'fill' : 'regular'} />
-              {it.badge ? <span style={{ position: 'absolute', top: -5, right: -5, minWidth: 16, height: 16, padding: '0 4px', borderRadius: 999, background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', fontSize: 9, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>{it.badge}</span> : null}
-            </button>
-          )
-        })}
-      </div>
     </div>
   )
 }
