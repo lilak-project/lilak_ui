@@ -39,6 +39,7 @@
  *        attachments:[att], created_at }
  */
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import Icon from '../icons.jsx'
 import Avatar from '../components/Avatar.jsx'
 import ReactMarkdown from 'react-markdown'
@@ -72,6 +73,11 @@ const DEFAULT_LABELS = {
   pollNamed: '실명', pollAnon: '익명', viewResults: '결과 보기', hideResults: '결과 접기',
   showClosedPolls: '완료된 투표 보기', hideClosedPolls: '완료된 투표 숨기기', noClosedPoll: '완료된 투표가 없습니다.',
   anonHint: '익명으로 작성 중 (관리자만 실명 확인)', revealWho: '누구인지 보기 (관리자)',
+  broadcast: '방송', broadcastManage: '방송 관리',
+  bcEnabled: '방송 사용', bcHint: '다른 탭에 있을 때 새 메시지를 말풍선으로 띄웁니다.',
+  bcAll: '모든 메세지 내보내기', bcQuestions: '질문만 내보내기', bcManagers: '관리자 메세지만 방송',
+  bcPlaza: '광장 모드로 내보내기', bcMax: '방송 최대 메세지', bcLifetime: '방송 메세지 유지시간(초, 0=계속)',
+  bcShowNames: '이름 표시', bcBubbleSize: '말풍선 크기',
 }
 
 const pad2 = (n) => String(n).padStart(2, '0')
@@ -281,7 +287,7 @@ function PollCard({ poll, isManager, onVote, onClose, labels, highlight, fetchRe
   )
 }
 
-export default function Community({ api, role = 'user', features = {}, labels: labelsProp, onOpenFiles, storageKey = 'default' }) {
+export default function Community({ api, role = 'user', features = {}, labels: labelsProp, onOpenFiles, storageKey = 'default', active = true }) {
   // 광장 settings are PER-USER and live in the browser (localStorage), so they
   // survive logout and every account tunes their own view (no server round-trip).
   const PLAZA_KEY = 'lilak-plaza:' + storageKey
@@ -322,6 +328,11 @@ export default function Community({ api, role = 'user', features = {}, labels: l
   const [clearScreen, setClearScreen] = useState(0)   // bump → 광장 clears on-screen bubbles
   const [activePollId, setActivePollId] = useState(null)
   const [showClosed, setShowClosed] = useState(false)  // reveal completed (closed) polls
+  // 방송(broadcast): global admin config + the queue of bubbles shown while off-tab
+  const [bcast, setBcast] = useState(null)             // server config, or null (feature off / unsupported)
+  const [bcastQueue, setBcastQueue] = useState([])     // [{ ...msg, _bcts }] currently-showing broadcast bubbles
+  const bcastSeen = useRef(0)                          // highest message id already considered for broadcast
+  const bcastReady = useRef(false)                     // first message load done → existing history counts as seen
 
   const anonOn = !!anon?.on
   const logRef = useRef(null); const inputRef = useRef(null); const stick = useRef(true); const sending = useRef(false)
@@ -347,6 +358,49 @@ export default function Community({ api, role = 'user', features = {}, labels: l
 
   // assign an anon identity on mount (kept until this component unmounts / login changes)
   useEffect(() => { if (F.anon && api.anonIdentity) api.anonIdentity().then((a) => setAnon((cur) => cur || { ...a, on: false })).catch(() => {}) }, [])
+
+  // ── 방송(broadcast): load the global admin config (all clients need it), refresh
+  //    slowly so admin edits propagate. Feature stays off when the api lacks support.
+  useEffect(() => {
+    if (!api.broadcastSettings) return
+    let alive = true
+    const load = () => api.broadcastSettings().then((c) => { if (alive) setBcast(c) }).catch(() => {})
+    load(); const t = setInterval(load, 15000)
+    return () => { alive = false; clearInterval(t) }
+  }, [])
+
+  // Build the bubble queue: while OFF this tab, any newly-arrived message that passes
+  // the admin filter pops up. On this tab (or feature off) nothing broadcasts and the
+  // seen-cursor tracks the latest so returning doesn't replay old messages.
+  useEffect(() => {
+    const maxId = messages.length ? messages[messages.length - 1].id : 0
+    if (!bcastReady.current) {   // first real load: everything already on screen counts as seen
+      if (messages.length) { bcastReady.current = true; bcastSeen.current = maxId }
+      return
+    }
+    if (active || !bcast?.enabled) { bcastSeen.current = maxId; if (bcastQueue.length) setBcastQueue([]); return }
+    const pass = (m) => {
+      if (m.kind !== 'msg' && m.kind !== 'question') return false          // no polls/system
+      if (bcast.scope === 'questions' && m.kind !== 'question') return false
+      if (bcast.managers_only && m.role !== 'manager') return false
+      return true
+    }
+    const fresh = messages.filter((m) => m.id > bcastSeen.current && pass(m))
+    if (maxId > bcastSeen.current) bcastSeen.current = maxId
+    if (!fresh.length) return
+    const now = Date.now()
+    setBcastQueue((q) => [...q, ...fresh.map((m) => ({ ...m, _bcts: now }))].slice(-Math.max(1, bcast.max || 5)))
+  }, [messages, active, bcast]) // eslint-disable-line
+
+  // lifetime expiry: drop bubbles older than `lifetime` seconds (0 = keep until tab return)
+  useEffect(() => {
+    if (active || !bcast?.enabled || !bcast.lifetime) return
+    const t = setInterval(() => {
+      const cutoff = Date.now() - bcast.lifetime * 1000
+      setBcastQueue((q) => (q.some((b) => b._bcts < cutoff) ? q.filter((b) => b._bcts >= cutoff) : q))
+    }, 500)
+    return () => clearInterval(t)
+  }, [active, bcast])
 
 
   // scroll to the newest BEFORE paint so 시간순 opens already at the bottom (no visible jump)
@@ -391,13 +445,14 @@ export default function Community({ api, role = 'user', features = {}, labels: l
     const next = panel === p ? null : p
     setPanel(next)
     if (next === 'questions' || next === 'completed') {
-      try { setPanelList(next === 'completed' ? await api.completed() : await api.questions()) } catch (e) { setError(String(e.message || e)) }
+      // 완료된 질문은 완료 목록에서만 — 질문 목록에서는 미완료만 (backend already filters; guard here too)
+      try { setPanelList(next === 'completed' ? await api.completed() : (await api.questions()).filter((q) => !q.done)) } catch (e) { setError(String(e.message || e)) }
     }
     if (next === 'manage' && api.users) { try { setUsers(await api.users()) } catch {} }
   }
   async function reloadPanel() {
     if (panel === 'questions' || panel === 'completed') {
-      try { setPanelList(panel === 'completed' ? await api.completed() : await api.questions()) } catch {}
+      try { setPanelList(panel === 'completed' ? await api.completed() : (await api.questions()).filter((q) => !q.done)) } catch {}
     }
   }
 
@@ -495,6 +550,10 @@ export default function Community({ api, role = 'user', features = {}, labels: l
   async function delBot(name) { try { await api.delBot(name); setBots(await api.bots()) } catch (e) { setError(String(e.message || e)) } }
   async function banAll(b) { try { await Promise.all(users.map((u) => api.ban(u.user_key, u.name, b))); setUsers((p) => p.map((u) => ({ ...u, banned: b }))) } catch (e) { setError(String(e.message || e)) } }
   function savePlaza(patch) { setPlaza((cur) => { const next = { ...cur, ...patch }; try { localStorage.setItem(PLAZA_KEY, JSON.stringify(next)) } catch { /* ignore */ } return next }) }
+  // 방송 config is GLOBAL (manager-set on the server) — optimistic local update + persist
+  function saveBcast(patch) {
+    setBcast((cur) => { const next = { ...(cur || {}), ...patch }; if (api.saveBroadcastSettings) api.saveBroadcastSettings(next).catch(() => {}); return next })
+  }
 
   // ── the + menu: only compose actions (attach, question-mode, anon).
   //    Lists & management moved to the right dock (see rail below). ──
@@ -515,6 +574,8 @@ export default function Community({ api, role = 'user', features = {}, labels: l
     F.attachments && { id: 'files', label: L.attachList, short: '첨부', icon: 'attach' },
     F.moderation && isManager && { id: 'manage', label: L.chatManage, short: '관리', icon: 'gear' },
     { id: 'plaza', label: L.plazaManage, short: '광장', icon: 'beer-stein' },   // per-user 광장 settings — open to everyone
+    isManager && api.saveBroadcastSettings && { id: 'broadcast', label: L.broadcastManage, short: '방송', icon: 'megaphone',
+      badge: bcast?.enabled ? 'ON' : null },   // admin-only 방송 (global) settings
   ].filter(Boolean)
   railRef.current = rail.map((r) => r.id)   // keep command-mode number keys in sync
   openPanelRef.current = openPanel
@@ -856,16 +917,115 @@ export default function Community({ api, role = 'user', features = {}, labels: l
                 </div>
               </div>
             </>}
+
+            {/* ── 방송(broadcast) 관리 (manager, global) ── */}
+            {panel === 'broadcast' && isManager && bcast && <>
+              <div style={{ fontSize: 'var(--fs-micro,10px)', color: 'var(--text-muted)' }}>{L.bcHint}</div>
+              <button onClick={() => saveBcast({ enabled: !bcast.enabled })} style={{ ...ghostBtnS, alignSelf: 'flex-start', ...(bcast.enabled ? activeGhost : {}) }}>
+                <Icon name={bcast.enabled ? 'megaphone' : 'megaphone'} size={13} /> {L.bcEnabled}: {bcast.enabled ? 'on' : 'off'}
+              </button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, opacity: bcast.enabled ? 1 : 0.5, pointerEvents: bcast.enabled ? 'auto' : 'none' }}>
+                <button onClick={() => saveBcast({ scope: 'all' })} style={{ ...ghostBtnS, alignSelf: 'flex-start', ...(bcast.scope !== 'questions' ? activeGhost : {}) }}>
+                  <Icon name={bcast.scope !== 'questions' ? 'check' : 'circle'} size={13} /> {L.bcAll}
+                </button>
+                <button onClick={() => saveBcast({ scope: 'questions' })} style={{ ...ghostBtnS, alignSelf: 'flex-start', ...(bcast.scope === 'questions' ? activeGhost : {}) }}>
+                  <Icon name={bcast.scope === 'questions' ? 'check' : 'circle'} size={13} /> {L.bcQuestions}
+                </button>
+                <button onClick={() => saveBcast({ managers_only: !bcast.managers_only })} style={{ ...ghostBtnS, alignSelf: 'flex-start', ...(bcast.managers_only ? activeGhost : {}) }}>
+                  <Icon name={bcast.managers_only ? 'check' : 'circle'} size={13} /> {L.bcManagers}
+                </button>
+                <button onClick={() => saveBcast({ plaza: !bcast.plaza })} style={{ ...ghostBtnS, alignSelf: 'flex-start', ...(bcast.plaza ? activeGhost : {}) }}>
+                  <Icon name="beer-stein" size={13} /> {L.bcPlaza}: {bcast.plaza ? 'on' : 'off'}
+                </button>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                  <span style={lblS}>{L.bcMax}</span>
+                  <input type="number" min="1" value={bcast.max} onChange={(e) => saveBcast({ max: Math.max(1, Number(e.target.value) || 1) })} style={fieldS} />
+                </label>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                  <span style={lblS}>{L.bcLifetime}</span>
+                  <input type="number" min="0" value={bcast.lifetime} onChange={(e) => saveBcast({ lifetime: Math.max(0, Number(e.target.value) || 0) })} style={fieldS} />
+                </label>
+                <button onClick={() => saveBcast({ show_names: !bcast.show_names })} style={{ ...ghostBtnS, alignSelf: 'flex-start', ...(bcast.show_names ? activeGhost : {}) }}>
+                  <Icon name={bcast.show_names ? 'eye' : 'eye-off'} size={13} /> {L.bcShowNames}: {bcast.show_names ? 'on' : 'off'}
+                </button>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <span style={lblS}>{L.bcBubbleSize} · {Math.round((bcast.bubble_scale || 1) * 100)}%</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <button onClick={() => saveBcast({ bubble_scale: Math.max(0.6, Math.round(((bcast.bubble_scale || 1) - 0.1) * 10) / 10) })} style={{ ...ghostBtnS, padding: '2px 10px' }}>−</button>
+                    <input type="range" min="0.6" max="2.5" step="0.1" value={bcast.bubble_scale || 1} onChange={(e) => saveBcast({ bubble_scale: Number(e.target.value) })} style={{ flex: 1 }} />
+                    <button onClick={() => saveBcast({ bubble_scale: Math.min(2.5, Math.round(((bcast.bubble_scale || 1) + 0.1) * 10) / 10) })} style={{ ...ghostBtnS, padding: '2px 10px' }}>+</button>
+                  </div>
+                </div>
+              </div>
+            </>}
           </div>
         </div>
       )}
 
+      {/* 방송 오버레이 — rendered to <body> so it survives the tab's display:none wrapper */}
+      {!active && bcast?.enabled && bcastQueue.length > 0 && typeof document !== 'undefined' &&
+        createPortal(<BroadcastOverlay items={bcastQueue} cfg={bcast} blobURL={api.blobURL} />, document.body)}
     </div>
   )
 }
 
+// 방송 overlay: profile bubbles for messages that arrived while off the community tab.
+// Default = a top-right stack (under the app's own toasts); 광장 모드 = scattered over
+// the right half (below the top bar). Rendered via a body portal (see caller).
+function BroadcastOverlay({ items, cfg, blobURL }) {
+  const scale = Math.min(2.5, Math.max(0.6, cfg.bubble_scale || 1))
+  if (cfg.plaza) {
+    return (
+      <div style={{ position: 'fixed', top: 56, right: 0, width: '50vw', height: 'calc(100vh - 56px)', pointerEvents: 'none', zIndex: 2147483000, overflow: 'hidden' }}>
+        {items.map((m, i) => {
+          const seed = hashPos(m.id)
+          return (
+            <div key={m.id} style={{ position: 'absolute',
+              left: `${8 + (seed % 62)}%`, top: `${6 + ((seed >> 3) % 82)}%`,
+              animation: 'lkbcin .25s ease-out' }}>
+              <BroadcastBubble m={m} cfg={cfg} scale={scale} blobURL={blobURL} />
+            </div>
+          )
+        })}
+        <style>{'@keyframes lkbcin{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:none}}'}</style>
+      </div>
+    )
+  }
+  return (
+    <div style={{ position: 'fixed', top: 64, right: 16, display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-end', pointerEvents: 'none', zIndex: 2147483000, maxHeight: 'calc(100vh - 80px)' }}>
+      {items.map((m) => (
+        <div key={m.id} style={{ animation: 'lkbcin .2s ease-out' }}>
+          <BroadcastBubble m={m} cfg={cfg} scale={scale} blobURL={blobURL} />
+        </div>
+      ))}
+      <style>{'@keyframes lkbcin{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}'}</style>
+    </div>
+  )
+}
+
+function BroadcastBubble({ m, cfg, scale, blobURL }) {
+  const size = Math.round(28 * scale)
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 7, maxWidth: 320 * scale,
+      background: 'var(--surface, #fff)', border: '1px solid var(--border-default,#ddd)', borderRadius: 14,
+      padding: `${6 * scale}px ${10 * scale}px`, boxShadow: '0 4px 16px rgba(0,0,0,.18)' }}>
+      <Avatar outline={m.anon} icon={m.author_shape} color={m.anon ? undefined : m.author_color} seed={m.author_username || m.author_key} size={size} />
+      <div style={{ minWidth: 0 }}>
+        {cfg.show_names && <div style={{ fontWeight: 700, fontSize: 11 * scale, color: 'var(--text-primary)' }}>{m.author_name}</div>}
+        <div style={{ fontSize: 12.5 * scale, color: 'var(--text-primary)', wordBreak: 'break-word', lineHeight: 1.35 }}>
+          {m.kind === 'question' && <span style={{ fontWeight: 700, color: 'var(--info-text)' }}>[질문] </span>}
+          {m.body || (m.attachments?.length ? '📎 첨부파일' : '')}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// tiny deterministic hash → stable pseudo-random plaza position per message id
+function hashPos(id) { let h = (id * 2654435761) >>> 0; return h % 997 }
+
 // right-dock box titles per panel id
-const PANEL_TITLES = (L) => ({ poll: L.poll, questions: L.questionList, completed: L.completedList, files: L.attachList, manage: L.chatManage, plaza: L.plazaManage })
+const PANEL_TITLES = (L) => ({ poll: L.poll, questions: L.questionList, completed: L.completedList, files: L.attachList, manage: L.chatManage, plaza: L.plazaManage, broadcast: L.broadcastManage })
 
 const ghostBtnS = { border: '1px solid var(--border-default)', background: 'transparent', borderRadius: 8, padding: '4px 10px', cursor: 'pointer', fontSize: 'var(--fs-small,12px)', color: 'var(--text-secondary)' }
 const activeGhost = { background: 'var(--info-bg)', color: 'var(--info-text)', borderColor: 'var(--info-text)' }
