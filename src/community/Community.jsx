@@ -73,6 +73,7 @@ const DEFAULT_LABELS = {
   pollNamed: '실명', pollAnon: '익명', viewResults: '결과 보기', hideResults: '결과 접기',
   showClosedPolls: '완료된 투표 보기', hideClosedPolls: '완료된 투표 숨기기', noClosedPoll: '완료된 투표가 없습니다.',
   anonHint: '익명으로 작성 중 (관리자만 실명 확인)', revealWho: '누구인지 보기 (관리자)',
+  anonReroll: '이름 바꾸기',
   broadcast: '방송', broadcastManage: '방송 관리',
   bcEnabled: '방송 사용', bcHint: '다른 탭에 있을 때 새 메시지를 말풍선으로 띄웁니다.',
   bcAll: '모든 메세지 내보내기', bcQuestions: '질문만 내보내기', bcManagers: '관리자 메세지만 방송',
@@ -483,6 +484,11 @@ export default function Community({ api, role = 'user', features = {}, labels: l
   function toggleAnon() {
     setAnon((cur) => { const next = cur ? { ...cur, on: !cur.on } : { on: true }; return next }); setPlusOpen(false)
   }
+  async function rerollAnon() {   // draw a new random anon name/shape (keeps 익명 on)
+    if (!api.rerollAnon) return
+    try { const a = await api.rerollAnon(); setAnon((cur) => ({ ...(cur || { on: true }), name: a.name, shape: a.shape })) }
+    catch (e) { setError(String(e.message || e)) }
+  }
   async function deleteMsg(m) { try { await api.del(m.id); setMessages((p) => p.filter((x) => x.id !== m.id)); setPanelList((p) => p.filter((x) => x.id !== m.id)) } catch (e) { setError(String(e.message || e)) } }
   async function editMsg(m, body) { try { const u = await api.edit(m.id, body); setMessages((p) => p.map((x) => x.id === m.id ? { ...x, ...u } : x)); setPanelList((p) => p.map((x) => x.id === m.id ? { ...x, ...u } : x)) } catch (e) { setError(String(e.message || e)) } }
   async function setNotice(m, on) { try { const u = await api.setNotice(m.id, on); setMessages((p) => p.map((x) => x.id === m.id ? { ...x, ...u } : x)) } catch (e) { setError(String(e.message || e)) } }
@@ -695,6 +701,12 @@ export default function Community({ api, role = 'user', features = {}, labels: l
             )}
             {anonOn && (
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 6, fontSize: 'var(--fs-tiny,11px)', color: 'var(--text-muted)' }} title={L.anonHint}>
+                {api.rerollAnon && (
+                  <button onClick={rerollAnon} title={L.anonReroll}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 3, border: '1px solid var(--border-default)', background: 'var(--surface-2)', borderRadius: 6, cursor: 'pointer', fontSize: 'var(--fs-micro,10px)', color: 'var(--text-secondary)', padding: '2px 7px' }}>
+                    🎲 {L.anonReroll}
+                  </button>
+                )}
                 <Avatar outline icon={anon.shape} seed={anon.name} size={18} /> {anon.name} · {L.anonHint}
               </div>
             )}
