@@ -66,6 +66,8 @@ const DEFAULT_LABELS = {
   anonOn: '익명으로 전환', anonOff: '익명 끄기', poll: '설문 / 투표',
   clearAll: '채팅 전체 삭제', confirmClear: '정말 전체 삭제?', ban: '이용제한', unban: '해제',
   banned: '커뮤니티 이용이 제한된 계정입니다.', drop: '📎 파일을 여기에 놓으세요',
+  locked: '커뮤니티 채팅이 잠겼습니다 (관리자만 작성 가능).', lockedMgr: '채팅 잠금 중 — 관리자만 작성할 수 있습니다.',
+  lockChat: '커뮤니티 끄기', unlockChat: '커뮤니티 켜기', rerollAll: '익명 이름 전체 바꾸기',
   pollTitle: '투표 제목', pollOption: '항목', addOption: '항목 추가', createPoll: '투표 만들기',
   vote: '투표', closePoll: '완료', pollClosed: '종료됨', deadline: '마감',
   viewPoll: '투표 보기', noPoll: '진행 중인 투표가 없습니다.',
@@ -144,7 +146,7 @@ const chipS = { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '
 const chipBtnS = { ...chipS, maxWidth: '100%', minWidth: 0, border: '1px solid var(--border-default)', cursor: 'pointer', color: 'var(--text-primary)' }
 
 /* ── a chat row: avatar + author/time + bubble(s). Everyone left-aligned. ── */
-function MessageRow({ m, meKey, grouped, isManager, blobURL, onReply, onEdit, onDelete, onComplete, onNotice, onRowClick, onPollClick, revealed, onReveal, labels }) {
+function MessageRow({ m, meKey, grouped, isManager, blobURL, onReply, onEdit, onDelete, onComplete, onNotice, onRowClick, onPollClick, onJumpTo, revealed, onReveal, labels }) {
   const isQ = m.kind === 'question'
   const isPoll = m.kind === 'poll'
   const isNotice = !!m.notice
@@ -158,7 +160,7 @@ function MessageRow({ m, meKey, grouped, isManager, blobURL, onReply, onEdit, on
   const canDelete = onDelete && (mine || isManager)
   function saveEdit() { const b = draft.trim(); if (b && b !== m.body) onEdit(m, b); setEditing(false) }
   return (
-    <div style={{ display: 'flex', gap: 7, padding: '1px 4px', alignItems: 'flex-start', cursor: onRowClick ? 'pointer' : 'default' }}
+    <div id={'cmmsg-' + m.id} style={{ display: 'flex', gap: 7, padding: '1px 4px', alignItems: 'flex-start', borderRadius: 6, cursor: onRowClick ? 'pointer' : 'default' }}
       onClick={onRowClick ? () => onRowClick(m) : undefined}>
       <div style={{ width: 26, flexShrink: 0 }}>
         {!grouped && <Avatar outline={m.anon} icon={m.author_shape} color={m.anon ? undefined : m.author_color} seed={m.author_username || m.author_key} size={26} title={m.author_name} />}
@@ -189,7 +191,9 @@ function MessageRow({ m, meKey, grouped, isManager, blobURL, onReply, onEdit, on
             {isQ && <span style={{ display: 'inline-block', fontSize: 'var(--fs-micro,10px)', fontWeight: 700, color: 'var(--warning-text)', marginBottom: 2 }}>{labels.question}{m.done ? ' · ' + labels.done : ''}</span>}
             {isPoll && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 'var(--fs-small,12px)', fontWeight: 600, color: 'var(--info-text)' }}><Icon name="chart" size={14} /> {m.body} <span style={{ fontWeight: 400, color: 'var(--text-muted)', fontSize: 'var(--fs-micro,10px)' }}>· {labels.viewPoll}</span></span>}
             {m.reply_to_id ? (
-              <div style={{ borderLeft: '2px solid var(--border-strong)', paddingLeft: 6, margin: '0 0 3px', fontSize: 'var(--fs-tiny,11px)', color: 'var(--text-secondary)' }}>
+              <div onClick={(e) => { e.stopPropagation(); onJumpTo && onJumpTo(m.reply_to_id) }}
+                title={onJumpTo ? '원본 메세지로 이동' : undefined}
+                style={{ borderLeft: '2px solid var(--border-strong)', paddingLeft: 6, margin: '0 0 3px', fontSize: 'var(--fs-tiny,11px)', color: 'var(--text-secondary)', cursor: onJumpTo ? 'pointer' : 'default' }}>
                 <b>{m.reply_to_author}</b> {String(m.reply_to_body || '').slice(0, 60)}
               </div>
             ) : null}
@@ -302,6 +306,7 @@ export default function Community({ api, role = 'user', features = {}, labels: l
   const [online, setOnline] = useState([])
   const [meKey, setMeKey] = useState('')
   const [banned, setBanned] = useState(false)
+  const [locked, setLocked] = useState(false)   // room-wide chat lock (manager toggle)
   const [text, setText] = useState('')
   const [error, setError] = useState('')
   const [pending, setPending] = useState([])
@@ -321,8 +326,8 @@ export default function Community({ api, role = 'user', features = {}, labels: l
   const [polls, setPolls] = useState([])
   const [pollForm, setPollForm] = useState(null)  // { title, options:[] } | null
   const [mention, setMention] = useState(null)    // { q, idx } | null  — @autocomplete
-  const [admin, setAdmin] = useState(null)         // 'names' | 'bots' | 'anonmap' | 'stats' | null (manage drawer)
-  const [report, setReport] = useState([])         // per-user report (익명 이름 보기 / 통계 보기)
+  const [admin, setAdmin] = useState(null)         // 'names' | 'bots' | null (manage drawer sub-editors)
+  const [userView, setUserView] = useState('ban')  // manage user list mode: 'ban' | 'anon' | 'stats'
   const [names, setNames] = useState(null)         // { surnames, given }
   const [nameDraft, setNameDraft] = useState({ surnames: '', given: '' })  // raw text (keeps spaces!)
   const [bots, setBots] = useState([])
@@ -337,6 +342,8 @@ export default function Community({ api, role = 'user', features = {}, labels: l
   const bcastReady = useRef(false)                     // first message load done → existing history counts as seen
 
   const anonOn = !!anon?.on
+  const cantPost = banned || (locked && !isManager)   // locked chat: only managers may post
+  const onlineKeys = useMemo(() => new Set((online || []).map((o) => o.key)), [online])
   const logRef = useRef(null); const inputRef = useRef(null); const stick = useRef(true); const sending = useRef(false)
   const rootRef = useRef(null)          // component root — number keys act only when visible
   const railRef = useRef([])            // current rail panel ids (for command-mode number keys)
@@ -349,7 +356,7 @@ export default function Community({ api, role = 'user', features = {}, labels: l
       try {
         const d = await api.poll()
         if (!alive) return
-        setMeKey(d.myKey || d.me || ''); setBanned(!!d.banned)
+        setMeKey(d.myKey || d.me || ''); setBanned(!!d.banned); setLocked(!!d.locked)
         setOnline(d.online || []); setMessages(d.messages || []); setError('')
         if (F.polls && api.polls) { try { setPolls(await api.polls()) } catch {} }
       } catch (e) { if (alive) setError(String(e.message || e)) }
@@ -413,14 +420,14 @@ export default function Community({ api, role = 'user', features = {}, labels: l
   useEffect(() => { inputRef.current?.focus() }, [])
   useEffect(() => {
     const onKey = (e) => {
-      if (e.key !== 'Enter' || e.shiftKey || e.altKey || e.ctrlKey || e.metaKey || banned) return
+      if (e.key !== 'Enter' || e.shiftKey || e.altKey || e.ctrlKey || e.metaKey || cantPost) return
       const t = e.target, tag = t && t.tagName
       if (tag === 'INPUT' || tag === 'TEXTAREA' || (t && t.isContentEditable)) return
       inputRef.current?.focus()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [banned])
+  }, [cantPost])
 
   // ── command-mode number keys: 1..N open/close the rail panels top-to-bottom,
   //    0 closes the open one. Only when this component is on-screen and not typing
@@ -450,7 +457,7 @@ export default function Community({ api, role = 'user', features = {}, labels: l
       // 완료된 질문은 완료 목록에서만 — 질문 목록에서는 미완료만 (backend already filters; guard here too)
       try { setPanelList(next === 'completed' ? await api.completed() : (await api.questions()).filter((q) => !q.done)) } catch (e) { setError(String(e.message || e)) }
     }
-    if (next === 'manage' && api.users) { try { setUsers(await api.users()) } catch {} }
+    if (next === 'manage') { try { await loadManageUsers() } catch {} }
   }
   async function reloadPanel() {
     if (panel === 'questions' || panel === 'completed') {
@@ -468,7 +475,7 @@ export default function Community({ api, role = 'user', features = {}, labels: l
 
   async function doSend() {
     const body = text.trim()
-    if ((!body && !pending.length) || sending.current || banned) return
+    if ((!body && !pending.length) || sending.current || cantPost) return
     sending.current = true
     const payload = { body, kind: qMode ? 'question' : 'msg', notice: noticeMode && isManager, reply_to_id: reply?.id || 0, attachments: pending,
       anonymous: anonOn, anon_name: anonOn ? anon.name : '', anon_shape: anonOn ? anon.shape : '' }
@@ -493,11 +500,36 @@ export default function Community({ api, role = 'user', features = {}, labels: l
   async function editMsg(m, body) { try { const u = await api.edit(m.id, body); setMessages((p) => p.map((x) => x.id === m.id ? { ...x, ...u } : x)); setPanelList((p) => p.map((x) => x.id === m.id ? { ...x, ...u } : x)) } catch (e) { setError(String(e.message || e)) } }
   async function setNotice(m, on) { try { const u = await api.setNotice(m.id, on); setMessages((p) => p.map((x) => x.id === m.id ? { ...x, ...u } : x)) } catch (e) { setError(String(e.message || e)) } }
   async function completeQ(m) { try { await api.complete(m.id); setMessages((p) => p.map((x) => x.id === m.id ? { ...x, done: true } : x)); reloadPanel() } catch (e) { setError(String(e.message || e)) } }
+  // scroll the chat to a replied-to original and flash it (clicking a reply quote)
+  function jumpToMessage(id) {
+    if (!id) return
+    if (panel) setPanel(null)   // reply quotes live in the chat; make sure it's visible
+    stick.current = false
+    requestAnimationFrame(() => {
+      const el = document.getElementById('cmmsg-' + id)
+      if (!el) { setError('원본 메세지를 찾을 수 없습니다 (오래되어 목록에 없음).'); return }
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      const prev = el.style.background
+      el.style.transition = 'background .3s'; el.style.background = 'var(--info-bg)'
+      setTimeout(() => { el.style.background = prev }, 1000)
+    })
+  }
+  function replyFromPanel(m) { setReply(m); setPanel(null); requestAnimationFrame(() => inputRef.current?.focus()) }
   async function clearAll() {
     if (!confirmClear) { setConfirmClear(true); setTimeout(() => setConfirmClear(false), 3000); return }
     setConfirmClear(false); try { await api.clearAll(); setMessages([]) } catch (e) { setError(String(e.message || e)) }
   }
+  // Manage user list: prefer the richer report (adds anon name + msg/question counts
+  // for the 익명 이름 보기 / 통계 보기 modes), else the plain user list.
+  async function loadManageUsers() {
+    if (api.userReport) {
+      const r = await api.userReport()
+      setUsers(r.map((u) => ({ user_key: u.key, name: u.name, username: u.username, banned: u.banned, anon_name: u.anon_name, anon_shape: u.anon_shape, msgs: u.msgs, questions: u.questions })))
+    } else if (api.users) { setUsers(await api.users()) }
+  }
   async function toggleBan(u) { try { await api.ban(u.user_key, u.name, !u.banned); setUsers((p) => p.map((x) => x.user_key === u.user_key ? { ...x, banned: !x.banned } : x)) } catch (e) { setError(String(e.message || e)) } }
+  async function toggleLock() { try { const r = await api.lockChat(!locked); setLocked(!!r.locked) } catch (e) { setError(String(e.message || e)) } }
+  async function rerollAll() { try { await api.rerollAllAnon(); await loadManageUsers() } catch (e) { setError(String(e.message || e)) } }
   async function vote(pid, oid) { try { await api.vote(pid, oid, { anonymous: anonOn, anon_name: anonOn ? anon.name : '', anon_shape: anonOn ? anon.shape : '' }); setPolls(await api.polls()) } catch (e) { setError(String(e.message || e)) } }
   async function closePoll(pid) { try { await api.closePoll(pid); setPolls(await api.polls()) } catch (e) { setError(String(e.message || e)) } }
   async function submitPoll() {
@@ -546,7 +578,6 @@ export default function Community({ api, role = 'user', features = {}, labels: l
     try {
       if (which === 'names' && api.anonNames) { const n = await api.anonNames(); setNames(n); setNameDraft({ surnames: (n.surnames || []).join(' '), given: (n.given || []).join(' ') }) }
       if (which === 'bots' && api.bots) setBots(await api.bots())
-      if ((which === 'anonmap' || which === 'stats') && api.userReport) setReport(await api.userReport())
     } catch (e) { setError(String(e.message || e)) }
   }
   // parse the raw draft only on save, so spaces stay typable while editing
@@ -616,9 +647,9 @@ export default function Community({ api, role = 'user', features = {}, labels: l
       </div>
 
       <div style={{ flex: 1, order: 2, minWidth: 0, position: 'relative', display: 'flex', flexDirection: 'column', border: '1px solid var(--border-default)', borderRadius: 12, background: 'var(--surface)', overflow: 'hidden' }}
-        onDragOver={!banned && F.attachments ? (e) => { e.preventDefault(); setDrag(true) } : undefined}
+        onDragOver={!cantPost && F.attachments ? (e) => { e.preventDefault(); setDrag(true) } : undefined}
         onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setDrag(false) }}
-        onDrop={!banned && F.attachments ? (e) => { e.preventDefault(); setDrag(false); if (e.dataTransfer?.files?.length) uploadFiles(e.dataTransfer.files) } : undefined}>
+        onDrop={!cantPost && F.attachments ? (e) => { e.preventDefault(); setDrag(false); if (e.dataTransfer?.files?.length) uploadFiles(e.dataTransfer.files) } : undefined}>
         {drag && <div style={{ position: 'absolute', inset: 6, border: '2px dashed var(--btn-primary-bg)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--info-bg)', color: 'var(--info-text)', zIndex: 20, pointerEvents: 'none', fontSize: 'var(--fs-medium,14px)', fontWeight: 600 }}>{L.drop}</div>}
         {/* header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 14px', borderBottom: '1px solid var(--border-subtle)', background: 'var(--surface-2)' }}>
@@ -670,6 +701,7 @@ export default function Community({ api, role = 'user', features = {}, labels: l
                 onComplete={completeQ}
                 onNotice={setNotice}
                 onPollClick={(pid) => { setActivePollId(pid); setPanel('poll') }}
+                onJumpTo={jumpToMessage}
                 revealed={revealed.has(m.id)} onReveal={() => setRevealed((s) => { const n = new Set(s); n.has(m.id) ? n.delete(m.id) : n.add(m.id); return n })}
                 labels={L} />
             ))}
@@ -677,10 +709,14 @@ export default function Community({ api, role = 'user', features = {}, labels: l
         )}
 
         {error && <div style={{ padding: '4px 12px', color: 'var(--danger-text)', fontSize: 'var(--fs-small,12px)' }}>⚠ {error}</div>}
-        {banned && <div style={{ padding: '8px 12px', color: 'var(--danger-text)', fontSize: 'var(--fs-small,12px)', textAlign: 'center' }}>{L.banned}</div>}
+        {/* Restricted (banned / locked): keep the box but the send button + Enter are
+            disabled below — no harsh banner. Locked shows a soft lock hint. */}
+        {locked && !isManager && <div style={{ padding: '6px 12px 0', color: 'var(--text-muted)', fontSize: 'var(--fs-micro,10px)', textAlign: 'center' }}>🔒 {L.locked}</div>}
 
         {/* input bar: [+]  [textarea]  [send] */}
-        {!banned && (
+        {(
+          <>
+          {locked && isManager && <div style={{ padding: '4px 12px 0', color: 'var(--warning-text,var(--text-muted))', fontSize: 'var(--fs-micro,10px)', textAlign: 'center' }}>🔒 {L.lockedMgr}</div>}
           <div style={{ borderTop: '1px solid var(--border-subtle)', padding: 10 }}>
             {reply && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 'var(--fs-small,12px)', color: 'var(--text-secondary)', marginBottom: 6 }}>
@@ -758,13 +794,14 @@ export default function Community({ api, role = 'user', features = {}, labels: l
                 placeholder={noticeMode ? '공지를 입력하고 전송하세요…' : qMode ? '질문을 입력하고 전송하세요…' : L.placeholder}
                 style={{ flex: 1, resize: 'none', maxHeight: 120, minHeight: 36, padding: '8px 11px', borderRadius: 10, fontFamily: 'inherit', fontSize: 'var(--fs-body,13px)', lineHeight: 1.4, outline: 'none', background: 'var(--input-bg,var(--surface))', color: 'var(--text-primary)',
                   border: (qMode || noticeMode) ? '2px solid var(--warning-text)' : '1px solid var(--border-default)' }} />
-              <button onClick={doSend} disabled={!text.trim() && !pending.length} title={L.send}
-                style={{ width: 36, height: 36, borderRadius: 10, border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                  background: (text.trim() || pending.length) ? 'var(--btn-primary-bg)' : 'var(--surface-3)', color: (text.trim() || pending.length) ? 'var(--btn-primary-text)' : 'var(--text-muted)' }}>
+              <button onClick={doSend} disabled={cantPost || (!text.trim() && !pending.length)} title={L.send}
+                style={{ width: 36, height: 36, borderRadius: 10, border: 'none', cursor: cantPost ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                  background: (!cantPost && (text.trim() || pending.length)) ? 'var(--btn-primary-bg)' : 'var(--surface-3)', color: (!cantPost && (text.trim() || pending.length)) ? 'var(--btn-primary-text)' : 'var(--text-muted)' }}>
                 <Icon name={uploading ? 'spinner' : 'send'} size={17} weight="fill" />
               </button>
             </div>
           </div>
+          </>
         )}
       </div>
 
@@ -837,9 +874,12 @@ export default function Community({ api, role = 'user', features = {}, labels: l
                     <em style={{ fontStyle: 'normal', fontSize: 'var(--fs-micro,10px)', color: 'var(--text-muted)', marginLeft: 'auto' }}>{timeLabel(m.created_at)}</em>
                   </div>
                   <div style={{ fontSize: 'var(--fs-small,12px)', color: 'var(--text-primary)', wordBreak: 'break-word' }}>{m.body}</div>
-                  {panel === 'questions' && isManager && !m.done && (
-                    <button onClick={() => completeQ(m)} style={{ ...ghostBtnS, marginTop: 6 }}><Icon name="check" size={12} /> {L.done}</button>
-                  )}
+                  <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+                    <button onClick={() => replyFromPanel(m)} style={ghostBtnS}><Icon name="reply" size={12} /> {L.reply}</button>
+                    {panel === 'questions' && isManager && !m.done && (
+                      <button onClick={() => completeQ(m)} style={ghostBtnS}><Icon name="check" size={12} /> {L.done}</button>
+                    )}
+                  </div>
                 </div>
               ))}
             </>}
@@ -855,31 +895,65 @@ export default function Community({ api, role = 'user', features = {}, labels: l
               ))}
             </>}
 
-            {/* ── 채팅창 관리 (manager) — 한 줄에 한 명 + 전체 이용제한/해제 ── */}
+            {/* ── 채팅창 관리 (manager): 잠금 · 목록(이용제한/익명이름/통계 모드) · 익명풀/봇 ── */}
             {panel === 'manage' && isManager && <>
-              <button onClick={clearAll} style={{ ...ghostBtnS, alignSelf: 'flex-start', color: confirmClear ? 'var(--danger-text)' : 'var(--text-secondary)', borderColor: confirmClear ? 'var(--danger-text)' : 'var(--border-default)' }}>
-                {confirmClear ? L.confirmClear : L.clearAll}
-              </button>
-              {users.length > 0 && (
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {api.lockChat && (
+                  <button onClick={toggleLock} style={{ ...ghostBtnS, ...(locked ? { background: 'var(--danger-bg)', color: 'var(--danger-text)', borderColor: 'var(--danger-text)' } : {}) }}>
+                    <Icon name={locked ? 'lock' : 'lock-open'} size={13} /> {locked ? L.unlockChat : L.lockChat}
+                  </button>
+                )}
+                <button onClick={clearAll} style={{ ...ghostBtnS, color: confirmClear ? 'var(--danger-text)' : 'var(--text-secondary)', borderColor: confirmClear ? 'var(--danger-text)' : 'var(--border-default)' }}>
+                  {confirmClear ? L.confirmClear : L.clearAll}
+                </button>
+              </div>
+
+              {/* one list, three modes */}
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                <button onClick={() => setUserView('ban')} style={{ ...ghostBtnS, ...(userView === 'ban' ? activeGhost : {}) }}>이용제한</button>
+                {F.anon && api.userReport && <button onClick={() => setUserView('anon')} style={{ ...ghostBtnS, ...(userView === 'anon' ? activeGhost : {}) }}>익명 이름 보기</button>}
+                {api.userReport && <button onClick={() => setUserView('stats')} style={{ ...ghostBtnS, ...(userView === 'stats' ? activeGhost : {}) }}>통계 보기</button>}
+              </div>
+              {userView === 'ban' && users.length > 0 && (
                 <div style={{ display: 'flex', gap: 6 }}>
                   <button onClick={() => banAll(true)} style={{ ...ghostBtnS, flex: 1, color: 'var(--danger-text)', borderColor: 'var(--danger-text)' }}>{L.banAll}</button>
                   <button onClick={() => banAll(false)} style={{ ...ghostBtnS, flex: 1 }}>{L.unbanAll}</button>
                 </div>
               )}
+              {userView === 'stats' && users.length > 0 && (
+                <div style={{ display: 'flex', fontSize: 'var(--fs-micro,10px)', color: 'var(--text-muted)', padding: '0 8px' }}>
+                  <span style={{ flex: 1 }}>사용자</span><span style={{ width: 46, textAlign: 'right' }}>채팅</span><span style={{ width: 46, textAlign: 'right' }}>질문</span>
+                </div>
+              )}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                 {users.length === 0 && <span style={{ fontSize: 'var(--fs-tiny,11px)', color: 'var(--text-muted)' }}>사용자 없음</span>}
-                {users.map((u) => (
-                  <div key={u.user_key} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 6px 4px 10px', borderRadius: 8, background: u.banned ? 'var(--danger-bg)' : 'var(--surface-2)', fontSize: 'var(--fs-small,12px)' }}>
-                    <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.name}</span>
-                    <button onClick={() => toggleBan(u)} style={{ ...actS, fontSize: 'var(--fs-micro,10px)', padding: '2px 8px', background: 'var(--surface)', border: '1px solid var(--border-default)', borderRadius: 999, color: u.banned ? 'var(--text-secondary)' : 'var(--danger-text)' }}>{u.banned ? L.unban : L.ban}</button>
-                  </div>
-                ))}
+                {users.map((u) => {
+                  const on = onlineKeys.has(u.user_key)   // 접속 중이면 초록 테두리
+                  return (
+                    <div key={u.user_key} title={on ? '접속 중' : undefined}
+                      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 8px', borderRadius: 8, fontSize: 'var(--fs-small,12px)',
+                        background: u.banned ? 'var(--danger-bg)' : 'var(--surface-2)',
+                        border: on ? '1px solid var(--success-text, #22c55e)' : '1px solid transparent' }}>
+                      <Avatar seed={u.username || u.name} size={20} />
+                      <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.name}</span>
+                      {userView === 'ban' && (
+                        <button onClick={() => toggleBan(u)} style={{ ...actS, fontSize: 'var(--fs-micro,10px)', padding: '2px 8px', background: 'var(--surface)', border: '1px solid var(--border-default)', borderRadius: 999, color: u.banned ? 'var(--text-secondary)' : 'var(--danger-text)' }}>{u.banned ? L.unban : L.ban}</button>
+                      )}
+                      {userView === 'anon' && (u.anon_name
+                        ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: 'var(--text-secondary)' }}><Avatar outline icon={u.anon_shape} size={16} />{u.anon_name}</span>
+                        : <span style={{ color: 'var(--text-muted)' }}>—</span>)}
+                      {userView === 'stats' && <>
+                        <span style={{ width: 46, textAlign: 'right' }}>{u.msgs ?? 0}</span>
+                        <span style={{ width: 46, textAlign: 'right', color: 'var(--info-text)' }}>{u.questions ?? 0}</span>
+                      </>}
+                    </div>
+                  )
+                })}
               </div>
-              {(api.anonNames || api.bots || api.userReport) && (
+              {(api.anonNames || api.bots || api.rerollAllAnon) && (
                 <div style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
                   {F.anon && api.anonNames && <button onClick={() => openAdmin(admin === 'names' ? null : 'names')} style={{ ...ghostBtnS, ...(admin === 'names' ? activeGhost : {}) }}>익명 이름 목록</button>}
-                  {F.anon && api.userReport && <button onClick={() => openAdmin(admin === 'anonmap' ? null : 'anonmap')} style={{ ...ghostBtnS, ...(admin === 'anonmap' ? activeGhost : {}) }}>익명 이름 보기</button>}
-                  {api.userReport && <button onClick={() => openAdmin(admin === 'stats' ? null : 'stats')} style={{ ...ghostBtnS, ...(admin === 'stats' ? activeGhost : {}) }}>통계 보기</button>}
+                  {F.anon && api.rerollAllAnon && <button onClick={rerollAll} style={ghostBtnS}>🎲 {L.rerollAll}</button>}
                   {api.bots && <button onClick={() => openAdmin(admin === 'bots' ? null : 'bots')} style={{ ...ghostBtnS, ...(admin === 'bots' ? activeGhost : {}) }}>봇 관리</button>}
                 </div>
               )}
@@ -888,37 +962,6 @@ export default function Community({ api, role = 'user', features = {}, labels: l
                   <div><div style={lblS}>성씨 ({parseNames(nameDraft.surnames).length})</div><textarea value={nameDraft.surnames} onChange={(e) => setNameDraft((n) => ({ ...n, surnames: e.target.value }))} rows={3} style={taS} /></div>
                   <div><div style={lblS}>이름 ({parseNames(nameDraft.given).length})</div><textarea value={nameDraft.given} onChange={(e) => setNameDraft((n) => ({ ...n, given: e.target.value }))} rows={3} style={taS} /></div>
                   <button onClick={saveNames} style={primaryBtnS}>저장 · {parseNames(nameDraft.surnames).length}×{parseNames(nameDraft.given).length} 조합</button>
-                </div>
-              )}
-              {admin === 'anonmap' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  {report.length === 0 && <div style={{ color: 'var(--text-muted)', fontSize: 'var(--fs-small,12px)' }}>표시할 사용자가 없습니다.</div>}
-                  {report.map((u) => (
-                    <div key={u.key} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 'var(--fs-small,12px)', padding: '4px 0', borderTop: '1px solid var(--border-subtle)' }}>
-                      <b style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.name}</b>
-                      <span style={{ color: 'var(--text-muted)', marginLeft: 'auto' }}>→</span>
-                      {u.anon_name
-                        ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><Avatar outline icon={u.anon_shape} size={18} /><span>{u.anon_name}</span></span>
-                        : <span style={{ color: 'var(--text-muted)' }}>—</span>}
-                    </div>
-                  ))}
-                </div>
-              )}
-              {admin === 'stats' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  {report.length === 0 && <div style={{ color: 'var(--text-muted)', fontSize: 'var(--fs-small,12px)' }}>표시할 사용자가 없습니다.</div>}
-                  {report.length > 0 && (
-                    <div style={{ display: 'flex', fontSize: 'var(--fs-micro,10px)', color: 'var(--text-muted)', padding: '0 0 2px' }}>
-                      <span style={{ flex: 1 }}>사용자</span><span style={{ width: 52, textAlign: 'right' }}>채팅</span><span style={{ width: 52, textAlign: 'right' }}>질문</span>
-                    </div>
-                  )}
-                  {report.map((u) => (
-                    <div key={u.key} style={{ display: 'flex', alignItems: 'center', fontSize: 'var(--fs-small,12px)', padding: '4px 0', borderTop: '1px solid var(--border-subtle)' }}>
-                      <b style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.name}</b>
-                      <span style={{ width: 52, textAlign: 'right' }}>{u.msgs}</span>
-                      <span style={{ width: 52, textAlign: 'right', color: 'var(--info-text)' }}>{u.questions}</span>
-                    </div>
-                  ))}
                 </div>
               )}
               {admin === 'bots' && (
@@ -1053,7 +1096,7 @@ function BroadcastOverlay({ items, cfg, blobURL }) {
 function BroadcastBubble({ m, cfg, scale, blobURL }) {
   const size = Math.round(28 * scale)
   return (
-    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 7, maxWidth: 320 * scale,
+    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 7, maxWidth: 320 * scale,
       background: 'var(--surface, #fff)', border: '1px solid var(--border-default,#ddd)', borderRadius: 14,
       padding: `${6 * scale}px ${10 * scale}px`, boxShadow: '0 4px 16px rgba(0,0,0,.18)' }}>
       <Avatar outline={m.anon} icon={m.author_shape} color={m.anon ? undefined : m.author_color} seed={m.author_username || m.author_key} size={size} />
