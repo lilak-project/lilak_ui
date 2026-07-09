@@ -52,14 +52,14 @@ const DEFAULT_LABELS = {
   online: (n) => `${n}명 접속 중`, empty: '아직 메시지가 없습니다. 첫 메시지를 남겨보세요.',
   emptyQ: '등록된 질문이 없습니다.', emptyDone: '완료된 질문이 없습니다.',
   placeholder: '메시지 입력…  (Enter 전송 · Shift+Enter 줄바꿈)',
-  send: '전송', reply: '답글', del: '삭제', done: '완료', me: '나', back: '← 채팅으로',
+  send: '전송', reply: '답글', del: '삭제', done: '완료', completeAll: '모두 완료', me: '나', back: '← 채팅으로',
   edit: '수정', save: '저장', cancel: '취소', edited: '수정됨',
   attach: '첨부파일', attachManage: '첨부파일 관리', chatManage: '채팅창 관리',
   attachList: '첨부 목록', noAttach: '첨부파일이 없습니다.',
   listMode: '시간순', spatialMode: '광장', spatialHint: '메시지가 광장에 떠오릅니다 · 마우스를 올리면 프로필',
   plazaManage: '광장 관리', plazaLifetime: '말풍선 유지 시간(초, 0=계속)', plazaMax: '최대 말풍선 수',
   plazaPerAccount: '계정당 표시 수', plazaShowNames: '이름 표시', plazaReplay: '다시 재생', banAll: '전체 이용제한', unbanAll: '전체 해제',
-  plazaClear: '화면 비우기', plazaDragHint: '프로필을 끌어 옮기기',
+  plazaClear: '화면 비우기', plazaDragHint: '프로필을 끌어 옮기기', plazaShot: '광장 사진찍기',
   question: '질문', questionList: '질문 목록', completedList: '완료 목록',
   notice: '공지', noticePost: '공지', setNotice: '공지로 설정', unsetNotice: '공지 해제', noticeEmpty: '공지가 없습니다.',
   plazaBubbleSize: '말풍선 크기',
@@ -321,6 +321,7 @@ export default function Community({ api, role = 'user', features = {}, labels: l
   const [plusOpen, setPlusOpen] = useState(false)
   const [users, setUsers] = useState([])
   const [confirmClear, setConfirmClear] = useState(false)
+  const [confirmCompleteAll, setConfirmCompleteAll] = useState(false)
   const [anon, setAnon] = useState(null)          // { name, shape, on }
   const [revealed, setRevealed] = useState(() => new Set())
   const [polls, setPolls] = useState([])
@@ -438,6 +439,11 @@ export default function Community({ api, role = 'user', features = {}, labels: l
       const t = e.target, tag = t && t.tagName
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (t && t.isContentEditable)) return
       if (e.metaKey || e.ctrlKey || e.altKey) return
+      // Backspace flips the display between 시간순(list) and 광장(square).
+      if (e.key === 'Backspace') {
+        e.preventDefault(); e.stopImmediatePropagation()
+        setMode((m) => (m === 'square' ? 'list' : 'square')); return
+      }
       if (e.key === '0') { openPanelRef.current && setPanel(null); return }
       if (e.key >= '1' && e.key <= '9') {
         const id = railRef.current[Number(e.key) - 1]
@@ -500,6 +506,19 @@ export default function Community({ api, role = 'user', features = {}, labels: l
   async function editMsg(m, body) { try { const u = await api.edit(m.id, body); setMessages((p) => p.map((x) => x.id === m.id ? { ...x, ...u } : x)); setPanelList((p) => p.map((x) => x.id === m.id ? { ...x, ...u } : x)) } catch (e) { setError(String(e.message || e)) } }
   async function setNotice(m, on) { try { const u = await api.setNotice(m.id, on); setMessages((p) => p.map((x) => x.id === m.id ? { ...x, ...u } : x)) } catch (e) { setError(String(e.message || e)) } }
   async function completeQ(m) { try { await api.complete(m.id); setMessages((p) => p.map((x) => x.id === m.id ? { ...x, done: true } : x)); reloadPanel() } catch (e) { setError(String(e.message || e)) } }
+  // Mark every open question done in one go (manager). Two-click confirm to avoid
+  // an accidental bulk-complete; completes the ids currently in the 질문 목록.
+  async function completeAllQ() {
+    const ids = panelList.filter((m) => !m.done).map((m) => m.id)
+    if (!ids.length) return
+    if (!confirmCompleteAll) { setConfirmCompleteAll(true); setTimeout(() => setConfirmCompleteAll(false), 3000); return }
+    setConfirmCompleteAll(false)
+    try {
+      for (const id of ids) await api.complete(id)
+      setMessages((p) => p.map((x) => ids.includes(x.id) ? { ...x, done: true } : x))
+      reloadPanel()
+    } catch (e) { setError(String(e.message || e)) }
+  }
   // scroll the chat to a replied-to original and flash it (clicking a reply quote)
   function jumpToMessage(id) {
     if (!id) return
@@ -514,7 +533,9 @@ export default function Community({ api, role = 'user', features = {}, labels: l
       setTimeout(() => { el.style.background = prev }, 1000)
     })
   }
-  function replyFromPanel(m) { setReply(m); setPanel(null); requestAnimationFrame(() => inputRef.current?.focus()) }
+  // Reply from the question/completed list: set the reply target and focus the input
+  // but KEEP the panel open, so the user can answer several questions in a row.
+  function replyFromPanel(m) { setReply(m); requestAnimationFrame(() => inputRef.current?.focus()) }
   async function clearAll() {
     if (!confirmClear) { setConfirmClear(true); setTimeout(() => setConfirmClear(false), 3000); return }
     setConfirmClear(false); try { await api.clearAll(); setMessages([]) } catch (e) { setError(String(e.message || e)) }
@@ -810,9 +831,17 @@ export default function Community({ api, role = 'user', features = {}, labels: l
         <div style={{ width: 288, order: 1, flexShrink: 0, display: 'flex', flexDirection: 'column', border: '1px solid var(--border-default)', borderRadius: 12, background: 'var(--surface)', overflow: 'hidden' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', borderBottom: '1px solid var(--border-subtle)', background: 'var(--surface-2)' }}>
             <Icon name={(rail.find((r) => r.id === panel) || {}).icon || 'community'} size={16} color="var(--btn-primary-bg)" />
-            <span style={{ fontWeight: 600, fontSize: 'var(--fs-small,12px)', flex: 1 }}>{PANEL_TITLES(L)[panel]}</span>
+            <span style={{ fontWeight: 600, fontSize: 'var(--fs-small,12px)', flex: 1 }}>
+              {PANEL_TITLES(L)[panel]}
+              {(panel === 'questions' || panel === 'completed') && <span style={{ marginLeft: 6, color: 'var(--text-muted)', fontWeight: 500 }}>{panelList.length}</span>}
+            </span>
             {panel === 'poll' && isManager && !pollForm && (
               <button title={L.createPoll} onClick={() => setPollForm({ title: '', options: ['', ''], deadline: '', minutes: '', named: true })} style={actS}><Icon name="plus" size={16} /></button>
+            )}
+            {panel === 'questions' && isManager && panelList.some((m) => !m.done) && (
+              <button title={L.completeAll} onClick={completeAllQ}
+                style={{ ...ghostBtnS, padding: '3px 8px', color: confirmCompleteAll ? 'var(--btn-primary-bg)' : 'var(--text-secondary)', borderColor: confirmCompleteAll ? 'var(--btn-primary-bg)' : 'var(--border-default)' }}>
+                <Icon name="check" size={12} /> {confirmCompleteAll ? '정말?' : L.completeAll}</button>
             )}
             <button onClick={() => setPanel(null)} title="닫기" style={actS}><Icon name="close" size={15} /></button>
           </div>
@@ -1324,14 +1353,58 @@ function SquareView({ messages, meKey, blobURL, labels, config, clearSignal }) {
     window.addEventListener('mousemove', move); window.addEventListener('mouseup', up)
   }
 
+  // 광장 사진찍기: snapshot the plaza to a PNG and download it. The plaza is pure
+  // inline-styled HTML + inline SVG avatars (no external images), so we can rasterise
+  // it natively via an <svg><foreignObject> of the cloned DOM → canvas → blob, with no
+  // extra library and no canvas tainting. Control buttons + hover-only overlays are
+  // stripped so the shot matches the resting view.
+  async function capturePlaza() {
+    const node = ref.current
+    if (!node) return
+    const rect = node.getBoundingClientRect()
+    const w = Math.max(1, Math.round(rect.width)), h = Math.max(1, Math.round(rect.height))
+    const bg = getComputedStyle(node).backgroundColor || '#ffffff'
+    const clone = node.cloneNode(true)
+    clone.querySelectorAll('[data-cm-nocapture], style').forEach((n) => n.remove())
+    clone.querySelectorAll('.cm-plaza-info').forEach((n) => { n.style.opacity = '0' })  // hover overlays stay hidden
+    clone.setAttribute('style', (clone.getAttribute('style') || '') + `;width:${w}px;height:${h}px;background:${bg};`)
+    const xml = new XMLSerializer().serializeToString(clone)
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">`
+      + `<foreignObject x="0" y="0" width="${w}" height="${h}">${xml}</foreignObject></svg>`
+    try {
+      const img = new Image()
+      img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg)
+      await img.decode()
+      const s = 2                                    // 2× for a crisp export
+      const canvas = document.createElement('canvas')
+      canvas.width = w * s; canvas.height = h * s
+      const ctx = canvas.getContext('2d')
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, canvas.width, canvas.height)
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+      canvas.toBlob((blob) => {
+        if (!blob) return
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url; a.download = `plaza-${Date.now()}.png`
+        document.body.appendChild(a); a.click(); a.remove()
+        setTimeout(() => URL.revokeObjectURL(url), 2000)
+      }, 'image/png')
+    } catch { /* rasterisation unsupported → silently skip */ }
+  }
+
   const now = Date.now()
   return (
     <div ref={ref} onDoubleClick={() => setFocusId(null)} style={{ flex: 1, minHeight: 0, position: 'relative', overflow: 'hidden', background: 'var(--surface-2)' }}>
       <style>{SQUARE_CSS}</style>
       {visible.length === 0 && <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: 'var(--fs-small,12px)' }}>{labels.empty}</div>}
-      <button onClick={replay} title={labels.plazaReplay} style={{ position: 'absolute', top: 10, right: 12, zIndex: 10, display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 10px', border: '1px solid var(--border-default)', borderRadius: 999, background: 'var(--surface)', cursor: 'pointer', fontSize: 'var(--fs-tiny,11px)', color: 'var(--text-secondary)' }}>
-        <Icon name="refresh" size={13} /> {labels.plazaReplay}
-      </button>
+      <div data-cm-nocapture style={{ position: 'absolute', top: 10, right: 12, zIndex: 10, display: 'flex', gap: 6 }}>
+        <button onClick={capturePlaza} title={labels.plazaShot} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 10px', border: '1px solid var(--border-default)', borderRadius: 999, background: 'var(--surface)', cursor: 'pointer', fontSize: 'var(--fs-tiny,11px)', color: 'var(--text-secondary)' }}>
+          <Icon name="camera" size={13} /> {labels.plazaShot}
+        </button>
+        <button onClick={replay} title={labels.plazaReplay} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 10px', border: '1px solid var(--border-default)', borderRadius: 999, background: 'var(--surface)', cursor: 'pointer', fontSize: 'var(--fs-tiny,11px)', color: 'var(--text-secondary)' }}>
+          <Icon name="refresh" size={13} /> {labels.plazaReplay}
+        </button>
+      </div>
       {visible.map((m) => {
         if (!revealed.has(m.id) || dismissed.current.has(m.id)) return null
         const pos = dragPos.get(m.id) || (focusId ? focusMap.get(m.id) : null) || positions.get(m.id)
