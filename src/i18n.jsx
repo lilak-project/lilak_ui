@@ -24,7 +24,10 @@ const STORAGE_KEY = 'lilak-ui-lang'
 export function LangProvider({ dicts = {}, defaultLang, fallbackLang, children }) {
   const langs = Object.keys(dicts)
   const fallback = fallbackLang ?? langs[0]
-  const initial = defaultLang ?? readSaved(langs) ?? langs[0]
+  // A user's saved choice must win over the app's default, else passing
+  // `defaultLang` re-pins the language on every reload and the persisted pick
+  // (written by the effect below) never takes effect.
+  const initial = readSaved(langs) ?? defaultLang ?? langs[0]
   const [lang, setLangState] = useState(initial)
 
   useEffect(() => {
