@@ -55,16 +55,23 @@ export function applyLangFont(lang) {
  *  AND make the themed sans stack the document-wide default font. Idempotent.
  *
  *  Defines the `--font-sans` / `--font-mono` (+ radius) tokens if the app hasn't
- *  already, then sets `<html style="font-family: var(--font-sans)">` so every
+ *  already, then makes the themed sans stack the document-wide default so every
  *  card and component inherits Pretendard / IBM Plex Sans instead of the host's
- *  CSS-reset system font. Pass `{ setDefault: false }` to load files only. */
-export function loadFonts({ pretendard = true, ibmPlexSans = true, d2coding = true, jetbrainsMono = true, setDefault = true } = {}) {
+ *  CSS-reset system font. Pass `{ setDefault: false }` to load files only.
+ *
+ *  `cdn` (default true) fetches the webfont CSS from jsDelivr. Offline / air-gapped
+ *  deployments (e.g. DAQ networks) should pass `{ cdn: false }` and self-host the
+ *  fonts (or accept the FONT_DEFAULTS system fallback) — the kit never hard-requires
+ *  the third-party CDN. */
+export function loadFonts({ pretendard = true, ibmPlexSans = true, d2coding = true, jetbrainsMono = true, setDefault = true, cdn = true } = {}) {
   if (typeof document === 'undefined') return
   const links = []
-  if (pretendard) links.push('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css')
-  if (ibmPlexSans) links.push('https://cdn.jsdelivr.net/npm/@fontsource/ibm-plex-sans/index.css')
-  if (d2coding) links.push('https://cdn.jsdelivr.net/gh/Joungkyun/font-d2coding/d2coding.css')
-  if (jetbrainsMono) links.push('https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono/index.css')
+  if (cdn) {
+    if (pretendard) links.push('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css')
+    if (ibmPlexSans) links.push('https://cdn.jsdelivr.net/npm/@fontsource/ibm-plex-sans/index.css')
+    if (d2coding) links.push('https://cdn.jsdelivr.net/gh/Joungkyun/font-d2coding/d2coding.css')
+    if (jetbrainsMono) links.push('https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono/index.css')
+  }
   for (const href of links) {
     const id = 'lilak-ui-font-' + href.length
     if (document.getElementById(id)) continue
@@ -80,8 +87,17 @@ export function loadFonts({ pretendard = true, ibmPlexSans = true, d2coding = tr
     for (const [k, v] of Object.entries(FONT_DEFAULTS)) {
       if (!root.style.getPropertyValue(k)) root.style.setProperty(k, v)
     }
-    // …then make it the document default (overrides the host's system-ui reset).
-    root.style.fontFamily = 'var(--font-sans)'
+    // …then make it the document default via an injected <style> (idempotent).
+    // NOT an inline `root.style.fontFamily`, which sits at the top of the cascade
+    // and no app stylesheet could override. `html { … }` has ordinary specificity,
+    // so an app can still restyle the font in its own CSS.
+    let el = document.getElementById('lilak-ui-font-default')
+    if (!el) {
+      el = document.createElement('style')
+      el.id = 'lilak-ui-font-default'
+      document.head.appendChild(el)
+    }
+    el.textContent = 'html{font-family:var(--font-sans)}'
   }
 }
 

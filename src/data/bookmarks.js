@@ -7,17 +7,36 @@
  */
 import { useEffect, useReducer } from 'react'
 
-const KEY = 'lilak.bookmarks'
+// Storage key. Every LILAK app is served from ONE origin behind the portal, so a
+// single global key makes a star on `file:12` in one service show up starred in
+// every other (and across a service's projects). `setBookmarkScope` namespaces it
+// per app/project. Default stays the global key for backward compatibility.
+let key = 'lilak.bookmarks'
 const subs = new Set()
 
 function read() {
-  try { return new Set(JSON.parse(localStorage.getItem(KEY) || '[]')) } catch { return new Set() }
+  try { return new Set(JSON.parse(localStorage.getItem(key) || '[]')) } catch { return new Set() }
 }
 let cache = read()
 
 function write(set) {
   cache = set
-  try { localStorage.setItem(KEY, JSON.stringify([...set])) } catch { /* ignore */ }
+  try { localStorage.setItem(key, JSON.stringify([...set])) } catch { /* ignore */ }
+  subs.forEach((f) => f())
+}
+
+/**
+ * Namespace the bookmark set for this app/project. Call ONCE at startup with a
+ * stable, app-unique scope (e.g. the service name or the portal base path, which
+ * encodes service + project). Idempotent; re-reads the scoped set and notifies
+ * subscribers so any mounted UI reflects the switch. Pass a falsy scope to reset
+ * to the shared global key.
+ */
+export function setBookmarkScope(scope) {
+  const next = scope ? `lilak.bookmarks:${scope}` : 'lilak.bookmarks'
+  if (next === key) return
+  key = next
+  cache = read()
   subs.forEach((f) => f())
 }
 

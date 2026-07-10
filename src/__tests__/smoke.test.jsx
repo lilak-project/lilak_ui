@@ -6,7 +6,7 @@
  * render with trivial props. Run it (and the fleet build) before calling a kit
  * edit done. Extend with real assertions as behaviour is nailed down.
  */
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
 import React from 'react'
 import * as kit from '../index.js'
@@ -22,6 +22,7 @@ const EXPORTS = [
   'useIdentity', 'CommandRegistryProvider', 'useCommandRegistry',
   // data
   'DataCard', 'DataGrid', 'makeDataFindModes', 'getBookmarks', 'toggleBookmark',
+  'setBookmarkScope',
   // layout
   'Box', 'Stack', 'Row', 'Grid', 'Container', 'Spacer',
   // icons + crud
@@ -68,5 +69,42 @@ describe('theme system', () => {
     const css = kit.buildThemeCSS()
     expect(typeof css).toBe('string')
     expect(css).toContain('--')
+  })
+})
+
+// Regression guards for the two portal-hygiene fixes.
+describe('bookmark scoping', () => {
+  it('isolates the star set per scope', () => {
+    // Node 26 ships an experimental global localStorage that can be non-functional
+    // in the test env and shadow jsdom's; stub a working in-memory one so this
+    // exercises real persistence (bookmarks are localStorage-backed).
+    const store = new Map()
+    vi.stubGlobal('localStorage', {
+      getItem: (k) => (store.has(k) ? store.get(k) : null),
+      setItem: (k, v) => store.set(k, String(v)),
+      removeItem: (k) => store.delete(k),
+      clear: () => store.clear(),
+    })
+    kit.setBookmarkScope('svcA')
+    kit.toggleBookmark('file:12')
+    expect(kit.isBookmarked('file:12')).toBe(true)
+    kit.setBookmarkScope('svcB')                 // different app → clean set
+    expect(kit.isBookmarked('file:12')).toBe(false)
+    kit.setBookmarkScope('svcA')                 // back → star preserved
+    expect(kit.isBookmarked('file:12')).toBe(true)
+    kit.toggleBookmark('file:12')                // cleanup
+    kit.setBookmarkScope(null)
+    vi.unstubAllGlobals()
+  })
+})
+
+describe('loadFonts', () => {
+  it('makes no CDN requests when cdn:false and never sets an inline root font', () => {
+    kit.loadFonts({ cdn: false })
+    const links = [...document.querySelectorAll('link[href]')]
+    expect(links.some((l) => l.href.includes('jsdelivr'))).toBe(false)
+    // default font applied via an overridable <style>, not an inline root style
+    expect(document.getElementById('lilak-ui-font-default')).not.toBeNull()
+    expect(document.documentElement.style.fontFamily).toBe('')
   })
 })

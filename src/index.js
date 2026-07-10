@@ -31,7 +31,7 @@ export { TagIndexProvider, useTagIndex, useTaggable, useTaggables } from './tags
 export { default as DataCard, KIND_INDEX } from './data/DataCard.jsx'
 export { default as DataGrid } from './data/DataGrid.jsx'
 export { makeDataFindModes, DATA_INDEX, INDEX_CHARS } from './data/dataFindModes.js'
-export { getBookmarks, isBookmarked, toggleBookmark, subscribeBookmarks, useBookmarks } from './data/bookmarks.js'
+export { getBookmarks, isBookmarked, toggleBookmark, subscribeBookmarks, useBookmarks, setBookmarkScope } from './data/bookmarks.js'
 
 // layout primitives
 export { Box, Stack, Row, Grid, Container, Spacer } from './layout/index.jsx'
