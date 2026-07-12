@@ -33,6 +33,7 @@ const EXPORTS = [
   'Button', 'Input', 'Badge', 'Chip', 'ChipGroup', 'Callout', 'Card', 'Modal',
   'Tabs', 'SubTabs', 'DataTable', 'Menu', 'TopBar', 'CommandBar', 'Drawer',
   'Pagination', 'ShortcutsModal', 'AppShell', 'Community', 'Avatar', 'LoginForm',
+  'Rail',
 ]
 
 describe('kit barrel', () => {
@@ -55,6 +56,8 @@ describe('leaf components render', () => {
     ['Icon', <kit.Icon name="check" />],
     ['Input', <kit.Input value="" onChange={() => {}} />],
     ['Markdown', <kit.Markdown>{'**hi**'}</kit.Markdown>],
+    ['Rail', <kit.Rail items={[{ id: 'a', label: 'A', icon: 'check' }, { type: 'divider' }, { id: 'b', label: 'B', icon: 'gear' }]}
+                       panels={{ a: <span>panel A</span>, b: <span>panel B</span> }} />],
   ]
   it.each(cases)('%s renders to non-empty markup', (_name, el) => {
     const html = renderToStaticMarkup(el)
