@@ -16,7 +16,13 @@ function EditorDemo() {
       { id: 'plaza', label: '광장', icon: 'beer-stein' },
       { id: 'broadcast', label: '방송', icon: 'megaphone', hidden: true },
     ] },
-    { id: 'set', label: '설정', icon: 'settings' },
+    { id: 'set', label: '설정', icon: 'settings', codeMenu: [
+      { id: 'account', label: '계정', icon: 'user' },
+      { id: 'users', label: '사용자 관리', icon: 'users' },
+      { id: 'anon', label: '익명 이름', icon: 'eye' },
+      { id: 'tabs', label: '탭', icon: 'browse' },
+      { id: 'profiles', label: '프로필 유형', icon: 'user' },
+    ] },
   ] })
   return <div style={{ width: 560 }}><LayoutEditor value={cfg} onChange={setCfg} /></div>
 }

@@ -30,7 +30,10 @@ const isItem = (x) => x && x.type !== 'divider'
 const slug = (s) => String(s || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'item'
 
 const row = { display: 'flex', alignItems: 'center', gap: 6 }
-const iconField = { width: 92 }
+const iconField = { width: 92, flex: '0 0 92px' }
+// Fixed-width id tag so a long #id (e.g. #community) doesn't shrink the label field
+// and leave the rows uneven.
+const idTag = { flex: '0 0 84px', width: 84, fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-micro,10px)', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }
 
 function ReorderBtns({ i, n, onMove }) {
   return (
@@ -53,11 +56,11 @@ function MenuEditor({ menu = [], onChange }) {
           {isItem(it) ? (
             <>
               <RealIcon name={it.icon || 'tag'} size={16} />
-              <Input size="sm" value={it.label || ''} placeholder="라벨"
+              <Input size="sm" style={{ flex: 1, minWidth: 0 }} value={it.label || ''} placeholder="라벨"
                 onChange={(e) => onChange(updateAt(menu, i, { label: e.target.value }))} />
               <Input size="sm" style={iconField} value={it.icon || ''} placeholder="아이콘"
                 onChange={(e) => onChange(updateAt(menu, i, { icon: e.target.value }))} />
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-micro,10px)', color: 'var(--text-muted)' }}>#{it.id}</span>
+              <span style={idTag}>#{it.id}</span>
             </>
           ) : (
             <span style={{ flex: 1, borderTop: '1px dashed var(--border-default)', color: 'var(--text-muted)', fontSize: 'var(--fs-micro,10px)' }}>구분선</span>
@@ -116,12 +119,11 @@ export default function LayoutEditor({ value, onChange, onSave, onReset, dirty =
             <div style={row}>
               <ReorderBtns i={i} n={tabs.length} onMove={(d) => setTabs(move(tabs, i, d))} />
               <RealIcon name={tb.icon || 'browse'} size={18} />
-              <Input size="sm" value={tb.label || ''} placeholder="탭 이름"
+              <Input size="sm" style={{ flex: 1, minWidth: 0 }} value={tb.label || ''} placeholder="탭 이름"
                 onChange={(e) => setTabs(updateAt(tabs, i, { label: e.target.value }))} />
               <Input size="sm" style={iconField} value={tb.icon || ''} placeholder="아이콘"
                 onChange={(e) => setTabs(updateAt(tabs, i, { icon: e.target.value }))} />
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-micro,10px)', color: 'var(--text-muted)' }}>#{tb.id}</span>
-              <span style={{ flex: 1 }} />
+              <span style={idTag}>#{tb.id}</span>
               <Button size="sm" variant="ghost" type="button" title={tb.hidden ? '표시' : '숨기기'}
                 onClick={() => setTabs(updateAt(tabs, i, { hidden: !tb.hidden }))}>{tb.hidden ? '숨김' : '표시'}</Button>
               <Button size="sm" variant="ghost" type="button" onClick={() => setOpenId(open ? null : tb.id)}>{open ? '메뉴 ▲' : '메뉴 ▼'}</Button>
