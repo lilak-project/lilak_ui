@@ -42,6 +42,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import Icon from '../icons.jsx'
 import Avatar from '../components/Avatar.jsx'
+import RailNav from '../components/RailNav.jsx'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 
@@ -647,25 +648,8 @@ export default function Community({ api, role = 'user', features = {}, labels: l
 
   return (
     <div ref={rootRef} style={{ display: 'flex', gap: 12, height: '100%', minHeight: 0, fontFamily: 'var(--font-sans)' }}>
-      {/* left icon rail (dock) — unified with the other tabs: a floating box of
-          icon+label buttons. Each opens its panel beside the chat. */}
-      <div style={{ flexShrink: 0, alignSelf: 'flex-start', display: 'flex', flexDirection: 'column', gap: 4, padding: 6, border: '1px solid var(--border-default)', borderRadius: 12, background: 'var(--surface-2)', boxShadow: '0 1px 3px rgba(0,0,0,.06)' }}>
-        {rail.map((it) => {
-          const on = panel === it.id
-          return (
-            <button key={it.id} onClick={() => openPanel(it.id)} title={it.label}
-              onMouseEnter={(e) => { if (!on) { e.currentTarget.style.background = 'var(--surface-3)'; e.currentTarget.style.color = 'var(--text-primary)' } }}
-              onMouseLeave={(e) => { if (!on) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)' } }}
-              style={{ position: 'relative', width: 52, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, padding: '8px 2px',
-                border: '1px solid transparent', borderRadius: 10, cursor: 'pointer', transition: 'background .12s, color .12s',
-                background: on ? 'var(--btn-primary-bg)' : 'transparent', color: on ? 'var(--btn-primary-text)' : 'var(--text-secondary)' }}>
-              <Icon name={it.icon} size={19} weight={on ? 'fill' : 'regular'} />
-              <span style={{ fontSize: 9.5, letterSpacing: '0.02em', lineHeight: 1.1, textAlign: 'center' }}>{it.short || it.label}</span>
-              {it.badge ? <span style={{ position: 'absolute', top: -3, right: -3, minWidth: 16, height: 16, padding: '0 4px', borderRadius: 999, background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', fontSize: 9, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>{it.badge}</span> : null}
-            </button>
-          )
-        })}
-      </div>
+      {/* left icon rail (dock) — the shared RailNav, identical to every other tab. */}
+      <RailNav items={rail.map((it) => ({ ...it, on: panel === it.id, onClick: () => openPanel(it.id) }))} />
 
       <div style={{ flex: 1, order: 2, minWidth: 0, position: 'relative', display: 'flex', flexDirection: 'column', border: '1px solid var(--border-default)', borderRadius: 12, background: 'var(--surface)', overflow: 'hidden' }}
         onDragOver={!cantPost && F.attachments ? (e) => { e.preventDefault(); setDrag(true) } : undefined}

@@ -33,7 +33,7 @@ const EXPORTS = [
   'Button', 'Input', 'Badge', 'Chip', 'ChipGroup', 'Callout', 'Card', 'Modal',
   'Tabs', 'SubTabs', 'DataTable', 'Menu', 'TopBar', 'CommandBar', 'Drawer',
   'Pagination', 'ShortcutsModal', 'AppShell', 'Community', 'Avatar', 'LoginForm',
-  'Rail', 'LayoutEditor',
+  'Rail', 'RailNav', 'LayoutEditor',
 ]
 
 describe('kit barrel', () => {
@@ -58,6 +58,7 @@ describe('leaf components render', () => {
     ['Markdown', <kit.Markdown>{'**hi**'}</kit.Markdown>],
     ['Rail', <kit.Rail items={[{ id: 'a', label: 'A', icon: 'check' }, { type: 'divider' }, { id: 'b', label: 'B', icon: 'gear' }]}
                        panels={{ a: <span>panel A</span>, b: <span>panel B</span> }} />],
+    ['RailNav', <kit.RailNav items={[{ id: 'a', label: 'A', icon: 'check', on: true }, { type: 'divider' }, { id: 'b', label: 'B', icon: 'gear', badge: 3 }, { id: 'r', label: 'run', icon: 'lightning', tone: 'run', disabled: true }]} onSelect={() => {}} />],
     ['LayoutEditor', <kit.LayoutEditor value={{ tabs: [{ id: 'setup', label: 'Setup', icon: 'home', menu: [{ type: 'item', id: 'd', label: 'D', icon: 'atom' }, { type: 'divider' }] }] }} onChange={() => {}} />],
   ]
   it.each(cases)('%s renders to non-empty markup', (_name, el) => {
