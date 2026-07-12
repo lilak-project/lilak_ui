@@ -1,7 +1,25 @@
 import React from 'react'
 import { createRoot } from 'react-dom/client'
 import { Package, Atom, Cube, ArrowsLeftRight, ChartLine, ChartBar, Palette, Stack, TreeStructure, SlidersHorizontal, Flask, Gauge, Terminal, Path, FilmStrip, Play, Stop, Lightning, FolderOpen } from '@phosphor-icons/react'
-import { applyTheme, RailNav, Rail } from '../src/index.js'
+import { applyTheme, RailNav, Rail, LayoutEditor } from '../src/index.js'
+
+function EditorDemo() {
+  const [cfg, setCfg] = React.useState({ tabs: [
+    { id: 'home', label: '홈', icon: 'factory', menu: [
+      { type: 'item', id: 'a', label: 'A', icon: 'tag' },
+      { type: 'item', id: 'b', label: 'B', icon: 'tag' },
+    ] },
+    { id: 'community', label: '커뮤니티', icon: 'community', codeMenu: [
+      { id: 'poll', label: '투표', icon: 'chart' },
+      { id: 'questions', label: '질문', icon: 'question-mark' },
+      { id: 'completed', label: '완료', icon: 'check' },
+      { id: 'plaza', label: '광장', icon: 'beer-stein' },
+      { id: 'broadcast', label: '방송', icon: 'megaphone', hidden: true },
+    ] },
+    { id: 'set', label: '설정', icon: 'settings' },
+  ] })
+  return <div style={{ width: 560 }}><LayoutEditor value={cfg} onChange={setCfg} /></div>
+}
 
 applyTheme('light')
 
@@ -19,6 +37,10 @@ function Block({ title, children }) {
 function Demo() {
   return (
     <div style={{ padding: 28, display: 'flex', gap: 40, flexWrap: 'wrap', alignItems: 'flex-start', fontFamily: 'var(--font-sans)', background: 'var(--surface)', minHeight: '100vh' }}>
+      <Block title="LayoutEditor — community codeMenu is 🔒 (reorder/hide only)">
+        <EditorDemo />
+      </Block>
+
       <Block title="setup (dup file · changed · needfill · select)">
         <RailNav items={[
           { id: 'file', label: 'file', Icon: Package, dup: true, on: true },

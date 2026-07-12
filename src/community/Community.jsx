@@ -293,7 +293,7 @@ function PollCard({ poll, isManager, onVote, onClose, labels, highlight, fetchRe
   )
 }
 
-export default function Community({ api, role = 'user', features = {}, labels: labelsProp, onOpenFiles, storageKey = 'default', active = true }) {
+export default function Community({ api, role = 'user', features = {}, labels: labelsProp, onOpenFiles, storageKey = 'default', active = true, menuConfig }) {
   // 광장 settings are PER-USER and live in the browser (localStorage), so they
   // survive logout and every account tunes their own view (no server round-trip).
   const PLAZA_KEY = 'lilak-plaza:' + storageKey
@@ -628,7 +628,7 @@ export default function Community({ api, role = 'user', features = {}, labels: l
 
   // ── the left icon rail (dock): each opens a "커뮤니티 채팅"-style box beside the chat.
   //    `short` is the compact label shown under the icon in the vertical dock. ──
-  const rail = [
+  let rail = [
     F.polls && { id: 'poll', label: L.poll, short: '투표', icon: 'chart', badge: polls.filter((p) => !p.closed).length || null },
     F.questions && { id: 'questions', label: L.questionList, short: '질문', icon: 'question-mark' },
     F.questions && { id: 'completed', label: L.completedList, short: '완료', icon: 'check' },
@@ -638,6 +638,16 @@ export default function Community({ api, role = 'user', features = {}, labels: l
     isManager && api.saveBroadcastSettings && { id: 'broadcast', label: L.broadcastManage, short: '방송', icon: 'megaphone',
       badge: bcast?.enabled ? 'ON' : null },   // admin-only 방송 (global) settings
   ].filter(Boolean)
+  // Optional layout override (from the service's tab layout config, edited in the
+  // Settings 탭): reorder the dock and hide entries. Items are still CODE-owned — the
+  // config only carries order + hidden by id, so this stays backward-compatible.
+  if (Array.isArray(menuConfig) && menuConfig.length) {
+    const cfg = menuConfig.filter((m) => m && m.id && m.type !== 'divider')
+    const hidden = new Set(cfg.filter((m) => m.hidden).map((m) => m.id))
+    const order = cfg.map((m) => m.id)
+    const rank = (id) => { const i = order.indexOf(id); return i < 0 ? order.length + 1 : i }
+    rail = rail.filter((r) => !hidden.has(r.id)).sort((a, b) => rank(a.id) - rank(b.id))
+  }
   railRef.current = rail.map((r) => r.id)   // keep command-mode number keys in sync
   openPanelRef.current = openPanel
 

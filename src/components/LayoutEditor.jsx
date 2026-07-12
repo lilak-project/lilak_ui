@@ -74,6 +74,27 @@ function MenuEditor({ menu = [], onChange }) {
   )
 }
 
+// A CODE-owned menu (e.g. the built-in community dock): the items come from the
+// component, so they can't be added / removed / renamed here — only reordered and
+// shown/hidden. Read-only label + icon, a 🔒, no ✕ or "+ 항목".
+function LockedMenuEditor({ menu = [], onChange }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, paddingLeft: 22, marginTop: 6 }}>
+      <div style={{ color: 'var(--text-muted)', fontSize: 'var(--fs-micro,10px)' }}>🔒 이 메뉴는 코드에서 제공됩니다 — 순서와 표시만 바꿀 수 있어요.</div>
+      {menu.map((it, i) => (
+        <div key={it.id || i} style={{ ...row, opacity: it.hidden ? 0.5 : 1 }}>
+          <ReorderBtns i={i} n={menu.length} onMove={(d) => onChange(move(menu, i, d))} />
+          <RealIcon name={it.icon || 'tag'} size={16} />
+          <span style={{ flex: 1, fontSize: 'var(--fs-small,12px)', color: 'var(--text-primary)' }}>{it.label || it.id}</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-micro,10px)', color: 'var(--text-muted)' }}>#{it.id}</span>
+          <Button size="sm" variant="ghost" type="button" title={it.hidden ? '표시' : '숨기기'}
+            onClick={() => onChange(updateAt(menu, i, { hidden: !it.hidden }))}>{it.hidden ? '숨김' : '표시'}</Button>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export default function LayoutEditor({ value, onChange, onSave, onReset, dirty = false, saving = false }) {
   const tabs = (value && Array.isArray(value.tabs)) ? value.tabs : []
   const [openId, setOpenId] = useState(null)
@@ -106,7 +127,9 @@ export default function LayoutEditor({ value, onChange, onSave, onReset, dirty =
               <Button size="sm" variant="ghost" type="button" onClick={() => setOpenId(open ? null : tb.id)}>{open ? '메뉴 ▲' : '메뉴 ▼'}</Button>
               <Button size="sm" variant="ghost" type="button" onClick={() => setTabs(removeAt(tabs, i))}>✕</Button>
             </div>
-            {open && <MenuEditor menu={tb.menu || []} onChange={(m) => setTabs(updateAt(tabs, i, { menu: m }))} />}
+            {open && (tb.codeMenu
+              ? <LockedMenuEditor menu={tb.codeMenu} onChange={(m) => setTabs(updateAt(tabs, i, { codeMenu: m }))} />
+              : <MenuEditor menu={tb.menu || []} onChange={(m) => setTabs(updateAt(tabs, i, { menu: m }))} />)}
           </div>
         )
       })}
