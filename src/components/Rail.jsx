@@ -15,6 +15,11 @@
  * `items` describe STRUCTURE (order, labels, icons, dividers); `panels` map each
  * item id → the code that renders its content. Controlled via `active`/`onSelect`,
  * or self-managed when those are omitted. `footer` adds extra buttons below the rail.
+ *
+ * AppShell mounts tab bodies flush to the window edge, so Rail insets itself (`pad`)
+ * — otherwise the dock is glued into the top-left corner. `emptyPanel` is shown when
+ * the active item has no `panels` entry yet (a menu created in the layout editor
+ * before its content is wired), instead of a blank void.
  */
 import { useState } from 'react'
 
@@ -22,7 +27,7 @@ import RailNav from './RailNav.jsx'
 
 function isItem(x) { return x && x.type !== 'divider' && x.id != null }
 
-export default function Rail({ items = [], panels = {}, active, onSelect, footer, gap = 12 }) {
+export default function Rail({ items = [], panels = {}, active, onSelect, footer, gap = 12, pad = 12, emptyPanel = null }) {
   const firstId = items.find(isItem)?.id
   const [innerId, setInnerId] = useState(firstId)
   const controlled = active !== undefined
@@ -34,10 +39,10 @@ export default function Rail({ items = [], panels = {}, active, onSelect, footer
   const navItems = items.map((it) => (isItem(it) ? { ...it, on: it.id === cur } : it))
 
   return (
-    <div style={{ display: 'flex', gap, height: '100%', boxSizing: 'border-box' }}>
+    <div style={{ display: 'flex', gap, height: '100%', boxSizing: 'border-box', padding: pad }}>
       <RailNav items={navItems} onSelect={select} footer={footer} />
       <div style={{ flex: '1 1 auto', minWidth: 0, height: '100%', overflow: 'auto' }}>
-        {panels[cur] ?? null}
+        {panels[cur] ?? emptyPanel}
       </div>
     </div>
   )

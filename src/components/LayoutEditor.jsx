@@ -52,7 +52,7 @@ function MenuEditor({ menu = [], onChange }) {
           <ReorderBtns i={i} n={menu.length} onMove={(d) => onChange(move(menu, i, d))} />
           {isItem(it) ? (
             <>
-              <RealIcon name={it.icon || 'dot'} size={16} />
+              <RealIcon name={it.icon || 'tag'} size={16} />
               <Input size="sm" value={it.label || ''} placeholder="라벨"
                 onChange={(e) => onChange(updateAt(menu, i, { label: e.target.value }))} />
               <Input size="sm" style={iconField} value={it.icon || ''} placeholder="아이콘"
@@ -67,7 +67,7 @@ function MenuEditor({ menu = [], onChange }) {
       ))}
       <div style={{ display: 'flex', gap: 6 }}>
         <Button size="sm" variant="secondary" type="button"
-          onClick={() => onChange([...menu, { type: 'item', id: slug('item' + (menu.length + 1)), label: 'Item', icon: 'dot' }])}>+ 항목</Button>
+          onClick={() => onChange([...menu, { type: 'item', id: slug('item' + (menu.length + 1)), label: 'Item', icon: 'tag' }])}>+ 항목</Button>
         <Button size="sm" variant="ghost" type="button" onClick={() => onChange([...menu, { type: 'divider' }])}>+ 구분선</Button>
       </div>
     </div>
@@ -94,7 +94,7 @@ export default function LayoutEditor({ value, onChange, onSave, onReset, dirty =
           <div key={tb.id || i} style={{ border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg,10px)', padding: 8, opacity: tb.hidden ? 0.55 : 1 }}>
             <div style={row}>
               <ReorderBtns i={i} n={tabs.length} onMove={(d) => setTabs(move(tabs, i, d))} />
-              <RealIcon name={tb.icon || 'dot'} size={18} />
+              <RealIcon name={tb.icon || 'browse'} size={18} />
               <Input size="sm" value={tb.label || ''} placeholder="탭 이름"
                 onChange={(e) => setTabs(updateAt(tabs, i, { label: e.target.value }))} />
               <Input size="sm" style={iconField} value={tb.icon || ''} placeholder="아이콘"
@@ -113,7 +113,7 @@ export default function LayoutEditor({ value, onChange, onSave, onReset, dirty =
 
       <div>
         <Button size="sm" variant="secondary" type="button"
-          onClick={() => { const id = slug('tab' + (tabs.length + 1)); setTabs([...tabs, { id, label: 'New tab', icon: 'dot', menu: [] }]) }}>+ 탭 추가</Button>
+          onClick={() => { const id = slug('tab' + (tabs.length + 1)); setTabs([...tabs, { id, label: 'New tab', icon: 'browse', menu: [] }]) }}>+ 탭 추가</Button>
       </div>
     </div>
   )

@@ -1,7 +1,7 @@
 import React from 'react'
 import { createRoot } from 'react-dom/client'
 import { Package, Atom, Cube, ArrowsLeftRight, ChartLine, ChartBar, Palette, Stack, TreeStructure, SlidersHorizontal, Flask, Gauge, Terminal, Path, FilmStrip, Play, Stop, Lightning, FolderOpen } from '@phosphor-icons/react'
-import { applyTheme, RailNav } from '../src/index.js'
+import { applyTheme, RailNav, Rail } from '../src/index.js'
 
 applyTheme('light')
 
@@ -58,6 +58,28 @@ function Demo() {
           { id: 'files', label: '파일', Icon: FolderOpen, dup: true, on: true },
           { id: 'root', label: 'root', Icon: ChartBar, dup: true, disabled: true },
         ]} />
+      </Block>
+
+      <Block title="SCAFFOLD: <Rail> coupled, panels EMPTY (what a new service shows)">
+        <div style={{ height: 300, width: 340, border: '1px dashed var(--border-default)', borderRadius: 8 }}>
+          <Rail items={[
+            { id: 'detector', label: 'detector', icon: 'atom' },
+            { id: 'physics', label: 'physics', icon: 'atom' },
+            { type: 'divider' },
+            { id: 'style', label: 'style', icon: 'palette' },
+          ]} panels={{}} />
+        </div>
+      </Block>
+
+      <Block title="SCAFFOLD: <Rail> coupled, panels FILLED">
+        <div style={{ height: 300, width: 340, border: '1px dashed var(--border-default)', borderRadius: 8 }}>
+          <Rail items={[
+            { id: 'detector', label: 'detector', icon: 'atom' },
+            { id: 'physics', label: 'physics', icon: 'atom' },
+            { type: 'divider' },
+            { id: 'style', label: 'style', icon: 'palette' },
+          ]} panels={{ detector: <div style={{ padding: 16 }}>detector panel</div>, physics: <div style={{ padding: 16 }}>physics panel</div>, style: <div style={{ padding: 16 }}>style panel</div> }} />
+        </div>
       </Block>
 
       <Block title="community (badges · short labels)">
