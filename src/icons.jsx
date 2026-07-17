@@ -10,6 +10,7 @@
  * (it's a kit dependency; Vite resolves it from the consumer's node_modules).
  */
 import { forwardRef, createElement } from 'react'
+import { ICON_TAGS } from './icon-tags.js'
 import {
   IconBase,
   Bell, BellRinging, X, MagnifyingGlass, Hash, Terminal, Gear,
@@ -22,11 +23,12 @@ import {
   Play, SlidersHorizontal, TreeStructure, MapTrifold, ChartLine,
   Users, Key, Table, Plug, Robot, Palette,
   DownloadSimple, UploadSimple, FileArrowDown,
-  Microscope, TestTube, Dna, Magnet, Gauge, Thermometer, Lightbulb, Wrench, Cpu,
+  TestTube, Dna, Magnet, Gauge, Thermometer, Lightbulb, Wrench, Cpu,
   Hexagon, Shapes, Crosshair, Polygon, Pulse, Waveform, ChartLineUp, Circuitry, Graph,
   Camera, Image as ImageIcon,
   ToggleLeft, ToggleRight,
   Cheers, File as FileIcon, BeerStein,
+  Star,
 } from '@phosphor-icons/react'
 
 const WEIGHTS = ['thin', 'light', 'regular', 'bold', 'fill', 'duotone']
@@ -78,7 +80,7 @@ export const ICONS = {
   user: User, users: Users, logout: SignOut, menu: List, more: DotsThree,
   key: Key, table: Table, plug: Plug, robot: Robot, palette: Palette,
   download: DownloadSimple, upload: UploadSimple, 'file-download': FileArrowDown,
-  filter: Funnel, tagFill: Tag, link: Link, pin: PushPin,
+  filter: Funnel, tagFill: Tag, link: Link, pin: PushPin, star: Star,
   eye: Eye, 'eye-off': EyeSlash, help: Question, 'question-mark': Question, question: Question,
   cheers: Cheers, file: FileIcon, 'beer-stein': BeerStein, megaphone: Megaphone, notice: Megaphone,
   // tab / nav glyphs
@@ -92,7 +94,7 @@ export const ICONS = {
   tree: TreeStructure, flow: TreeStructure, map: MapTrifold, mapping: MapTrifold,
   'chart-line': ChartLine,
   // project / experiment marks (distinct from the avatar icon set)
-  microscope: Microscope, 'test-tube': TestTube, dna: Dna, magnet: Magnet,
+  'test-tube': TestTube, dna: Dna, magnet: Magnet,
   gauge: Gauge, thermometer: Thermometer, lightbulb: Lightbulb, wrench: Wrench,
   cpu: Cpu, hexagon: Hexagon, shapes: Shapes, crosshair: Crosshair, polygon: Polygon,
   pulse: Pulse, waveform: Waveform, 'chart-line-up': ChartLineUp, circuitry: Circuitry, graph: Graph,
@@ -104,7 +106,7 @@ export const ICONS = {
  * Pick one at random when creating a project; store it WITH the project's data.
  */
 export const PROJECT_ICONS = [
-  'microscope', 'test-tube', 'dna', 'magnet', 'gauge', 'thermometer', 'lightbulb',
+  'test-tube', 'dna', 'magnet', 'gauge', 'thermometer', 'lightbulb',
   'wrench', 'cpu', 'hexagon', 'shapes', 'crosshair', 'polygon', 'pulse', 'waveform',
   'chart-line-up', 'circuitry', 'graph',
 ]
@@ -115,55 +117,81 @@ export const randomProjectIcon = () => PROJECT_ICONS[Math.floor(Math.random() * 
 // would bloat the bundle). Each is added to the ICONS map under its kebab name, so
 // a service can store any of these and the kit renders it (incl. duotone).
 import {
-  Airplane, Alarm, Alien, Anchor, Aperture, AppWindow, Archive, Atom, Baby, Backpack,
-  Bag, Balloon, Bank, Barbell, Barcode, Basketball, Bathtub, Bed, Bicycle, Binoculars,
-  Bird, Boat, Bomb, Bone, Book, BookOpen, Books, Brain, Bridge, Briefcase,
-  Broadcast, Broom, Bug, Buildings, Bus, Butterfly, Cactus, Cake, Calculator, Campfire,
-  Car, Cardholder, Carrot, Cat, ChartPie, ChatCircle, Circle, Clipboard, Clock, Cloud,
-  Club, Coffee, Coins, Compass, Confetti, Cookie, CreditCard, Crop, Crown, Cube,
-  Database, Desktop, Detective, Diamond, Disc, Dog, Door, Drop, Ear, Egg,
-  Envelope, Eraser, Factory, Faders, Feather, File, FileText, Fingerprint, Fire, FirstAid,
-  Fish, Flag, Flashlight, FlowerLotus, Football, ForkKnife, GameController, Gavel, Ghost, Gift,
-  GitBranch, Globe, GraduationCap, Guitar, Hammer, Hand, Handbag, Handshake, HardDrive, Headphones,
-  Heart, Heartbeat, Horse, Hourglass, IceCream, Keyboard, Ladder, Lamp, Laptop,
-  Leaf, Lifebuoy, Lightning, LinkSimple, Lock, MagicWand, MapPin, Martini, Medal, Megaphone,
-  Microphone, Money, Monitor, Mountains, MusicNote, Newspaper, Notepad, PaintBrush, PaintBucket,
-  Parachute, Path, Pause, PawPrint, Pen, Percent, Person, Phone, PiggyBank, Pill,
-  Pizza, Planet, Plant, Popcorn, Presentation, Printer, Prohibit, PuzzlePiece, QrCode, Rabbit,
-  Radio, Rainbow, Receipt, Recycle, Rocket, RocketLaunch, Ruler, Scales, Scissors, Scroll,
-  Shield, ShieldCheck, ShootingStar, ShoppingCart, Shuffle, SignIn, Siren, Skull, Smiley, Snowflake,
-  SoccerBall, Spade, Sparkle, SpeakerHigh, Spinner, Sunglasses, Swap, Sword, Syringe, Taxi,
-  TennisBall, ThumbsUp, ThumbsDown, Ticket, Timer, Toilet, Toolbox, Tooth, Tornado, Train,
-  Tree, Trophy, Truck, Umbrella, UsersThree, VideoCamera, Wallet, Watch, WifiHigh, Wind, Wine,
+  Acorn, Airplane, Alarm, Alien, AndroidLogo, Aperture, AppWindow, Archive, ArrowFatRight, Atom,
+  Baby, Backpack, Bag, Balloon, Bank, Barcode, Bathtub, Bed, Bicycle, Binary, Binoculars, Bird,
+  Boat, Bomb, Bone, Book, BookOpen, Books, BowlFood, BracketsAngle, Brain, Bridge, Briefcase,
+  Broadcast, Broom, Bug, Buildings, Bus, Butterfly, Cactus, Cake, Calculator, Campfire, Car,
+  Cardholder, Carrot, CastleTurret, Cat, ChartPie, ChartScatter, ChatCircle, Circle, Clipboard,
+  Clock, Cloud, Club, Code, Coffee, Coins, Compass, Confetti, Cookie, CreditCard, Crop, Crown,
+  Cube, Database, Desktop, Detective, Diamond, Disc, DiscordLogo, Dog, Door, Drop, Ear, Egg,
+  Envelope, Eraser, Factory, Faders, Feather, File, FileText, Fingerprint, FinnTheHuman, Fire,
+  FirstAid, Fish, Flag, Flashlight, FlowerLotus, FlyingSaucer, ForkKnife, GameController, Gavel,
+  Ghost, Gift, GitBranch, GithubLogo, Globe, GraduationCap, Guitar, Hammer, Hand, HandPalm,
+  Handbag, HandsClapping, Handshake, HardDrive, Headphones, Heart, Heartbeat, Horse, Hourglass,
+  IceCream, IntersectSquare, Keyboard, Ladder, Lamp, Laptop, Leaf, LegoSmiley, Lifebuoy,
+  Lightning, LinkSimple, LinuxLogo, Lock, MagicWand, MapPin, Martini, MaskHappy, Medal, Megaphone,
+  Microphone, Money, Monitor, Mountains, MusicNote, Newspaper, Notepad, NuclearPlant, NumberFour,
+  NumberOne, NumberThree, NumberTwo, NumberZero, PaintBrush, PaintBucket, Parachute, Path, Pause,
+  PawPrint, Pen, PencilLine, Percent, Person, PersonArmsSpread, Phone, PiggyBank, Pill, Pizza,
+  Planet, Plant, Popcorn, Presentation, Printer, Prohibit, PuzzlePiece, QrCode, Rabbit, Radio,
+  Radioactive, Rainbow, Receipt, Recycle, RedditLogo, Rocket, RocketLaunch, Ruler, Scales,
+  Scissors, Scroll, Shield, ShieldCheck, ShootingStar, ShoppingCart, Shrimp, Shuffle, SignIn,
+  Siren, Skull, Smiley, SmileyWink, Snowflake, Spade, Sparkle, SpeakerHigh, Spinner, Spiral,
+  Sunglasses, Swap, Sword, Syringe, Taxi, ThumbsDown, ThumbsUp, Ticket, Timer, Toilet, Toolbox,
+  Tooth, Tornado, Train, Tree, Trophy, Truck, Umbrella, UsersThree, VideoCamera, Wallet, Watch,
+  WifiHigh, Wind, Wine, Yarn,
 } from '@phosphor-icons/react'
 
 const _EXTRA = {
-  Airplane, Alarm, Alien, Anchor, Aperture, AppWindow, Archive, Atom, Baby, Backpack,
-  Bag, Balloon, Bank, Barbell, Barcode, Basketball, Bathtub, Bed, Bicycle, Binoculars,
-  Bird, Boat, Bomb, Bone, Book, BookOpen, Books, Brain, Bridge, Briefcase,
-  Broadcast, Broom, Bug, Buildings, Bus, Butterfly, Cactus, Cake, Calculator, Campfire,
-  Car, Cardholder, Carrot, Cat, ChartPie, ChatCircle, Circle, Clipboard, Clock, Cloud,
-  Club, Coffee, Coins, Compass, Confetti, Cookie, CreditCard, Crop, Crown, Cube,
-  Database, Desktop, Detective, Diamond, Disc, Dog, Door, Drop, Ear, Egg,
-  Envelope, Eraser, Factory, Faders, Feather, File, FileText, Fingerprint, Fire, FirstAid,
-  Fish, Flag, Flashlight, FlowerLotus, Football, ForkKnife, GameController, Gavel, Ghost, Gift,
-  GitBranch, Globe, GraduationCap, Guitar, Hammer, Hand, Handbag, Handshake, HardDrive, Headphones,
-  Heart, Heartbeat, Horse, Hourglass, IceCream, Keyboard, Ladder, Lamp, Laptop,
-  Leaf, Lifebuoy, Lightning, LinkSimple, Lock, MagicWand, MapPin, Martini, Medal, Megaphone,
-  Microphone, Money, Monitor, Mountains, MusicNote, Newspaper, Notepad, PaintBrush, PaintBucket,
-  Parachute, Path, Pause, PawPrint, Pen, Percent, Person, Phone, PiggyBank, Pill,
-  Pizza, Planet, Plant, Popcorn, Presentation, Printer, Prohibit, PuzzlePiece, QrCode, Rabbit,
-  Radio, Rainbow, Receipt, Recycle, Rocket, RocketLaunch, Ruler, Scales, Scissors, Scroll,
-  Shield, ShieldCheck, ShootingStar, ShoppingCart, Shuffle, SignIn, Siren, Skull, Smiley, Snowflake,
-  SoccerBall, Spade, Sparkle, SpeakerHigh, Spinner, Sunglasses, Swap, Sword, Syringe, Taxi,
-  TennisBall, ThumbsUp, ThumbsDown, Ticket, Timer, Toilet, Toolbox, Tooth, Tornado, Train,
-  Tree, Trophy, Truck, Umbrella, UsersThree, VideoCamera, Wallet, Watch, WifiHigh, Wind, Wine,
+  Acorn, Airplane, Alarm, Alien, AndroidLogo, Aperture, AppWindow, Archive, ArrowFatRight, Atom,
+  Baby, Backpack, Bag, Balloon, Bank, Barcode, Bathtub, Bed, Bicycle, Binary, Binoculars, Bird,
+  Boat, Bomb, Bone, Book, BookOpen, Books, BowlFood, BracketsAngle, Brain, Bridge, Briefcase,
+  Broadcast, Broom, Bug, Buildings, Bus, Butterfly, Cactus, Cake, Calculator, Campfire, Car,
+  Cardholder, Carrot, CastleTurret, Cat, ChartPie, ChartScatter, ChatCircle, Circle, Clipboard,
+  Clock, Cloud, Club, Code, Coffee, Coins, Compass, Confetti, Cookie, CreditCard, Crop, Crown,
+  Cube, Database, Desktop, Detective, Diamond, Disc, DiscordLogo, Dog, Door, Drop, Ear, Egg,
+  Envelope, Eraser, Eye, Factory, Faders, Feather, File, FileText, Fingerprint, FinnTheHuman,
+  Fire, FirstAid, Fish, Flag, Flashlight, FlowerLotus, FlyingSaucer, ForkKnife, GameController,
+  Gavel, Ghost, Gift, GitBranch, GithubLogo, Globe, GraduationCap, Guitar, Hammer, Hand, HandPalm,
+  Handbag, HandsClapping, Handshake, HardDrive, Headphones, Heart, Heartbeat, Horse, Hourglass,
+  IceCream, IntersectSquare, Keyboard, Ladder, Lamp, Laptop, Leaf, LegoSmiley, Lifebuoy,
+  Lightning, LinkSimple, LinuxLogo, Lock, MagicWand, MapPin, Martini, MaskHappy, Medal, Megaphone,
+  Microphone, Money, Monitor, Moon, Mountains, MusicNote, Newspaper, Notepad, NuclearPlant,
+  NumberFour, NumberOne, NumberThree, NumberTwo, NumberZero, PaintBrush, PaintBucket, Parachute,
+  Path, Pause, PawPrint, Pen, PencilLine, Percent, Person, PersonArmsSpread, Phone, PiggyBank,
+  Pill, Pizza, Planet, Plant, Play, Popcorn, Presentation, Printer, Prohibit, PuzzlePiece, QrCode,
+  Rabbit, Radio, Radioactive, Rainbow, Receipt, Recycle, RedditLogo, Robot, Rocket, RocketLaunch,
+  Ruler, Scales, Scissors, Scroll, Shield, ShieldCheck, ShootingStar, ShoppingCart, Shrimp,
+  Shuffle, SignIn, Siren, Skull, Smiley, SmileyWink, Snowflake, Spade, Sparkle, SpeakerHigh,
+  Spinner, Spiral, Star, Sunglasses, Swap, Sword, Syringe, Taxi, ThumbsDown, ThumbsUp, Ticket,
+  Timer, Toilet, Toolbox, Tooth, Tornado, Train, Tree, Trophy, Truck, Umbrella, UsersThree,
+  VideoCamera, Wallet, Watch, WifiHigh, Wind, Wine, Yarn,
 }
 const _kebab = (s) => s.replace(/([a-z0-9])([A-Z])/g, '$1-$2').replace(/([A-Z]+)([A-Z][a-z])/g, '$1-$2').toLowerCase()
 for (const [k, C] of Object.entries(_EXTRA)) { const n = _kebab(k); if (!ICONS[n]) ICONS[n] = C }
 
 // The full pool the icon PICKER offers (curated project marks + the extended set).
 export const PICKER_ICONS = Array.from(new Set([...PROJECT_ICONS, ...Object.keys(_EXTRA).map(_kebab)])).sort()
+
+/**
+ * searchIcons — filter a list of icon names by a query, the way phosphoricons.com
+ * does: match the name OR any of the icon's own tags (ICON_TAGS, baked from
+ * Phosphor's catalog), so "nut" finds `acorn` and "nasa" finds `rocket`.
+ *
+ *   searchIcons('nut')                  → ['acorn', …]
+ *   searchIcons(q, PROJECT_ICONS)       → search just the project marks
+ *
+ * An empty query returns the pool unchanged. Every term must match (AND), so
+ * "smiley wink" narrows rather than widens.
+ */
+export function searchIcons(query, pool = PICKER_ICONS) {
+  const terms = String(query || '').toLowerCase().split(/\s+/).filter(Boolean)
+  if (!terms.length) return pool
+  return pool.filter((name) => {
+    const hay = name + ' ' + (ICON_TAGS[name] || []).join(' ')
+    return terms.every((t) => hay.includes(t))
+  })
+}
 
 /**
  * strokeIcon — like customIcon, but for LINE-ART (stroke) marks. Phosphor's
