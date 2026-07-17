@@ -24,10 +24,13 @@ import { Container } from '../layout/index.jsx'
  *   note       a small muted line under the header (e.g. a permissions hint)
  *   max        content column max width (px, default 760)
  *   theme      data-theme to re-scope this subtree to (default 'bright')
+ *   center     stack the header centered — mark alone on its own line, title and
+ *              subtitle underneath — instead of the default leading-icon row.
+ *              For landing/sign-in screens with no header actions.
  */
 export default function CoverPage({
   icon, iconSize = 36, title, subtitle, actions, note, subheader,
-  max = 760, theme = 'bright', fill = false, style, children, ...rest
+  max = 760, theme = 'bright', fill = false, center = false, style, children, ...rest
 }) {
   // fill: pin the page to the viewport and scroll the BODY internally (header
   // stays put). A stable scrollbar gutter means switching between short and tall
@@ -39,13 +42,18 @@ export default function CoverPage({
   return (
     <div data-theme={theme} style={rootStyle} {...rest}>
       <Container max={max} style={fill ? { display: 'flex', flexDirection: 'column', minHeight: 0, flex: 1 } : undefined}>
-        <header style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '40px 0 8px', flexShrink: 0 }}>
+        <header style={{
+          display: 'flex', flexShrink: 0, padding: '40px 0 8px',
+          ...(center
+            ? { flexDirection: 'column', alignItems: 'center', gap: 10, textAlign: 'center' }
+            : { alignItems: 'flex-start', gap: 12 }),
+        }}>
           {icon != null && (
             typeof icon === 'string'
               ? <Icon name={icon} size={iconSize} style={{ height: iconSize, width: 'auto' }} />
               : icon
           )}
-          <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={center ? { minWidth: 0 } : { flex: 1, minWidth: 0 }}>
             <h1 style={{ margin: 0, fontSize: 'var(--fs-title, 22px)', color: 'var(--text-emphasis)', letterSpacing: '0.01em' }}>
               {title}
             </h1>
