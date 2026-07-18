@@ -29,7 +29,7 @@ import { Container } from '../layout/index.jsx'
  *              For landing/sign-in screens with no header actions.
  */
 export default function CoverPage({
-  icon, iconSize = 36, title, subtitle, actions, note, subheader,
+  icon, iconSize = 36, title, subtitle, actions, note, subheader, headerPad = '40px 0 8px',
   max = 760, theme = 'bright', fill = false, center = false, style, children, ...rest
 }) {
   // fill: pin the page to the viewport and scroll the BODY internally (header
@@ -43,7 +43,7 @@ export default function CoverPage({
     <div data-theme={theme} style={rootStyle} {...rest}>
       <Container max={max} style={fill ? { display: 'flex', flexDirection: 'column', minHeight: 0, flex: 1 } : undefined}>
         <header style={{
-          display: 'flex', flexShrink: 0, padding: '40px 0 8px',
+          display: 'flex', flexShrink: 0, padding: headerPad,
           ...(center
             ? { flexDirection: 'column', alignItems: 'center', gap: 10, textAlign: 'center' }
             : { alignItems: 'flex-start', gap: 12 }),
