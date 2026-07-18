@@ -53,16 +53,20 @@ export default function CoverPage({
               ? <Icon name={icon} size={iconSize} style={{ height: iconSize, width: 'auto' }} />
               : icon
           )}
-          <div style={center ? { minWidth: 0 } : { flex: 1, minWidth: 0 }}>
-            <h1 style={{ margin: 0, fontSize: 'var(--fs-title, 22px)', color: 'var(--text-emphasis)', letterSpacing: '0.01em' }}>
-              {title}
-            </h1>
-            {subtitle && (
-              <p style={{ margin: '2px 0 0', fontSize: 'var(--fs-small, 12px)', color: 'var(--text-muted)' }}>
-                {subtitle}
-              </p>
-            )}
-          </div>
+          {(title != null || subtitle != null) && (
+            <div style={center ? { minWidth: 0 } : { flex: 1, minWidth: 0 }}>
+              {title != null && (
+                <h1 style={{ margin: 0, fontSize: 'var(--fs-title, 22px)', color: 'var(--text-emphasis)', letterSpacing: '0.01em' }}>
+                  {title}
+                </h1>
+              )}
+              {subtitle && (
+                <p style={{ margin: '2px 0 0', fontSize: 'var(--fs-small, 12px)', color: 'var(--text-muted)' }}>
+                  {subtitle}
+                </p>
+              )}
+            </div>
+          )}
           {actions && (
             <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8 }}>{actions}</div>
           )}
