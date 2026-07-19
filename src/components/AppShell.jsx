@@ -28,7 +28,7 @@
  * Strings are dict-independent: pass a `labels` object to localize the few
  * chrome strings (defaults are English). Tab labels come from `tabs`.
  */
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import TopBar from './TopBar.jsx'
 import CommandBar from './CommandBar.jsx'
 import Drawer from './Drawer.jsx'
@@ -192,6 +192,29 @@ function AppShellInner({
   // register → render → register loop.
   const tabsKey = tabs.map((tb) => `${tb.id}:${tb.label}`).join('|')
   const langsKey = langs.join(',')
+
+  // ── remember the active tab per app (localStorage) so a page refresh comes
+  // back to the same tab. Keyed by the portal base path (unique per service /
+  // project); falls back to the pathname for standalone dev. Restore runs once,
+  // as soon as the tab list is known and contains the saved id; saving skips the
+  // very first render so the default tab doesn't clobber the stored one.
+  const tabStoreKey = 'lilak.activeTab:' +
+    ((typeof window !== 'undefined' && window.__PORTAL_BASE__) ||
+      (typeof location !== 'undefined' ? location.pathname : ''))
+  const tabRestored = useRef(false)
+  useEffect(() => {
+    if (tabRestored.current || !tabs.length) return
+    tabRestored.current = true
+    try {
+      const saved = localStorage.getItem(tabStoreKey)
+      if (saved && saved !== active && tabs.some((tb) => tb.id === saved)) onTab?.(saved)
+    } catch { /* storage unavailable */ }
+  }, [tabsKey]) // eslint-disable-line react-hooks/exhaustive-deps
+  const tabSaveArmed = useRef(false)
+  useEffect(() => {
+    if (!tabSaveArmed.current) { tabSaveArmed.current = true; return }
+    try { localStorage.setItem(tabStoreKey, active) } catch { /* storage unavailable */ }
+  }, [active]) // eslint-disable-line react-hooks/exhaustive-deps
   const themesKey = themes.join(',')
   const labelsKey = JSON.stringify(labels || {})
 
