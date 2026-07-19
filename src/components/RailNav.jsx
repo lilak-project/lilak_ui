@@ -36,14 +36,45 @@
  *
  * `float` positions the rail absolutely (over a 3D canvas, as geometry/simulation
  * do); default is in-flow. `footer` renders extra nodes below the items.
+ *
+ * `hotkeys` (default true) wires **number-key toggling**: pressing 1‑9 activates
+ * the Nth real item (same as clicking it), and 0 toggles every currently-open
+ * item off (no visible number is drawn). Keys are ignored while typing in a
+ * field, with a modifier held, or when the rail is off-screen (so multiple tabs
+ * each with a rail don't fight over the same keys). Turn off per-rail if a page
+ * already binds number keys elsewhere.
  */
+import { useEffect, useRef } from 'react'
 import Icon from '../icons.jsx'
 
 const TONE = { start: '#16a34a', stop: '#dc2626', run: 'var(--btn-primary-bg)' }
 
 function isItem(x) { return x && x.type !== 'divider' && x.id != null }
 
-export default function RailNav({ items = [], onSelect, footer, float = false, width = 60, gap = 4, style }) {
+export default function RailNav({ items = [], onSelect, footer, float = false, width = 60, gap = 4, hotkeys = true, style }) {
+  const navRef = useRef(null)
+  // Number-key toggling. Keys act only when this rail is actually on-screen
+  // (offsetParent != null → not inside a display:none tab) so services that keep
+  // every tab mounted don't cross-fire. 1‑9 → Nth real item; 0 → close all open.
+  useEffect(() => {
+    if (!hotkeys) return
+    const fire = (it) => { if (it && !it.disabled) (it.onClick ? it.onClick() : onSelect?.(it.id)) }
+    const onKey = (e) => {
+      if (!navRef.current || navRef.current.offsetParent === null) return
+      if (e.metaKey || e.ctrlKey || e.altKey) return
+      const t = e.target
+      const tag = (t?.tagName || '').toUpperCase()
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || t?.isContentEditable) return
+      if (!/^[0-9]$/.test(e.key)) return
+      const reals = items.filter(isItem)
+      if (e.key === '0') { reals.forEach((it) => { if (it.on) fire(it) }); }
+      else { const it = reals[Number(e.key) - 1]; if (!it) return; fire(it) }
+      e.preventDefault(); e.stopPropagation()
+    }
+    window.addEventListener('keydown', onKey, true)
+    return () => window.removeEventListener('keydown', onKey, true)
+  }, [items, onSelect, hotkeys])
+
   const wrap = {
     boxSizing: 'border-box', width, flex: '0 0 auto', alignSelf: 'flex-start',
     display: 'flex', flexDirection: 'column', gap, padding: 6,
@@ -78,7 +109,7 @@ export default function RailNav({ items = [], onSelect, footer, float = false, w
   }
 
   return (
-    <nav style={wrap} aria-label="menu">
+    <nav ref={navRef} style={wrap} aria-label="menu">
       {items.map((it, i) => {
         if (!isItem(it)) return <div key={`s${i}`} aria-hidden="true" style={{ height: 1, alignSelf: 'stretch', margin: '5px 8px', background: 'var(--border-subtle)', opacity: 0.9 }} />
         const IC = it.Icon
