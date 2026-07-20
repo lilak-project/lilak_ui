@@ -30,7 +30,7 @@ import { Container } from '../layout/index.jsx'
  */
 export default function CoverPage({
   icon, iconSize = 36, title, subtitle, actions, note, subheader, headerPad = '40px 0 8px',
-  max = 760, theme = 'bright', fill = false, center = false, style, children, ...rest
+  headerTransition, max = 760, theme = 'bright', fill = false, center = false, style, children, ...rest
 }) {
   // fill: pin the page to the viewport and scroll the BODY internally (header
   // stays put). A stable scrollbar gutter means switching between short and tall
@@ -44,6 +44,9 @@ export default function CoverPage({
       <Container max={max} style={fill ? { display: 'flex', flexDirection: 'column', minHeight: 0, flex: 1 } : undefined}>
         <header style={{
           display: 'flex', flexShrink: 0, padding: headerPad,
+          // Optional: animate padding so a changing headerPad (e.g. the mark rising
+          // after login) slides smoothly instead of jumping.
+          transition: headerTransition,
           ...(center
             ? { flexDirection: 'column', alignItems: 'center', gap: 10, textAlign: 'center' }
             : { alignItems: 'flex-start', gap: 12 }),
