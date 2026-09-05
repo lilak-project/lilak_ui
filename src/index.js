@@ -54,7 +54,7 @@ export { default as LogList, GROUP_ACCESSORS } from './log/LogList.jsx'
 export { default as LogDetail } from './log/LogDetail.jsx'
 export { default as LogToolbar } from './log/LogToolbar.jsx'
 export { default as NumberEntryField } from './log/NumberEntryField.jsx'
-export { default as Markdown } from './log/Markdown.jsx'
+export { default as Markdown, remarkSoftBreaks } from './log/Markdown.jsx'
 export { default as FormatPicker } from './log/FormatPicker.jsx'
 export { default as LoginForm } from './auth/LoginForm.jsx'
 

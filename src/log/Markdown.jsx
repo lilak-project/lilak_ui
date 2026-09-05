@@ -10,6 +10,35 @@
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 
+/**
+ * Treat a single newline as a line break.
+ *
+ * Markdown folds one newline into the surrounding paragraph, so a log typed with
+ * Enter between its lines came back as one run-on block — the text was never
+ * lost, it just stopped being readable the moment it was saved. A logbook is
+ * written the way a note is, not the way a document is, so a newline means what
+ * the person pressing Enter meant by it.
+ *
+ * Written out rather than pulled in (remark-breaks) to keep the kit's dependency
+ * list as it is; the whole transform is one walk over the tree.
+ */
+export function remarkSoftBreaks() {
+  const split = (nodes) => {
+    const out = []
+    for (const node of nodes) {
+      if (node.children) node.children = split(node.children)
+      if (node.type !== 'text' || !node.value.includes('\n')) { out.push(node); continue }
+      const parts = node.value.split('\n')
+      parts.forEach((part, i) => {
+        if (i) out.push({ type: 'break' })
+        if (part) out.push({ ...node, value: part })
+      })
+    }
+    return out
+  }
+  return (tree) => { tree.children = split(tree.children) }
+}
+
 const components = {
   h1: (p) => <h1 style={{ fontSize: 'var(--fs-xlarge, 18px)', fontWeight: 600, margin: '8px 0 4px' }} {...p} />,
   h2: (p) => <h2 style={{ fontSize: 'var(--fs-large, 16px)', fontWeight: 600, margin: '8px 0 4px' }} {...p} />,
@@ -32,7 +61,7 @@ const components = {
 export default function Markdown({ children = '', style }) {
   return (
     <div style={{ fontSize: 'var(--fs-body, 13px)', color: 'var(--text-primary)', ...style }}>
-      <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
+      <ReactMarkdown remarkPlugins={[remarkGfm, remarkSoftBreaks]} components={components}>
         {children}
       </ReactMarkdown>
     </div>
