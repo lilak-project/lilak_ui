@@ -7,6 +7,7 @@
  */
 import { useState } from 'react'
 import Icon from '../icons.jsx'
+import { copyText } from '../utils/clipboard.js'
 
 export default function CopyField({ value, mono = true, labels = {}, style, ...rest }) {
   const [copied, setCopied] = useState(false)
@@ -14,7 +15,8 @@ export default function CopyField({ value, mono = true, labels = {}, style, ...r
   const L = { copy: 'copy', copied: 'copied', ...labels }
 
   function copy() {
-    navigator.clipboard?.writeText(value).then(() => {
+    copyText(value).then((ok) => {
+      if (!ok) return
       setCopied(true); setTimeout(() => setCopied(false), 1500)
     })
   }
