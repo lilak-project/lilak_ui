@@ -30,6 +30,7 @@ export { TagIndexProvider, useTagIndex, useTaggable, useTaggables } from './tags
 // data components (the unified collapsible data-entry abstraction)
 export { default as DataCard, KIND_INDEX } from './data/DataCard.jsx'
 export { default as DataGrid } from './data/DataGrid.jsx'
+export { default as SheetGrid, formatSheetValue } from './data/SheetGrid.jsx'
 export { makeDataFindModes, DATA_INDEX, INDEX_CHARS } from './data/dataFindModes.js'
 export { getBookmarks, isBookmarked, toggleBookmark, subscribeBookmarks, useBookmarks, setBookmarkScope } from './data/bookmarks.js'
 
@@ -46,8 +47,9 @@ export { ICON_TAGS } from './icon-tags.js'
 
 // log system (ported from lilak_elog)
 export * as formatUtils from './log/formatUtils.js'
+export { logDate, formatLogStamp } from './log/formatUtils.js'
 export * as tagColors from './log/tagColors.js'
-export { default as LogEntryCard } from './log/LogEntryCard.jsx'
+export { default as LogEntryCard, isPolling } from './log/LogEntryCard.jsx'
 export { default as LogComposer } from './log/LogComposer.jsx'
 export { default as LogFeed } from './log/LogFeed.jsx'
 export { default as LogList, GROUP_ACCESSORS } from './log/LogList.jsx'
