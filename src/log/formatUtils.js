@@ -232,3 +232,32 @@ export function formatNumberEntry(canonical, opts = {}) {
   if (!error) return Number(value).toFixed(digits).replace(/\.?0+$/, '')
   return `${Number(value).toFixed(digits)} ± ${Number(error).toFixed(digits)}`
 }
+
+
+// ── Log timestamps ──────────────────────────────────────────────────────────
+
+/**
+ * A log timestamp as a real Date.
+ *
+ * The API sends naive UTC ("2026-09-10T02:55:34.688495", no Z, no offset) and
+ * `new Date()` reads a bare date-time as LOCAL. Every displayed time was
+ * therefore shifted by the viewer's offset — nine hours in KST, so a log
+ * written at 11:55 read as 02:55. Only the date was ever shown, which is why
+ * nobody noticed until the clock went next to it.
+ */
+export function logDate(value) {
+  if (!value) return null
+  const s = String(value)
+  const iso = /(?:Z|[+-]\d{2}:?\d{2})$/.test(s) ? s : s + 'Z'
+  const d = new Date(iso)
+  return Number.isNaN(d.getTime()) ? null : d
+}
+
+/** `2026/09/10 11:55` — year first, then the clock. Pass {time:false} for the date alone. */
+export function formatLogStamp(value, { time = true } = {}) {
+  const d = logDate(value)
+  if (!d) return ''
+  const p = (n) => String(n).padStart(2, '0')
+  const day = `${d.getFullYear()}/${p(d.getMonth() + 1)}/${p(d.getDate())}`
+  return time ? `${day} ${p(d.getHours())}:${p(d.getMinutes())}` : day
+}

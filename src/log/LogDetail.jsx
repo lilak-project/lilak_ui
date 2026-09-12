@@ -16,10 +16,13 @@
  * Attachments are rendered internally from `detail.attachments`
  * (`{id, filename, original_filename, size, content_type}`) via `attachmentHref`.
  */
-import { runNumberText } from './formatUtils.js'
+import { useState } from 'react'
+import { runNumberText, formatLogStamp } from './formatUtils.js'
+import { isPolling } from './LogEntryCard.jsx'
 import { RUN_STATUS_TAG, chipProps, synthChipProps } from './tagColors.js'
 import Markdown from './Markdown.jsx'
 import Icon from '../icons.jsx'
+import Lightbox from '../components/Lightbox.jsx'
 
 const RUN_NUM = { backgroundColor: '#374151', color: '#fff' }
 const RUN_NUM_ALT = { backgroundColor: '#d1d5db', color: '#111827' }
@@ -76,6 +79,15 @@ export default function LogDetail({
   indexPrefix = '_',   // '_' for logs, '&' for infographs
   showIndex = true,    // run groups hide the per-log index pill (it's not one log)
 }) {
+  // Index of the attachment shown fullscreen, or null. Hoisted above the early
+  // return because hooks cannot sit behind one.
+  const [lightIdx, setLightIdx] = useState(null)
+
+  const isImg = (a) => a.content_type
+    ? a.content_type.startsWith('image/')
+    : /\.(png|jpe?g|gif|webp|bmp|svg|avif)$/i.test(a.original_filename || '')
+  const images = (detail?.attachments || []).filter(isImg)
+
   if (!entry) return null
   const d = detail || entry
   const level = entry.level || 'info'
@@ -99,12 +111,25 @@ export default function LogDetail({
   return (
     <div id={`log-card-${entry.id}`} style={{
       borderRadius: 12, borderWidth: 2, borderStyle: 'solid',
-      borderColor: focused ? 'var(--border-focus)' : (entry.is_deleted ? 'var(--danger-text)' : 'var(--border-default)'),
+      borderColor: focused ? 'var(--border-focus)'
+        : entry.is_deleted ? 'var(--danger-text)'
+        : isPolling(entry) ? 'var(--success-border)'    // still refilling — see LogEntryCard
+        : 'var(--border-default)',
       backgroundColor: 'var(--surface)', boxShadow: '0 4px 14px rgba(0,0,0,0.08)', fontFamily: 'var(--font-sans)',
     }}>
-      {/* header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '10px 16px',
-        borderBottom: '1px solid var(--border-subtle)', backgroundColor: 'var(--surface-2)', borderRadius: '12px 12px 0 0', flexWrap: 'wrap' }}>
+      {/* header — the whole bar closes the entry, not just the × in its corner.
+          A strip that already reads as the card's title bar is the obvious
+          place to click to put it away, and hunting for a 14px glyph to do it
+          is the kind of aim this feed should not ask for. Controls living in
+          the bar keep their own jobs (see the guard). */}
+      <div onClick={onClose ? (ev) => {
+             if (ev.target.closest('button, a, input, select, textarea, label')) return
+             onClose()
+           } : undefined}
+        title={onClose ? L.close : undefined}
+        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '10px 16px',
+        borderBottom: '1px solid var(--border-subtle)', backgroundColor: 'var(--surface-2)', borderRadius: '12px 12px 0 0', flexWrap: 'wrap',
+        cursor: onClose ? 'pointer' : undefined }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
           {showIndex && <span style={idPill}>{indexPrefix}{entry.log_index ?? entry.id}</span>}
           {level !== 'info' && <span style={{ ...CHIP, ...severityStyle(level) }}>{level.toUpperCase()}</span>}
@@ -132,8 +157,8 @@ export default function LogDetail({
         {/* meta */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', fontSize: 'var(--fs-small, 12px)', color: 'var(--text-secondary)', marginBottom: 12 }}>
           <span>{entry.author_name}</span>
-          <span>{entry.created_at ? new Date(entry.created_at).toLocaleString() : ''}</span>
-          {L.editedBy && d.updated_by && <span style={{ color: 'var(--text-muted)' }}>{L.editedBy(d.updated_by, d.updated_at ? new Date(d.updated_at).toLocaleString() : '')}</span>}
+          <span>{formatLogStamp(entry.created_at)}</span>
+          {L.editedBy && d.updated_by && <span style={{ color: 'var(--text-muted)' }}>{L.editedBy(d.updated_by, formatLogStamp(d.updated_at))}</span>}
           {entry.source && entry.source !== 'human' && <span style={{ color: 'var(--text-link)' }}>{entry.source}</span>}
         </div>
 
@@ -167,8 +192,6 @@ export default function LogDetail({
 
         {/* attachments — images render as thumbnails, the rest as filename chips */}
         {detail?.attachments?.length > 0 && (() => {
-          const isImg = (a) => a.content_type ? a.content_type.startsWith('image/') : /\.(png|jpe?g|gif|webp|bmp|svg|avif)$/i.test(a.original_filename || '')
-          const images = detail.attachments.filter(isImg)
           const files = detail.attachments.filter((a) => !isImg(a))
           return (
             <div style={{ ...divider }}>
@@ -177,12 +200,16 @@ export default function LogDetail({
               </div>
               {images.length > 0 && (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: files.length ? 8 : 0 }}>
-                  {images.map((att) => (
-                    <a key={att.id} href={attachmentHref(att)} target="_blank" rel="noopener noreferrer" title={att.original_filename}
-                      style={{ display: 'block', borderRadius: 8, overflow: 'hidden', border: '1px solid var(--border-default)', lineHeight: 0 }}>
+                  {/* A photo on a log opens where the eye already is, the same
+                      as in the gallery — a new browser tab loses the log. */}
+                  {images.map((att, i) => (
+                    <button key={att.id} type="button" title={att.original_filename}
+                      onClick={(e) => { e.stopPropagation(); setLightIdx(i) }}
+                      style={{ display: 'block', padding: 0, borderRadius: 8, overflow: 'hidden', cursor: 'zoom-in',
+                               border: '1px solid var(--border-default)', background: 'none', lineHeight: 0 }}>
                       <img src={attachmentHref(att)} alt={att.original_filename} loading="lazy"
                         style={{ display: 'block', width: 'auto', maxWidth: 220, maxHeight: 220, objectFit: 'cover' }} />
-                    </a>
+                    </button>
                   ))}
                 </div>
               )}
@@ -205,6 +232,17 @@ export default function LogDetail({
         {actions}
         {footer}
       </div>
+
+      <Lightbox
+        open={lightIdx != null}
+        src={lightIdx != null ? attachmentHref(images[lightIdx]) : undefined}
+        alt={lightIdx != null ? images[lightIdx]?.original_filename : ''}
+        caption={lightIdx != null ? images[lightIdx]?.original_filename : null}
+        index={lightIdx} count={images.length}
+        onClose={() => setLightIdx(null)}
+        onPrev={images.length > 1 ? () => setLightIdx((i) => (i - 1 + images.length) % images.length) : undefined}
+        onNext={images.length > 1 ? () => setLightIdx((i) => (i + 1) % images.length) : undefined}
+      />
     </div>
   )
 }

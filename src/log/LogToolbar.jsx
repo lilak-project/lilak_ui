@@ -10,6 +10,9 @@
  *     groupBy={gb} groupOptions={GROUP_OPTS} onGroupBy={setGb} groupLabel={t('group_by')}
  *     filterActive={isFiltered} onToggleFilter={...} filterLabel={t('filter_title')}
  *     status={<…chips…>} actions={<…buttons…>} />
+ *
+ * `style` merges into the bar's own — that is how a host overrides the default
+ * gap it leaves below itself.
  */
 function Segmented({ value, options, onChange, render }) {
   return (
@@ -38,12 +41,17 @@ export default function LogToolbar({
   viewMode, viewModes = ['brief', 'normal', 'rich'], onViewMode, viewLabel = (m) => m,
   groupBy, groupOptions, onGroupBy, groupLabel = 'group',
   filterActive, onToggleFilter, filterLabel = 'Filter',
-  status, actions,
+  status, actions, style,
 }) {
   return (
     <div style={{
       display: 'flex', alignItems: 'center', gap: 8, height: 44,
       borderBottom: '1px solid var(--border-default)', fontFamily: 'var(--font-sans)',
+      // The bar is always followed by the feed it controls, and it had no gap at
+      // all — the first entry sat welded to the bar's bottom rule, reading as a
+      // header row of the list rather than the first item in it.
+      marginBottom: 10,
+      ...style,
     }}>
       {onPageSize && (
         <Segmented value={pageSize} options={pageSizes} onChange={onPageSize} />

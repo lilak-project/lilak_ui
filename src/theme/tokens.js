@@ -37,12 +37,18 @@ export const TOKEN_GROUPS = [
     id: 'border',
     label: '테두리',
     tokens: {
+      // One notch firmer than the original slate ramp, which was too faint to
+      // divide anything: `border-subtle` was #f1f5f9 — the exact colour of the
+      // `surface-2` it was usually drawn on, so cards and rules simply had no
+      // edge. On the dark theme "firmer" means lighter, since contrast there
+      // runs the other way. Kept in step with lilak_elog's index.css, which
+      // still defines these itself (that app does not call applyTheme).
       'border-default': { label: '기본 테두리',    usage: '카드, 버튼, 입력의 일반 테두리',
-                          bright: '#e2e8f0', dark: '#334155', lowcontrast: '#cec5af' },
+                          bright: '#d6dee8', dark: '#414f63', lowcontrast: '#bfb6a0' },
       'border-subtle':  { label: '약한 테두리',    usage: '구분선, 보조 구분',
-                          bright: '#f1f5f9', dark: '#243347', lowcontrast: '#dfd8c8' },
+                          bright: '#e2e8f0', dark: '#303f54', lowcontrast: '#d2cbbb' },
       'border-strong':  { label: '진한 테두리',    usage: '하이라이트 카드, 강조 영역',
-                          bright: '#cbd5e1', dark: '#475569', lowcontrast: '#b9a98e' },
+                          bright: '#b9c4d3', dark: '#556377', lowcontrast: '#aa9a7f' },
       'border-focus':   { label: '포커스 테두리',  usage: '포커스/선택 강조 (ring)',
                           bright: '#3b82f6', dark: '#60a5fa', lowcontrast: '#8a6040' },
     },
@@ -77,6 +83,11 @@ export const TOKEN_GROUPS = [
     tokens: {
       'success-bg':     { label: '성공 배경',      usage: '성공 배지/알림 배경',
                           bright: '#d1fae5', dark: 'rgba(16,185,129,0.18)', lowcontrast: '#cce0c0' },
+      // `success-text` is sized for text ON success-bg, so it is very dark in the
+      // bright theme (#065f46) — used as a 1px border it reads as black, not
+      // green. A border needs its own mid-tone.
+      'success-border': { label: '성공 테두리',    usage: '초록 강조 테두리 (수집 중인 로그 등)',
+                          bright: '#2f9e44', dark: '#34d399', lowcontrast: '#5c7a3f' },
       'success-text':   { label: '성공 글씨',      usage: '성공 메시지 텍스트',
                           bright: '#065f46', dark: '#34d399', lowcontrast: '#3a5028' },
       'warning-bg':     { label: '경고 배경',      usage: '경고 배지/알림 배경',

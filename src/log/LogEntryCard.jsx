@@ -9,7 +9,7 @@
  *
  *   viewMode: 'brief' | 'normal' | 'rich'
  */
-import { runNumberText } from './formatUtils.js'
+import { runNumberText, formatLogStamp } from './formatUtils.js'
 import { RUN_STATUS_TAG, chipProps, synthChipProps } from './tagColors.js'
 import Markdown from './Markdown.jsx'
 
@@ -28,10 +28,25 @@ function severityStyle(level) {
   }
 }
 
+/** True while a task log is still being refilled on its interval. */
+export function isPolling(entry) {
+  return !!entry && entry.task_interval_min > 0
+    && (entry.task_service_id != null || !!entry.task_module)
+}
+
 function cardFrameStyle(entry, focused) {
   if (focused)          return { backgroundColor: 'var(--info-bg)',   borderColor: 'var(--border-focus)' }
   if (entry.is_deleted) return { backgroundColor: 'var(--danger-bg)', borderColor: 'var(--danger-bg)', opacity: 0.6 }
-  return                       { backgroundColor: 'var(--surface-2)', borderColor: 'var(--border-subtle)' }
+  // A green edge means "this one is still moving": a service is refilling it on
+  // an interval, so its numbers are not final. Worth seeing from the feed —
+  // otherwise a live log and a closed one look identical.
+  if (isPolling(entry))
+    return { backgroundColor: 'var(--surface-2)', borderColor: 'var(--success-border)' }
+  // `border-default`, not `border-subtle`: in the bright theme the subtle border
+  // is #f1f5f9 — the exact colour of the surface-2 the card is painted in. The
+  // card carried a 1px border nobody could ever see, so a feed of them read as
+  // one undivided block instead of a list of entries.
+  return                       { backgroundColor: 'var(--surface-2)', borderColor: 'var(--border-default)' }
 }
 
 function stripMarkdown(text = '') {
@@ -97,7 +112,7 @@ export default function LogEntryCard({ entry, viewMode = 'normal', focused = fal
         <span style={{ flex: 1 }} />
         {entry.attachment_count > 0 && <span style={{ fontSize: 'var(--fs-tiny, 11px)', color: 'var(--text-muted)', flexShrink: 0 }}>[{entry.attachment_count}]</span>}
         <span style={{ fontSize: 'var(--fs-tiny, 11px)', color: 'var(--text-muted)', flexShrink: 0 }}>{entry.author_name}</span>
-        <span style={{ fontSize: 'var(--fs-tiny, 11px)', color: 'var(--text-muted)', flexShrink: 0 }}>{entry.created_at ? new Date(entry.created_at).toLocaleDateString() : ''}</span>
+        <span style={{ fontSize: 'var(--fs-tiny, 11px)', color: 'var(--text-muted)', flexShrink: 0 }}>{formatLogStamp(entry.created_at)}</span>
       </div>
     )
   }
@@ -122,7 +137,7 @@ export default function LogEntryCard({ entry, viewMode = 'normal', focused = fal
         {/* row 4: author / date / source / attachments */}
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', fontSize: 'var(--fs-small, 12px)', color: 'var(--text-secondary)' }}>
           <span>{entry.author_name}</span>
-          <span>{entry.created_at ? new Date(entry.created_at).toLocaleString() : ''}</span>
+          <span>{formatLogStamp(entry.created_at)}</span>
           {entry.source && entry.source !== 'human' && <span style={{ color: 'var(--text-link)' }}>{entry.source}</span>}
           {entry.attachment_count > 0 && <span>[{entry.attachment_count}]</span>}
         </div>

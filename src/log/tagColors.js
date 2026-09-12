@@ -9,10 +9,15 @@
 
 export const DEFAULT_TAG_COLORS = {
   pending: '#2563eb',
-  init:    '#ffe375', start: '#ffe375', running: '#ffe375', end: '#ffe375',
+  // The run lifecycle is yellow up to the end, and the end is black — a full
+  // stop reads as one at a glance, which "another yellow chip" never did.
+  init:    '#ffe375', start: '#ffe375', running: '#ffe375', end: '#111827',
   idle:    '#e5e7eb',
 }
-export const BORDER_TAGS = {}
+// A near-black chip is invisible on the dark theme, whose surface-2 is #162032.
+// The outline is what keeps `end` legible there without lightening the fill and
+// losing the point of it.
+export const BORDER_TAGS = { end: '#64748b' }
 export const RUN_STATUS_TAG = { I: 'init', S: 'start', R: 'running', E: 'end', IDLE: 'idle', A: 'idle' }
 
 export function textOn(hex) {

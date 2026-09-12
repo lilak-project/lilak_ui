@@ -21,7 +21,7 @@ const EXPORTS = [
   'LangProvider', 'useLang', 'useHotkeys', 'defineCommands', 'IdentityProvider',
   'useIdentity', 'CommandRegistryProvider', 'useCommandRegistry',
   // data
-  'DataCard', 'DataGrid', 'makeDataFindModes', 'getBookmarks', 'toggleBookmark',
+  'DataCard', 'DataGrid', 'SheetGrid', 'formatSheetValue', 'makeDataFindModes', 'getBookmarks', 'toggleBookmark',
   'setBookmarkScope',
   // layout
   'Box', 'Stack', 'Row', 'Grid', 'Container', 'Spacer',
@@ -59,12 +59,30 @@ describe('leaf components render', () => {
     ['Rail', <kit.Rail items={[{ id: 'a', label: 'A', icon: 'check' }, { type: 'divider' }, { id: 'b', label: 'B', icon: 'gear' }]}
                        panels={{ a: <span>panel A</span>, b: <span>panel B</span> }} />],
     ['RailNav', <kit.RailNav items={[{ id: 'a', label: 'A', icon: 'check', on: true }, { type: 'divider' }, { id: 'b', label: 'B', icon: 'gear', badge: 3 }, { id: 'r', label: 'run', icon: 'lightning', tone: 'run', disabled: true }]} onSelect={() => {}} />],
+    ['SheetGrid', <kit.SheetGrid columns={[{ key: 'run', label: 'Run', frozen: true }, { key: 'p', label: 'Pressure', unit: 'Torr' }]}
+                                 rows={[{ run: 1, p: 2.9e-5 }, { run: 2, p: null }]} />],
     ['LayoutEditor', <kit.LayoutEditor value={{ tabs: [{ id: 'setup', label: 'Setup', icon: 'home', menu: [{ type: 'item', id: 'd', label: 'D', icon: 'atom' }, { type: 'divider' }] }] }} onChange={() => {}} />],
   ]
   it.each(cases)('%s renders to non-empty markup', (_name, el) => {
     const html = renderToStaticMarkup(el)
     expect(typeof html).toBe('string')
     expect(html.length).toBeGreaterThan(0)
+  })
+})
+
+// The sheet formatter decides whether a real reading is legible or reads as a
+// dead instrument, so it gets assertions rather than a render check.
+describe('formatSheetValue', () => {
+  it('keeps a small reading visible instead of rounding it to zero', () => {
+    expect(kit.formatSheetValue(2.9e-5)).toBe('2.900e-5')
+  })
+  it('drops trailing zeros without touching the integer part', () => {
+    expect(kit.formatSheetValue(1.2300)).toBe('1.23')
+    expect(kit.formatSheetValue(100)).toBe('100')
+  })
+  it('passes text through and renders a blank for nothing', () => {
+    expect(kit.formatSheetValue('2026-09-04 05:19:28')).toBe('2026-09-04 05:19:28')
+    expect(kit.formatSheetValue(null)).toBe('')
   })
 })
 
