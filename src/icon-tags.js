@@ -110,6 +110,7 @@ export const ICON_TAGS = {
   'flying-saucer': ["ufo","space","aliens","extra terrestrial","sci-fi","games","objects"],
   'fork-knife': ["food","meal","eating","restaurants","dining","utensils","commerce","maps & travel","objects"],
   'game-controller': ["gaming","video games","nintendo switch","sony playstation","microsoft xbox","games","media","objects"],
+  wall: ["brick","rack","wall","structure","grid","objects"],
   gauge: ["dashboard","meter","speed","speedometer","odometer","performance","technology & development","objects","system"],
   gavel: ["judge","justice","legal","law","court","hammer","government","commerce","objects"],
   ghost: ["pac-man","spirit","scary","halloween","games","objects"],

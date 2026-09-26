@@ -23,7 +23,7 @@ import {
   Play, SlidersHorizontal, TreeStructure, MapTrifold, ChartLine,
   Users, Key, Table, Plug, Robot, Palette,
   DownloadSimple, UploadSimple, FileArrowDown,
-  TestTube, Dna, Magnet, Gauge, Thermometer, Lightbulb, Wrench, Cpu,
+  TestTube, Dna, Magnet, Gauge, Thermometer, Lightbulb, Wrench, Cpu, Wall,
   Hexagon, Shapes, Crosshair, Polygon, Pulse, Waveform, ChartLineUp, Circuitry, Graph,
   Camera, Image as ImageIcon,
   ToggleLeft, ToggleRight,
@@ -98,6 +98,7 @@ export const ICONS = {
   // project / experiment marks (distinct from the avatar icon set)
   'test-tube': TestTube, dna: Dna, magnet: Magnet,
   gauge: Gauge, thermometer: Thermometer, lightbulb: Lightbulb, wrench: Wrench,
+  wall: Wall,
   cpu: Cpu, hexagon: Hexagon, shapes: Shapes, crosshair: Crosshair, polygon: Polygon,
   pulse: Pulse, waveform: Waveform, 'chart-line-up': ChartLineUp, circuitry: Circuitry, graph: Graph,
 }
