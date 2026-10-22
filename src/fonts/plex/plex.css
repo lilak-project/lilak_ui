@@ -1,6 +1,6 @@
 /* IBM Plex Sans, kept here rather than fetched from Google Fonts: a page
  * waits for its stylesheets, so a flaky connection held every rack page for
- * ~10s. It is --rk-sans's fallback after Pretendard (installed or not, the
+ * ~10s. It is --font-sans's fallback after NanumSquare Neo (installed or not, the
  * page never waits). Each @font-face is one unicode-range slice; a browser
  * loads only the slices its text uses. From fonts.googleapis.com css2. */
 /* cyrillic-ext */

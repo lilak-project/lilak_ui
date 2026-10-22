@@ -1,0 +1,54 @@
+/* ══ LILAK type — the one place a font or a text size is decided ═════════════
+ *
+ * Every LILAK screen — the portal, a rack service, anything on the kit — reads
+ * its fonts and sizes from the variables below, so a change here is a change
+ * everywhere. The files are kept in the kit rather than fetched from a CDN: a
+ * page waits for its stylesheets, and a flaky connection used to hold every
+ * page for ~10 s (font-display: swap means nobody waits for a font either).
+ *
+ *   --font-sans   NanumSquare Neo (Korean) → IBM Plex Sans (Latin) → system
+ *                 An English screen puts Plex first: applyLangFont('en').
+ *   --font-mono   D2 coding (Korean-aware) → system mono
+ *   --fs-*        the 9-step size scale; RACK's own one-size lists keep --rk-fs
+ *
+ * Regular weight only: RACK sets nothing bold, and where the portal does, the
+ * browser thickens the regular face. Both fonts are SIL Open Font License.
+ *   NanumSquare Neo — NAVER, hangeul.pstatic.net (NanumSquareNeoTTF-bRg.woff)
+ *   D2 coding       — NAVER, via Joungkyun/font-d2coding (D2Coding.woff2)
+ */
+@import './plex/plex.css';
+
+@font-face {
+  font-family: 'NanumSquare Neo';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('NanumSquare Neo'), local('NanumSquareNeo'),
+       url('./NanumSquareNeo-Regular.woff') format('woff');
+}
+
+@font-face {
+  font-family: 'D2 coding';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('D2Coding'), url('./D2Coding.woff2') format('woff2');
+}
+
+:root {
+  --font-sans: 'NanumSquare Neo', 'IBM Plex Sans', -apple-system, BlinkMacSystemFont,
+               system-ui, 'Apple SD Gothic Neo', sans-serif;
+  --font-mono: 'D2 coding', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* 9 named steps — use these everywhere instead of a px number:
+       micro 10 badges, key chips · tiny 11 captions, hints · small 12 secondary
+       text, compact buttons · body 13 default text, inputs · medium 14 emphasis,
+       section labels · large 16 card titles · xlarge 18 h2 · title 22 h1 ·
+       display 28 big numbers.  A host's "large" mode redefines them one step up. */
+  --fs-micro: 10px;  --fs-tiny: 11px;  --fs-small: 12px;  --fs-body: 13px;
+  --fs-medium: 14px; --fs-large: 16px; --fs-xlarge: 18px; --fs-title: 22px;
+  --fs-display: 28px;
+  /* RACK's nameplate rank: a page's name, a band's name, and the one size a
+     rack list's text is set in (--rk-fs). Between medium and large on purpose. */
+  --fs-plate: 15px;
+}

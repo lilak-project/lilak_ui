@@ -12,17 +12,22 @@
  *   setTheme('dark')        // switch theme (persists to localStorage)
  */
 import { TOKENS, THEMES } from './tokens.js'
+// The fonts themselves and the --font-* / --fs-* variables: kept in the kit,
+// so any app that imports it renders in the same type without a CDN.
+import '../fonts/fonts.css'
 
 const STYLE_ID = 'lilak-ui-theme-vars'
 const FONT_ID = 'lilak-ui-fonts'
 const STORAGE_KEY = 'lilak-ui-theme'
 
-/** Per-language sans stacks: Korean → Pretendard, English → IBM Plex Sans.
- *  Both list the other as fallback so mixed text always renders. Extend it for
- *  a new language (especially a new script) with `registerLangFont`. */
+/** Per-language sans stacks: Korean → NanumSquare Neo, English → IBM Plex Sans.
+ *  Both list the other as fallback so mixed text always renders; the faces are
+ *  in fonts/fonts.css. Extend it for a new language (especially a new script)
+ *  with `registerLangFont`. */
+const TAIL = "-apple-system, BlinkMacSystemFont, system-ui, 'Apple SD Gothic Neo', sans-serif"
 export const SANS_BY_LANG = {
-  ko: "Pretendard, 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, system-ui, sans-serif",
-  en: "'IBM Plex Sans', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif",
+  ko: `'NanumSquare Neo', 'IBM Plex Sans', ${TAIL}`,
+  en: `'IBM Plex Sans', 'NanumSquare Neo', ${TAIL}`,
 }
 const SANS_DEFAULT = SANS_BY_LANG.ko
 
@@ -38,8 +43,8 @@ export function registerLangFont(lang, stack) {
 
 export const FONT_DEFAULTS = {
   '--font-sans': SANS_DEFAULT,
-  // D2Coding: Korean-aware coding font; JetBrains Mono / system mono as fallback
-  '--font-mono': "'D2 coding', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
+  // D2Coding: Korean-aware coding font (in fonts/fonts.css); system mono after
+  '--font-mono': "'D2 coding', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
   '--radius-md': '8px',
   '--radius-lg': '10px',
 }
@@ -51,8 +56,12 @@ export function applyLangFont(lang) {
   document.documentElement.style.setProperty('--font-sans', stack)
 }
 
-/** Load Pretendard + IBM Plex Sans + D2Coding (+ JetBrains Mono) from jsDelivr,
- *  AND make the themed sans stack the document-wide default font. Idempotent.
+/** Make the themed sans stack the document-wide default font. Idempotent.
+ *
+ *  The fonts themselves (NanumSquare Neo, IBM Plex Sans, D2 coding) ship in the
+ *  kit — fonts/fonts.css, imported by this module — so nothing is fetched. The
+ *  CDN options remain for an app that wants a face the kit does not carry; all
+ *  are off unless asked for.
  *
  *  Defines the `--font-sans` / `--font-mono` (+ radius) tokens if the app hasn't
  *  already, then makes the themed sans stack the document-wide default so every
@@ -63,7 +72,7 @@ export function applyLangFont(lang) {
  *  deployments (e.g. DAQ networks) should pass `{ cdn: false }` and self-host the
  *  fonts (or accept the FONT_DEFAULTS system fallback) — the kit never hard-requires
  *  the third-party CDN. */
-export function loadFonts({ pretendard = true, ibmPlexSans = true, d2coding = true, jetbrainsMono = true, setDefault = true, cdn = true } = {}) {
+export function loadFonts({ pretendard = false, ibmPlexSans = false, d2coding = false, jetbrainsMono = false, setDefault = true, cdn = true } = {}) {
   if (typeof document === 'undefined') return
   const links = []
   if (cdn) {
