@@ -20,14 +20,14 @@ const STYLE_ID = 'lilak-ui-theme-vars'
 const FONT_ID = 'lilak-ui-fonts'
 const STORAGE_KEY = 'lilak-ui-theme'
 
-/** Per-language sans stacks: Korean → NanumSquare Neo, English → IBM Plex Sans.
+/** Per-language sans stacks: Latin in IBM Plex Sans, Hangul in Pretendard, whichever the language.
  *  Both list the other as fallback so mixed text always renders; the faces are
  *  in fonts/fonts.css. Extend it for a new language (especially a new script)
  *  with `registerLangFont`. */
 const TAIL = "-apple-system, BlinkMacSystemFont, system-ui, 'Apple SD Gothic Neo', sans-serif"
 export const SANS_BY_LANG = {
-  ko: `'NanumSquare Neo', 'IBM Plex Sans', ${TAIL}`,
-  en: `'IBM Plex Sans', 'NanumSquare Neo', ${TAIL}`,
+  ko: `'IBM Plex Sans', 'Pretendard', ${TAIL}`,
+  en: `'IBM Plex Sans', 'Pretendard', ${TAIL}`,
 }
 const SANS_DEFAULT = SANS_BY_LANG.ko
 
@@ -49,7 +49,7 @@ export const FONT_DEFAULTS = {
   '--radius-lg': '10px',
 }
 
-/** Set the sans stack for the active language (ko → Pretendard, en → IBM Plex Sans). */
+/** Set the sans stack for the active language (see SANS_BY_LANG). */
 export function applyLangFont(lang) {
   if (typeof document === 'undefined') return
   const stack = SANS_BY_LANG[lang] ?? SANS_DEFAULT
@@ -58,7 +58,7 @@ export function applyLangFont(lang) {
 
 /** Make the themed sans stack the document-wide default font. Idempotent.
  *
- *  The fonts themselves (NanumSquare Neo, IBM Plex Sans, D2 coding) ship in the
+ *  The fonts themselves (Pretendard, IBM Plex Sans, D2 coding) ship in the
  *  kit — fonts/fonts.css, imported by this module — so nothing is fetched. The
  *  CDN options remain for an app that wants a face the kit does not carry; all
  *  are off unless asked for.

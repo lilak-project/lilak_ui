@@ -6,25 +6,24 @@
  * page waits for its stylesheets, and a flaky connection used to hold every
  * page for ~10 s (font-display: swap means nobody waits for a font either).
  *
- *   --font-sans   NanumSquare Neo (Korean) → IBM Plex Sans (Latin) → system
- *                 An English screen puts Plex first: applyLangFont('en').
+ *   --font-sans   IBM Plex Sans (Latin) → Pretendard (Hangul) → system
  *   --font-mono   D2 coding (Korean-aware) → system mono
  *   --fs-*        the 9-step size scale; RACK's own one-size lists keep --rk-fs
  *
  * Regular weight only: RACK sets nothing bold, and where the portal does, the
  * browser thickens the regular face. Both fonts are SIL Open Font License.
- *   NanumSquare Neo — NAVER, hangeul.pstatic.net (NanumSquareNeoTTF-bRg.woff)
+ *   Pretendard      — orioncactus/pretendard (Regular, otf → woff with fontTools)
  *   D2 coding       — NAVER, via Joungkyun/font-d2coding (D2Coding.woff2)
  */
 @import './plex/plex.css';
 
 @font-face {
-  font-family: 'NanumSquare Neo';
+  font-family: 'Pretendard';
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: local('NanumSquare Neo'), local('NanumSquareNeo'),
-       url('./NanumSquareNeo-Regular.woff') format('woff');
+  src: local('Pretendard Regular'), local('Pretendard-Regular'),
+       url('./Pretendard-Regular.woff') format('woff');
 }
 
 @font-face {
@@ -36,7 +35,7 @@
 }
 
 :root {
-  --font-sans: 'NanumSquare Neo', 'IBM Plex Sans', -apple-system, BlinkMacSystemFont,
+  --font-sans: 'IBM Plex Sans', 'Pretendard', -apple-system, BlinkMacSystemFont,
                system-ui, 'Apple SD Gothic Neo', sans-serif;
   --font-mono: 'D2 coding', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
