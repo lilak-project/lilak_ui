@@ -57,7 +57,7 @@ export default function LogFeed({
         authorName={authorName} labels={composerLabels} onUpload={onUpload}
         onSubmit={(entry) => { onCreate?.(entry); setSel(0) }} />
       {entries.length === 0 && (
-        <div style={{ padding: 18, textAlign: 'center', color: 'var(--text-muted)', fontSize: 'var(--fs-body, 13px)' }}>
+        <div style={{ padding: 18, textAlign: 'center', color: 'var(--dock-text-muted)', fontSize: 'var(--fs-body, 13px)' }}>
           {labels.empty ?? 'No entries'}
         </div>
       )}

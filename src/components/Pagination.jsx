@@ -21,9 +21,9 @@ export default function Pagination({ page, pageSize, total, onPageChange, loadin
   const btn = (disabled) => ({
     padding: '4px 12px', borderRadius: 8, fontSize: 'var(--fs-body, 13px)',
     borderWidth: 1, borderStyle: 'solid',
-    borderColor: disabled ? 'var(--border-subtle)' : 'var(--border-default)',
-    backgroundColor: disabled ? 'var(--surface-2)' : 'transparent',
-    color: disabled ? 'var(--text-muted)' : 'var(--text-primary)',
+    borderColor: disabled ? 'var(--dock-border-subtle)' : 'var(--dock-border-default)',
+    backgroundColor: disabled ? 'var(--dock-surface-2)' : 'transparent',
+    color: disabled ? 'var(--dock-text-muted)' : 'var(--dock-text-primary)',
     cursor: disabled ? 'not-allowed' : 'pointer', transition: 'background-color .12s',
   })
 
@@ -38,10 +38,10 @@ export default function Pagination({ page, pageSize, total, onPageChange, loadin
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 24, fontFamily: 'var(--font-sans)' }}>
       <button disabled={prevDisabled} onClick={() => onPageChange(page - 1)} style={btn(prevDisabled)}
-        onMouseEnter={(e) => { if (!prevDisabled) e.currentTarget.style.backgroundColor = 'var(--surface-2)' }}
+        onMouseEnter={(e) => { if (!prevDisabled) e.currentTarget.style.backgroundColor = 'var(--dock-surface-2)' }}
         onMouseLeave={(e) => { if (!prevDisabled) e.currentTarget.style.backgroundColor = 'transparent' }}>{prev}</button>
 
-      <div style={{ display: 'flex', alignItems: 'center', fontSize: 'var(--fs-body, 13px)', color: 'var(--text-secondary)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', fontSize: 'var(--fs-body, 13px)', color: 'var(--dock-text-secondary)' }}>
         {editing ? (
           <input autoFocus type="number" min={1} max={totalPages} value={inputVal}
             onChange={(e) => setInputVal(e.target.value)}
@@ -51,18 +51,18 @@ export default function Pagination({ page, pageSize, total, onPageChange, loadin
               if (e.key === 'Escape') { setInputVal(''); setEditing(false) }
             }}
             style={{ width: 56, textAlign: 'center', borderRadius: 6, padding: '2px 4px', fontSize: 'var(--fs-body, 13px)',
-              borderWidth: 1, borderStyle: 'solid', borderColor: 'var(--border-focus)',
-              backgroundColor: 'var(--surface)', color: 'var(--text-primary)', outline: 'none' }} />
+              borderWidth: 1, borderStyle: 'solid', borderColor: 'var(--dock-border-focus)',
+              backgroundColor: 'var(--dock-surface)', color: 'var(--dock-text-primary)', outline: 'none' }} />
         ) : (
           <button onClick={() => { setInputVal(String(page)); setEditing(true) }}
-            style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: 'var(--fs-body, 13px)', padding: '0 4px' }}>
+            style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--dock-text-secondary)', fontSize: 'var(--fs-body, 13px)', padding: '0 4px' }}>
             {info(page, totalPages, total)}
           </button>
         )}
       </div>
 
       <button disabled={nextDisabled} onClick={() => onPageChange(page + 1)} style={btn(nextDisabled)}
-        onMouseEnter={(e) => { if (!nextDisabled) e.currentTarget.style.backgroundColor = 'var(--surface-2)' }}
+        onMouseEnter={(e) => { if (!nextDisabled) e.currentTarget.style.backgroundColor = 'var(--dock-surface-2)' }}
         onMouseLeave={(e) => { if (!nextDisabled) e.currentTarget.style.backgroundColor = 'transparent' }}>{next}</button>
     </div>
   )

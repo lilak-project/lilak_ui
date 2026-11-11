@@ -33,15 +33,15 @@ const row = { display: 'flex', alignItems: 'center', gap: 6 }
 const iconField = { width: 92, flex: '0 0 92px' }
 // Fixed-width id tag so a long #id (e.g. #community) doesn't shrink the label field
 // and leave the rows uneven.
-const idTag = { flex: '0 0 84px', width: 84, fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-micro,10px)', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }
+const idTag = { flex: '0 0 84px', width: 84, fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-micro,10px)', color: 'var(--dock-text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }
 
 function ReorderBtns({ i, n, onMove }) {
   return (
     <span style={{ display: 'inline-flex', flexDirection: 'column' }}>
       <button type="button" title="위로" disabled={i === 0} onClick={() => onMove(-1)}
-        style={{ border: 0, background: 'transparent', cursor: i === 0 ? 'default' : 'pointer', color: i === 0 ? 'var(--text-muted)' : 'var(--text-secondary)', lineHeight: 1, padding: 0, opacity: i === 0 ? 0.4 : 1 }}>▲</button>
+        style={{ border: 0, background: 'transparent', cursor: i === 0 ? 'default' : 'pointer', color: i === 0 ? 'var(--dock-text-muted)' : 'var(--dock-text-secondary)', lineHeight: 1, padding: 0, opacity: i === 0 ? 0.4 : 1 }}>▲</button>
       <button type="button" title="아래로" disabled={i === n - 1} onClick={() => onMove(1)}
-        style={{ border: 0, background: 'transparent', cursor: i === n - 1 ? 'default' : 'pointer', color: i === n - 1 ? 'var(--text-muted)' : 'var(--text-secondary)', lineHeight: 1, padding: 0, opacity: i === n - 1 ? 0.4 : 1 }}>▼</button>
+        style={{ border: 0, background: 'transparent', cursor: i === n - 1 ? 'default' : 'pointer', color: i === n - 1 ? 'var(--dock-text-muted)' : 'var(--dock-text-secondary)', lineHeight: 1, padding: 0, opacity: i === n - 1 ? 0.4 : 1 }}>▼</button>
     </span>
   )
 }
@@ -49,7 +49,7 @@ function ReorderBtns({ i, n, onMove }) {
 function MenuEditor({ menu = [], onChange }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6, paddingLeft: 22, marginTop: 6 }}>
-      {menu.length === 0 && <div style={{ color: 'var(--text-muted)', fontSize: 'var(--fs-small, 12px)' }}>메뉴 항목이 없습니다 (단일 패널 탭).</div>}
+      {menu.length === 0 && <div style={{ color: 'var(--dock-text-muted)', fontSize: 'var(--fs-small, 12px)' }}>메뉴 항목이 없습니다 (단일 패널 탭).</div>}
       {menu.map((it, i) => (
         <div key={i} style={row}>
           <ReorderBtns i={i} n={menu.length} onMove={(d) => onChange(move(menu, i, d))} />
@@ -63,7 +63,7 @@ function MenuEditor({ menu = [], onChange }) {
               <span style={idTag}>#{it.id}</span>
             </>
           ) : (
-            <span style={{ flex: 1, borderTop: '1px dashed var(--border-default)', color: 'var(--text-muted)', fontSize: 'var(--fs-micro,10px)' }}>구분선</span>
+            <span style={{ flex: 1, borderTop: '1px dashed var(--dock-border-default)', color: 'var(--dock-text-muted)', fontSize: 'var(--fs-micro,10px)' }}>구분선</span>
           )}
           <Button size="sm" variant="ghost" type="button" onClick={() => onChange(removeAt(menu, i))}>✕</Button>
         </div>
@@ -83,13 +83,13 @@ function MenuEditor({ menu = [], onChange }) {
 function LockedMenuEditor({ menu = [], onChange }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6, paddingLeft: 22, marginTop: 6 }}>
-      <div style={{ color: 'var(--text-muted)', fontSize: 'var(--fs-micro,10px)' }}>🔒 이 메뉴는 코드에서 제공됩니다 — 순서와 표시만 바꿀 수 있어요.</div>
+      <div style={{ color: 'var(--dock-text-muted)', fontSize: 'var(--fs-micro,10px)' }}>🔒 이 메뉴는 코드에서 제공됩니다 — 순서와 표시만 바꿀 수 있어요.</div>
       {menu.map((it, i) => (
         <div key={it.id || i} style={{ ...row, opacity: it.hidden ? 0.5 : 1 }}>
           <ReorderBtns i={i} n={menu.length} onMove={(d) => onChange(move(menu, i, d))} />
           <RealIcon name={it.icon || 'tag'} size={16} />
-          <span style={{ flex: 1, fontSize: 'var(--fs-small,12px)', color: 'var(--text-primary)' }}>{it.label || it.id}</span>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-micro,10px)', color: 'var(--text-muted)' }}>#{it.id}</span>
+          <span style={{ flex: 1, fontSize: 'var(--fs-small,12px)', color: 'var(--dock-text-primary)' }}>{it.label || it.id}</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-micro,10px)', color: 'var(--dock-text-muted)' }}>#{it.id}</span>
           <Button size="sm" variant="ghost" type="button" title={it.hidden ? '표시' : '숨기기'}
             onClick={() => onChange(updateAt(menu, i, { hidden: !it.hidden }))}>{it.hidden ? '숨김' : '표시'}</Button>
         </div>
@@ -115,7 +115,7 @@ export default function LayoutEditor({ value, onChange, onSave, onReset, dirty =
       {tabs.map((tb, i) => {
         const open = openId === tb.id
         return (
-          <div key={tb.id || i} style={{ border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg,10px)', padding: 8, opacity: tb.hidden ? 0.55 : 1 }}>
+          <div key={tb.id || i} style={{ border: '1px solid var(--dock-border-subtle)', borderRadius: 'var(--radius-lg,10px)', padding: 8, opacity: tb.hidden ? 0.55 : 1 }}>
             <div style={row}>
               <ReorderBtns i={i} n={tabs.length} onMove={(d) => setTabs(move(tabs, i, d))} />
               <RealIcon name={tb.icon || 'browse'} size={18} />

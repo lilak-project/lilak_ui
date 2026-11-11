@@ -19,15 +19,15 @@ export function Chip({ selected = false, round = false, onClick, style, children
     transition: 'background-color .12s, color .12s, border-color .12s',
   }
   const skin = selected
-    ? { backgroundColor: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', border: '1px solid var(--btn-primary-bg)' }
-    : { backgroundColor: 'var(--surface)', color: 'var(--text-secondary)', border: '1px solid var(--border-default)' }
+    ? { backgroundColor: 'var(--dock-btn-primary-bg)', color: 'var(--dock-btn-primary-text)', border: '1px solid var(--dock-btn-primary-bg)' }
+    : { backgroundColor: 'var(--dock-surface)', color: 'var(--dock-text-secondary)', border: '1px solid var(--dock-border-default)' }
   return (
     <button
       type="button"
       onClick={onClick}
       style={{ ...base, ...skin, ...style }}
-      onMouseEnter={(e) => { if (!selected) e.currentTarget.style.backgroundColor = 'var(--surface-2)' }}
-      onMouseLeave={(e) => { if (!selected) e.currentTarget.style.backgroundColor = 'var(--surface)' }}
+      onMouseEnter={(e) => { if (!selected) e.currentTarget.style.backgroundColor = 'var(--dock-surface-2)' }}
+      onMouseLeave={(e) => { if (!selected) e.currentTarget.style.backgroundColor = 'var(--dock-surface)' }}
       {...rest}
     >
       {children}
@@ -46,7 +46,7 @@ export function ChipGroup({
       {label && (
         <p style={{
           fontSize: 'var(--fs-micro, 10px)', fontWeight: 600, textTransform: 'uppercase',
-          letterSpacing: '0.04em', color: 'var(--text-muted)', margin: '0 0 6px',
+          letterSpacing: '0.04em', color: 'var(--dock-text-muted)', margin: '0 0 6px',
         }}>{label}</p>
       )}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>

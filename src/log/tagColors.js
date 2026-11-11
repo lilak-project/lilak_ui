@@ -34,10 +34,10 @@ export function chipProps(name, color, border, text) {
   if (bg) {
     style.backgroundColor = bg
     style.color = text || textOn(bg)
-    if (bg.toLowerCase() === '#ffffff' && !bd) bd = 'var(--border-default)'
+    if (bg.toLowerCase() === '#ffffff' && !bd) bd = 'var(--dock-border-default)'
   } else {
-    style.backgroundColor = 'var(--info-bg)'
-    style.color = text || 'var(--info-text)'
+    style.backgroundColor = 'var(--dock-info-bg)'
+    style.color = text || 'var(--dock-info-text)'
   }
   if (bd) style.border = `1.5px solid ${bd}`
   return { style }

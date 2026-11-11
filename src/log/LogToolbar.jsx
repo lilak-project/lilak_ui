@@ -1,3 +1,4 @@
+import Select from '../components/Select.jsx'
 /**
  * LogToolbar — the bar above a log feed: page-size, view-mode, the configurable
  * group-by selector (#8), a filter toggle, plus free slots for status chips and
@@ -16,7 +17,7 @@
  */
 function Segmented({ value, options, onChange, render }) {
   return (
-    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 2, padding: 2, height: 32, borderRadius: 8, backgroundColor: 'var(--surface-2)' }}>
+    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 2, padding: 2, height: 32, borderRadius: 8, backgroundColor: 'var(--dock-surface-2)' }}>
       {options.map((opt) => {
         const v = typeof opt === 'object' ? opt.value : opt
         const label = render ? render(opt) : (typeof opt === 'object' ? opt.label : opt)
@@ -26,8 +27,8 @@ function Segmented({ value, options, onChange, render }) {
             style={{
               height: '100%', padding: '0 11px', borderRadius: 6, fontSize: 'var(--fs-small, 12px)', fontWeight: 500,
               border: 'none', cursor: 'pointer', whiteSpace: 'nowrap',
-              backgroundColor: on ? 'var(--surface)' : 'transparent',
-              color: on ? 'var(--text-primary)' : 'var(--text-secondary)',
+              backgroundColor: on ? 'var(--dock-surface)' : 'transparent',
+              color: on ? 'var(--dock-text-primary)' : 'var(--dock-text-secondary)',
               boxShadow: on ? '0 1px 2px rgba(0,0,0,0.08)' : 'none', transition: 'background-color .12s, color .12s',
             }}>{label}</button>
         )
@@ -46,7 +47,7 @@ export default function LogToolbar({
   return (
     <div style={{
       display: 'flex', alignItems: 'center', gap: 8, height: 44,
-      borderBottom: '1px solid var(--border-default)', fontFamily: 'var(--font-sans)',
+      borderBottom: '1px solid var(--dock-border-default)', fontFamily: 'var(--font-sans)',
       // The bar is always followed by the feed it controls, and it had no gap at
       // all — the first entry sat welded to the bar's bottom rule, reading as a
       // header row of the list rather than the first item in it.
@@ -62,13 +63,13 @@ export default function LogToolbar({
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 'auto' }}>
         {groupOptions && onGroupBy && (
           <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 32, padding: '0 4px 0 10px',
-            borderRadius: 8, backgroundColor: 'var(--surface-2)', fontSize: 'var(--fs-small, 12px)', color: 'var(--text-secondary)' }}>
+            borderRadius: 8, backgroundColor: 'var(--dock-surface-2)', fontSize: 'var(--fs-small, 12px)', color: 'var(--dock-text-secondary)' }}>
             <span style={{ whiteSpace: 'nowrap' }}>{groupLabel}</span>
-            <select value={groupBy} onChange={(e) => onGroupBy(e.target.value)}
-              style={{ height: 26, border: 'none', borderRadius: 6, background: 'var(--surface)', color: 'var(--text-primary)',
+            <Select value={groupBy} onChange={(e) => onGroupBy(e.target.value)}
+              style={{ height: 26, border: 'none', borderRadius: 6, background: 'var(--dock-surface)', color: 'var(--dock-text-primary)',
                 fontSize: 'var(--fs-small, 12px)', padding: '0 6px', cursor: 'pointer', fontFamily: 'var(--font-sans)' }}>
               {groupOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
+            </Select>
           </label>
         )}
 
@@ -76,8 +77,8 @@ export default function LogToolbar({
           <button onClick={onToggleFilter}
             style={{
               height: 32, padding: '0 12px', borderRadius: 8, fontSize: 'var(--fs-small, 12px)', fontWeight: 500, cursor: 'pointer', border: 'none',
-              backgroundColor: filterActive ? 'var(--info-bg)' : 'var(--surface-2)',
-              color: filterActive ? 'var(--info-text)' : 'var(--text-secondary)',
+              backgroundColor: filterActive ? 'var(--dock-info-bg)' : 'var(--dock-surface-2)',
+              color: filterActive ? 'var(--dock-info-text)' : 'var(--dock-text-secondary)',
             }}>{filterLabel}{filterActive ? ' •' : ''}</button>
         )}
 

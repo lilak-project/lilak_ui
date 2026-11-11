@@ -34,7 +34,7 @@ applyTheme('light')
 function Block({ title, children }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)' }}>{title}</div>
+      <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--dock-text-secondary)' }}>{title}</div>
       <div style={{ position: 'relative', minHeight: 320, minWidth: 74 }}>{children}</div>
     </div>
   )
@@ -42,7 +42,7 @@ function Block({ title, children }) {
 
 function Demo() {
   return (
-    <div style={{ padding: 28, display: 'flex', gap: 40, flexWrap: 'wrap', alignItems: 'flex-start', fontFamily: 'var(--font-sans)', background: 'var(--surface)', minHeight: '100vh' }}>
+    <div style={{ padding: 28, display: 'flex', gap: 40, flexWrap: 'wrap', alignItems: 'flex-start', fontFamily: 'var(--font-sans)', background: 'var(--dock-surface)', minHeight: '100vh' }}>
       <Block title="LayoutEditor — community codeMenu is 🔒 (reorder/hide only)">
         <EditorDemo />
       </Block>
@@ -89,7 +89,7 @@ function Demo() {
       </Block>
 
       <Block title="SCAFFOLD: <Rail> coupled, panels EMPTY (what a new service shows)">
-        <div style={{ height: 300, width: 340, border: '1px dashed var(--border-default)', borderRadius: 8 }}>
+        <div style={{ height: 300, width: 340, border: '1px dashed var(--dock-border-default)', borderRadius: 8 }}>
           <Rail items={[
             { id: 'detector', label: 'detector', icon: 'atom' },
             { id: 'physics', label: 'physics', icon: 'atom' },
@@ -100,7 +100,7 @@ function Demo() {
       </Block>
 
       <Block title="SCAFFOLD: <Rail> coupled, panels FILLED">
-        <div style={{ height: 300, width: 340, border: '1px dashed var(--border-default)', borderRadius: 8 }}>
+        <div style={{ height: 300, width: 340, border: '1px dashed var(--dock-border-default)', borderRadius: 8 }}>
           <Rail items={[
             { id: 'detector', label: 'detector', icon: 'atom' },
             { id: 'physics', label: 'physics', icon: 'atom' },

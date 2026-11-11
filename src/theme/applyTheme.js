@@ -110,19 +110,24 @@ export function loadFonts({ pretendard = false, ibmPlexSans = false, d2coding = 
   }
 }
 
-/** Build the full CSS string of `[data-theme="…"] { --token: value; }` blocks. */
+/** Build the full CSS string of `[data-theme="…"] { --dock-token: value; }` blocks
+ *  (DOCK, the kit's own look — see the README). */
 export function buildThemeCSS() {
   const blocks = []
   for (const { id } of THEMES) {
     const lines = []
     for (const [name, def] of Object.entries(TOKENS)) {
       const value = def[id]
-      if (value != null) lines.push(`  --${name}: ${value};`)
+      if (value != null) lines.push(`  --dock-${name}: ${value};`)
     }
     // First theme also seeds :root so vars exist before any data-theme is set.
     const selector = id === THEMES[0].id ? `:root, [data-theme="${id}"]` : `[data-theme="${id}"]`
     blocks.push(`${selector} {\n${lines.join('\n')}\n}`)
   }
+  // The old bare names, while code that has not moved to --dock-* is still
+  // around (scripts/dock.py --check lists it). Remove once that is empty.
+  const alias = Object.keys(TOKENS).map((name) => `  --${name}: var(--dock-${name});`)
+  blocks.push(`:root {\n${alias.join('\n')}\n}`)
   return blocks.join('\n\n')
 }
 

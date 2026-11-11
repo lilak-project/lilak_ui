@@ -38,6 +38,7 @@
  *        body, kind:'msg'|'question', done, reply_to_id, reply_to_author, reply_to_body,
  *        attachments:[att], created_at }
  */
+import Select from '../components/Select.jsx'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import Icon from '../icons.jsx'
@@ -131,20 +132,20 @@ function Attachment({ att, blobURL, imgMax = 240 }) {
   if (image) {
     return src
       ? <img src={src} alt={att.name} onClick={download} title={att.name}
-          style={{ maxWidth: imgMax, maxHeight: 260, width: 'auto', height: 'auto', objectFit: 'contain', borderRadius: 8, cursor: 'pointer', display: 'block', border: '1px solid var(--border-subtle)' }} />
+          style={{ maxWidth: imgMax, maxHeight: 260, width: 'auto', height: 'auto', objectFit: 'contain', borderRadius: 8, cursor: 'pointer', display: 'block', border: '1px solid var(--dock-border-subtle)' }} />
       : <div style={{ ...chipS, opacity: 0.6 }}><Icon name="image" size={14} /> {att.name}</div>
   }
   return (
     <button onClick={download} title={`${att.name} · ${fmtSize(att.size)}`} style={chipBtnS}>
       <span style={{ flexShrink: 0, display: 'inline-flex' }}><Icon name="download" size={14} /></span>
       <span style={{ flex: '0 1 auto', minWidth: 0, maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{att.name}</span>
-      <em style={{ flexShrink: 0, color: 'var(--text-muted)', fontStyle: 'normal', fontSize: 'var(--fs-micro,10px)' }}>{fmtSize(att.size)}</em>
+      <em style={{ flexShrink: 0, color: 'var(--dock-text-muted)', fontStyle: 'normal', fontSize: 'var(--fs-micro,10px)' }}>{fmtSize(att.size)}</em>
     </button>
   )
 }
 
-const chipS = { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 8px', borderRadius: 8, background: 'var(--surface-3)', fontSize: 'var(--fs-small,12px)' }
-const chipBtnS = { ...chipS, maxWidth: '100%', minWidth: 0, border: '1px solid var(--border-default)', cursor: 'pointer', color: 'var(--text-primary)' }
+const chipS = { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 8px', borderRadius: 8, background: 'var(--dock-surface-3)', fontSize: 'var(--fs-small,12px)' }
+const chipBtnS = { ...chipS, maxWidth: '100%', minWidth: 0, border: '1px solid var(--dock-border-default)', cursor: 'pointer', color: 'var(--dock-text-primary)' }
 
 /* ── a chat row: avatar + author/time + bubble(s). Everyone left-aligned. ── */
 function MessageRow({ m, meKey, grouped, isManager, blobURL, onReply, onEdit, onDelete, onComplete, onNotice, onRowClick, onPollClick, onJumpTo, revealed, onReveal, labels }) {
@@ -152,9 +153,9 @@ function MessageRow({ m, meKey, grouped, isManager, blobURL, onReply, onEdit, on
   const isPoll = m.kind === 'poll'
   const isNotice = !!m.notice
   const mine = m.author_key === meKey
-  const bg = isNotice ? 'var(--warning-bg)' : isQ ? 'var(--warning-bg)' : isPoll ? 'var(--info-bg)' : 'var(--surface-2)'
+  const bg = isNotice ? 'var(--dock-warning-bg)' : isQ ? 'var(--dock-warning-bg)' : isPoll ? 'var(--dock-info-bg)' : 'var(--dock-surface-2)'
   // every bubble gets a slightly-darker-than-bg outline; my own chat is themed.
-  const bd = isNotice ? 'var(--warning-text)' : isQ ? 'var(--warning-text)' : isPoll ? 'var(--info-text)' : mine ? 'var(--btn-primary-bg)' : 'var(--border-default)'
+  const bd = isNotice ? 'var(--dock-warning-text)' : isQ ? 'var(--dock-warning-text)' : isPoll ? 'var(--dock-info-text)' : mine ? 'var(--dock-btn-primary-bg)' : 'var(--dock-border-default)'
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState('')
   const canEdit = mine && onEdit && !isPoll
@@ -169,11 +170,11 @@ function MessageRow({ m, meKey, grouped, isManager, blobURL, onReply, onEdit, on
       <div style={{ minWidth: 0, flex: 1 }}>
         {!grouped && (
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 1 }}>
-            <span style={{ fontWeight: 600, fontSize: 'var(--fs-small,12px)', color: 'var(--text-primary)' }}>{mine ? labels.me : m.author_name}</span>
+            <span style={{ fontWeight: 600, fontSize: 'var(--fs-small,12px)', color: 'var(--dock-text-primary)' }}>{mine ? labels.me : m.author_name}</span>
             {m.anon && m.real_name && isManager && (revealed
-              ? <em title="숨기기" onClick={(e) => { e.stopPropagation(); onReveal() }} style={{ cursor: 'pointer', fontStyle: 'normal', fontSize: 'var(--fs-micro,10px)', color: 'var(--info-text)', background: 'var(--info-bg)', padding: '0 5px', borderRadius: 6 }}>{m.real_name}</em>
-              : <button title={labels.revealWho} onClick={(e) => { e.stopPropagation(); onReveal() }} style={{ border: 'none', background: 'var(--surface-3)', borderRadius: 6, cursor: 'pointer', fontSize: 'var(--fs-micro,10px)', color: 'var(--text-muted)', padding: '0 5px' }}>?</button>)}
-            <em style={{ fontStyle: 'normal', fontSize: 'var(--fs-micro,10px)', color: 'var(--text-muted)' }}>{timeLabel(m.created_at)}</em>
+              ? <em title="숨기기" onClick={(e) => { e.stopPropagation(); onReveal() }} style={{ cursor: 'pointer', fontStyle: 'normal', fontSize: 'var(--fs-micro,10px)', color: 'var(--dock-info-text)', background: 'var(--dock-info-bg)', padding: '0 5px', borderRadius: 6 }}>{m.real_name}</em>
+              : <button title={labels.revealWho} onClick={(e) => { e.stopPropagation(); onReveal() }} style={{ border: 'none', background: 'var(--dock-surface-3)', borderRadius: 6, cursor: 'pointer', fontSize: 'var(--fs-micro,10px)', color: 'var(--dock-text-muted)', padding: '0 5px' }}>?</button>)}
+            <em style={{ fontStyle: 'normal', fontSize: 'var(--fs-micro,10px)', color: 'var(--dock-text-muted)' }}>{timeLabel(m.created_at)}</em>
           </div>
         )}
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}
@@ -184,17 +185,17 @@ function MessageRow({ m, meKey, grouped, isManager, blobURL, onReply, onEdit, on
             // first bubble of a run gets a small tail toward the profile (elog style)
             borderRadius: grouped ? 12 : '3px 12px 12px 12px',
             padding: '6px 11px', background: bg, border: `1px solid ${bd}`,
-            fontSize: 'var(--fs-body,13px)', color: 'var(--text-primary)',
+            fontSize: 'var(--fs-body,13px)', color: 'var(--dock-text-primary)',
             cursor: isPoll && onPollClick ? 'pointer' : undefined,
           }}
             onClick={isPoll && onPollClick ? (e) => { e.stopPropagation(); onPollClick(m.poll_id) } : undefined}>
-            {isNotice && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 'var(--fs-micro,10px)', fontWeight: 700, color: 'var(--warning-text)', marginBottom: 2 }}><Icon name="megaphone" size={11} /> {labels.notice}</span>}
-            {isQ && <span style={{ display: 'inline-block', fontSize: 'var(--fs-micro,10px)', fontWeight: 700, color: 'var(--warning-text)', marginBottom: 2 }}>{labels.question}{m.done ? ' · ' + labels.done : ''}</span>}
-            {isPoll && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 'var(--fs-small,12px)', fontWeight: 600, color: 'var(--info-text)' }}><Icon name="chart" size={14} /> {m.body} <span style={{ fontWeight: 400, color: 'var(--text-muted)', fontSize: 'var(--fs-micro,10px)' }}>· {labels.viewPoll}</span></span>}
+            {isNotice && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 'var(--fs-micro,10px)', fontWeight: 700, color: 'var(--dock-warning-text)', marginBottom: 2 }}><Icon name="megaphone" size={11} /> {labels.notice}</span>}
+            {isQ && <span style={{ display: 'inline-block', fontSize: 'var(--fs-micro,10px)', fontWeight: 700, color: 'var(--dock-warning-text)', marginBottom: 2 }}>{labels.question}{m.done ? ' · ' + labels.done : ''}</span>}
+            {isPoll && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 'var(--fs-small,12px)', fontWeight: 600, color: 'var(--dock-info-text)' }}><Icon name="chart" size={14} /> {m.body} <span style={{ fontWeight: 400, color: 'var(--dock-text-muted)', fontSize: 'var(--fs-micro,10px)' }}>· {labels.viewPoll}</span></span>}
             {m.reply_to_id ? (
               <div onClick={(e) => { e.stopPropagation(); onJumpTo && onJumpTo(m.reply_to_id) }}
                 title={onJumpTo ? '원본 메세지로 이동' : undefined}
-                style={{ borderLeft: '2px solid var(--border-strong)', paddingLeft: 6, margin: '0 0 3px', fontSize: 'var(--fs-tiny,11px)', color: 'var(--text-secondary)', cursor: onJumpTo ? 'pointer' : 'default' }}>
+                style={{ borderLeft: '2px solid var(--dock-border-strong)', paddingLeft: 6, margin: '0 0 3px', fontSize: 'var(--fs-tiny,11px)', color: 'var(--dock-text-secondary)', cursor: onJumpTo ? 'pointer' : 'default' }}>
                 <b>{m.reply_to_author}</b> {String(m.reply_to_body || '').slice(0, 60)}
               </div>
             ) : null}
@@ -209,7 +210,7 @@ function MessageRow({ m, meKey, grouped, isManager, blobURL, onReply, onEdit, on
                 </div>
               </div>
             ) : (
-              m.body && !isPoll && <div style={{ lineHeight: 1.4, wordBreak: 'break-word' }}><ReactMarkdown remarkPlugins={[remarkGfm]} components={CM_MD}>{mdPrep(m.body)}</ReactMarkdown>{m.edited && <span style={{ fontSize: 'var(--fs-micro,10px)', color: 'var(--text-muted)', marginLeft: 4 }}>({labels.edited})</span>}</div>
+              m.body && !isPoll && <div style={{ lineHeight: 1.4, wordBreak: 'break-word' }}><ReactMarkdown remarkPlugins={[remarkGfm]} components={CM_MD}>{mdPrep(m.body)}</ReactMarkdown>{m.edited && <span style={{ fontSize: 'var(--fs-micro,10px)', color: 'var(--dock-text-muted)', marginLeft: 4 }}>({labels.edited})</span>}</div>
             )}
             {(m.attachments || []).length > 0 && (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: m.body ? 5 : 0 }}>
@@ -220,16 +221,16 @@ function MessageRow({ m, meKey, grouped, isManager, blobURL, onReply, onEdit, on
           <div className="cm-actions" style={{ display: 'flex', gap: 2, opacity: 0, transition: 'opacity .1s', flexShrink: 0, paddingTop: 2 }}>
             {onReply && <button title={labels.reply} onClick={(e) => { e.stopPropagation(); onReply(m) }} style={actS}><Icon name="reply" size={13} /></button>}
             {isManager && isQ && !m.done && onComplete && <button title={labels.done} onClick={(e) => { e.stopPropagation(); onComplete(m) }} style={actS}><Icon name="check" size={13} /></button>}
-            {isManager && onNotice && !isPoll && <button title={isNotice ? labels.unsetNotice : labels.setNotice} onClick={(e) => { e.stopPropagation(); onNotice(m, !isNotice) }} style={{ ...actS, color: isNotice ? 'var(--warning-text)' : 'var(--text-muted)' }}><Icon name="megaphone" size={13} weight={isNotice ? 'fill' : 'regular'} /></button>}
+            {isManager && onNotice && !isPoll && <button title={isNotice ? labels.unsetNotice : labels.setNotice} onClick={(e) => { e.stopPropagation(); onNotice(m, !isNotice) }} style={{ ...actS, color: isNotice ? 'var(--dock-warning-text)' : 'var(--dock-text-muted)' }}><Icon name="megaphone" size={13} weight={isNotice ? 'fill' : 'regular'} /></button>}
             {canEdit && <button title={labels.edit} onClick={(e) => { e.stopPropagation(); setDraft(m.body || ''); setEditing(true) }} style={actS}><Icon name="edit" size={13} /></button>}
-            {canDelete && <button title={labels.del} onClick={(e) => { e.stopPropagation(); onDelete(m) }} style={{ ...actS, color: 'var(--danger-text)' }}><Icon name="trash" size={13} /></button>}
+            {canDelete && <button title={labels.del} onClick={(e) => { e.stopPropagation(); onDelete(m) }} style={{ ...actS, color: 'var(--dock-danger-text)' }}><Icon name="trash" size={13} /></button>}
           </div>
         </div>
       </div>
     </div>
   )
 }
-const actS = { border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)', padding: 3, borderRadius: 6, display: 'inline-flex' }
+const actS = { border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--dock-text-muted)', padding: 3, borderRadius: 6, display: 'inline-flex' }
 
 /* ── active poll card (docks to the right of the chat) ── */
 function PollCard({ poll, isManager, onVote, onClose, labels, highlight, fetchResults }) {
@@ -243,12 +244,12 @@ function PollCard({ poll, isManager, onVote, onClose, labels, highlight, fetchRe
   }
   const votersFor = (oid) => (res && res.options.find((x) => x.id === oid)?.voters) || []
   return (
-    <div style={{ border: `1px solid ${highlight ? 'var(--btn-primary-bg)' : 'var(--border-default)'}`, borderRadius: 12, background: 'var(--surface)', padding: 12, boxShadow: highlight ? '0 0 0 2px var(--info-bg)' : '0 1px 2px rgba(0,0,0,.04)' }}>
+    <div style={{ border: `1px solid ${highlight ? 'var(--dock-btn-primary-bg)' : 'var(--dock-border-default)'}`, borderRadius: 12, background: 'var(--dock-surface)', padding: 12, boxShadow: highlight ? '0 0 0 2px var(--dock-info-bg)' : '0 1px 2px rgba(0,0,0,.04)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-        <Icon name="chart" size={15} color="var(--btn-primary-bg)" />
+        <Icon name="chart" size={15} color="var(--dock-btn-primary-bg)" />
         <span style={{ fontWeight: 600, fontSize: 'var(--fs-small,12px)', flex: 1, minWidth: 0 }}>{poll.title}</span>
-        <span style={{ fontSize: 'var(--fs-micro,10px)', padding: '1px 6px', borderRadius: 999, background: 'var(--surface-3)', color: 'var(--text-muted)' }}>{anonPoll ? labels.pollAnon : labels.pollNamed}</span>
-        {closed && <span style={{ fontSize: 'var(--fs-micro,10px)', color: 'var(--text-muted)' }}>{labels.pollClosed}</span>}
+        <span style={{ fontSize: 'var(--fs-micro,10px)', padding: '1px 6px', borderRadius: 999, background: 'var(--dock-surface-3)', color: 'var(--dock-text-muted)' }}>{anonPoll ? labels.pollAnon : labels.pollNamed}</span>
+        {closed && <span style={{ fontSize: 'var(--fs-micro,10px)', color: 'var(--dock-text-muted)' }}>{labels.pollClosed}</span>}
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         {poll.options.map((o) => {
@@ -258,18 +259,18 @@ function PollCard({ poll, isManager, onVote, onClose, labels, highlight, fetchRe
           return (
             <div key={o.id}>
               <button disabled={closed} onClick={() => onVote(poll.id, o.id)}
-                style={{ width: '100%', position: 'relative', textAlign: 'left', border: `1px solid ${voted ? 'var(--btn-primary-bg)' : 'var(--border-default)'}`, borderRadius: 8, padding: '5px 9px', background: 'var(--surface-2)', cursor: closed ? 'default' : 'pointer', overflow: 'hidden' }}>
-                <div style={{ position: 'absolute', inset: 0, width: `${pct}%`, background: 'var(--info-bg)', zIndex: 0 }} />
+                style={{ width: '100%', position: 'relative', textAlign: 'left', border: `1px solid ${voted ? 'var(--dock-btn-primary-bg)' : 'var(--dock-border-default)'}`, borderRadius: 8, padding: '5px 9px', background: 'var(--dock-surface-2)', cursor: closed ? 'default' : 'pointer', overflow: 'hidden' }}>
+                <div style={{ position: 'absolute', inset: 0, width: `${pct}%`, background: 'var(--dock-info-bg)', zIndex: 0 }} />
                 <div style={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'space-between', fontSize: 'var(--fs-small,12px)' }}>
                   <span>{voted ? '● ' : ''}{o.text}</span>
-                  <span style={{ color: 'var(--text-muted)' }}>{o.votes || 0} · {pct}%</span>
+                  <span style={{ color: 'var(--dock-text-muted)' }}>{o.votes || 0} · {pct}%</span>
                 </div>
               </button>
               {res && voters.length > 0 && (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, padding: '4px 4px 2px' }}>
                   {voters.map((v) => (
                     <span key={v.key} title={v.real_name ? `실제: ${v.real_name}` : undefined}
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 'var(--fs-micro,10px)', color: 'var(--text-secondary)', background: 'var(--surface-2)', borderRadius: 999, padding: '1px 7px 1px 2px' }}>
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 'var(--fs-micro,10px)', color: 'var(--dock-text-secondary)', background: 'var(--dock-surface-2)', borderRadius: 999, padding: '1px 7px 1px 2px' }}>
                       <Avatar outline={v.anon} icon={v.shape} color={v.color} seed={v.key} size={14} />
                       {v.name}{v.real_name ? ` (${v.real_name})` : ''}
                     </span>
@@ -280,13 +281,13 @@ function PollCard({ poll, isManager, onVote, onClose, labels, highlight, fetchRe
           )
         })}
       </div>
-      {poll.deadline && <div style={{ fontSize: 'var(--fs-micro,10px)', color: 'var(--text-muted)', marginTop: 6 }}>{labels.deadline}: {new Date(poll.deadline).toLocaleString()}</div>}
+      {poll.deadline && <div style={{ fontSize: 'var(--fs-micro,10px)', color: 'var(--dock-text-muted)', marginTop: 6 }}>{labels.deadline}: {new Date(poll.deadline).toLocaleString()}</div>}
       <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
         {!anonPoll && fetchResults && (
-          <button onClick={toggleResults} style={{ flex: 1, border: '1px solid var(--border-default)', borderRadius: 8, padding: '5px 0', background: 'transparent', cursor: 'pointer', fontSize: 'var(--fs-small,12px)', color: 'var(--text-secondary)' }}>{res ? labels.hideResults : labels.viewResults}</button>
+          <button onClick={toggleResults} style={{ flex: 1, border: '1px solid var(--dock-border-default)', borderRadius: 8, padding: '5px 0', background: 'transparent', cursor: 'pointer', fontSize: 'var(--fs-small,12px)', color: 'var(--dock-text-secondary)' }}>{res ? labels.hideResults : labels.viewResults}</button>
         )}
         {isManager && !closed && onClose && (
-          <button onClick={() => onClose(poll.id)} style={{ flex: 1, border: '1px solid var(--border-default)', borderRadius: 8, padding: '5px 0', background: 'transparent', cursor: 'pointer', fontSize: 'var(--fs-small,12px)', color: 'var(--text-secondary)' }}>{labels.closePoll}</button>
+          <button onClick={() => onClose(poll.id)} style={{ flex: 1, border: '1px solid var(--dock-border-default)', borderRadius: 8, padding: '5px 0', background: 'transparent', cursor: 'pointer', fontSize: 'var(--fs-small,12px)', color: 'var(--dock-text-secondary)' }}>{labels.closePoll}</button>
         )}
       </div>
     </div>
@@ -530,7 +531,7 @@ export default function Community({ api, role = 'user', features = {}, labels: l
       if (!el) { setError('원본 메세지를 찾을 수 없습니다 (오래되어 목록에 없음).'); return }
       el.scrollIntoView({ behavior: 'smooth', block: 'center' })
       const prev = el.style.background
-      el.style.transition = 'background .3s'; el.style.background = 'var(--info-bg)'
+      el.style.transition = 'background .3s'; el.style.background = 'var(--dock-info-bg)'
       setTimeout(() => { el.style.background = prev }, 1000)
     })
   }
@@ -661,24 +662,24 @@ export default function Community({ api, role = 'user', features = {}, labels: l
       {/* left icon rail (dock) — the shared RailNav, identical to every other tab. */}
       <RailNav items={rail.map((it) => ({ ...it, on: panel === it.id, onClick: () => openPanel(it.id) }))} />
 
-      <div style={{ flex: 1, order: 2, minWidth: 0, position: 'relative', display: 'flex', flexDirection: 'column', border: '1px solid var(--border-default)', borderRadius: 12, background: 'var(--surface)', overflow: 'hidden' }}
+      <div style={{ flex: 1, order: 2, minWidth: 0, position: 'relative', display: 'flex', flexDirection: 'column', border: '1px solid var(--dock-border-default)', borderRadius: 12, background: 'var(--dock-surface)', overflow: 'hidden' }}
         onDragOver={!cantPost && F.attachments ? (e) => { e.preventDefault(); setDrag(true) } : undefined}
         onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setDrag(false) }}
         onDrop={!cantPost && F.attachments ? (e) => { e.preventDefault(); setDrag(false); if (e.dataTransfer?.files?.length) uploadFiles(e.dataTransfer.files) } : undefined}>
-        {drag && <div style={{ position: 'absolute', inset: 6, border: '2px dashed var(--btn-primary-bg)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--info-bg)', color: 'var(--info-text)', zIndex: 20, pointerEvents: 'none', fontSize: 'var(--fs-medium,14px)', fontWeight: 600 }}>{L.drop}</div>}
+        {drag && <div style={{ position: 'absolute', inset: 6, border: '2px dashed var(--dock-btn-primary-bg)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--dock-info-bg)', color: 'var(--dock-info-text)', zIndex: 20, pointerEvents: 'none', fontSize: 'var(--fs-medium,14px)', fontWeight: 600 }}>{L.drop}</div>}
         {/* header */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 14px', borderBottom: '1px solid var(--border-subtle)', background: 'var(--surface-2)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 14px', borderBottom: '1px solid var(--dock-border-subtle)', background: 'var(--dock-surface-2)' }}>
           <Icon name="community" size={17} />
           <span style={{ fontWeight: 600, fontSize: 'var(--fs-medium,14px)', flex: 1 }}>{L.chat}</span>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 'var(--fs-tiny,11px)', color: 'var(--text-muted)' }}>
-            <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--success-text)' }} />{L.online(online.length)}
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 'var(--fs-tiny,11px)', color: 'var(--dock-text-muted)' }}>
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--dock-success-text)' }} />{L.online(online.length)}
           </span>
           {/* display-mode toggle: 시간순(list) ↔ 광장/square-view */}
-          <div style={{ display: 'inline-flex', border: '1px solid var(--border-default)', borderRadius: 8, overflow: 'hidden' }}>
+          <div style={{ display: 'inline-flex', border: '1px solid var(--dock-border-default)', borderRadius: 8, overflow: 'hidden' }}>
             {[['list', 'menu', L.listMode], ['square', 'map', L.spatialMode]].map(([mv, ic, lb]) => (
               <button key={mv} onClick={() => setMode(mv)} title={lb}
                 style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 9px', border: 'none', cursor: 'pointer', fontSize: 'var(--fs-tiny,11px)',
-                  background: mode === mv ? 'var(--btn-primary-bg)' : 'transparent', color: mode === mv ? 'var(--btn-primary-text)' : 'var(--text-secondary)' }}>
+                  background: mode === mv ? 'var(--dock-btn-primary-bg)' : 'transparent', color: mode === mv ? 'var(--dock-btn-primary-text)' : 'var(--dock-text-secondary)' }}>
                 <Icon name={ic} size={13} weight={mode === mv ? 'fill' : 'regular'} /> {lb}
               </button>
             ))}
@@ -687,14 +688,14 @@ export default function Community({ api, role = 'user', features = {}, labels: l
 
         {/* 공지 box — pinned announcements right under the title bar */}
         {notices.length > 0 && (
-          <div style={{ borderBottom: '1px solid var(--border-subtle)', background: 'var(--warning-bg)', padding: '7px 12px', display: 'flex', flexDirection: 'column', gap: 5, maxHeight: 140, overflowY: 'auto' }}>
+          <div style={{ borderBottom: '1px solid var(--dock-border-subtle)', background: 'var(--dock-warning-bg)', padding: '7px 12px', display: 'flex', flexDirection: 'column', gap: 5, maxHeight: 140, overflowY: 'auto' }}>
             {notices.map((m) => (
               <div key={m.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 7, fontSize: 'var(--fs-small,12px)' }}>
-                <Icon name="megaphone" size={14} color="var(--warning-text)" style={{ flexShrink: 0, marginTop: 1 }} />
-                <div style={{ flex: 1, minWidth: 0, color: 'var(--text-primary)', wordBreak: 'break-word' }}>
-                  <b style={{ color: 'var(--warning-text)' }}>{m.author_name}</b> · <span>{m.body}</span>
+                <Icon name="megaphone" size={14} color="var(--dock-warning-text)" style={{ flexShrink: 0, marginTop: 1 }} />
+                <div style={{ flex: 1, minWidth: 0, color: 'var(--dock-text-primary)', wordBreak: 'break-word' }}>
+                  <b style={{ color: 'var(--dock-warning-text)' }}>{m.author_name}</b> · <span>{m.body}</span>
                 </div>
-                {isManager && <button onClick={() => setNotice(m, false)} title={L.unsetNotice} style={{ ...actS, flexShrink: 0, color: 'var(--text-muted)' }}><Icon name="close" size={13} /></button>}
+                {isManager && <button onClick={() => setNotice(m, false)} title={L.unsetNotice} style={{ ...actS, flexShrink: 0, color: 'var(--dock-text-muted)' }}><Icon name="close" size={13} /></button>}
               </div>
             ))}
           </div>
@@ -706,7 +707,7 @@ export default function Community({ api, role = 'user', features = {}, labels: l
         ) : (
           <div ref={logRef} onScroll={() => { const el = logRef.current; if (el) stick.current = el.scrollHeight - el.scrollTop - el.clientHeight < 60 }}
             style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 10, display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {messages.length === 0 && <div style={{ margin: 'auto', color: 'var(--text-muted)', fontSize: 'var(--fs-small,12px)' }}>{L.empty}</div>}
+            {messages.length === 0 && <div style={{ margin: 'auto', color: 'var(--dock-text-muted)', fontSize: 'var(--fs-small,12px)' }}>{L.empty}</div>}
             {messages.map((m, i) => (
               <MessageRow key={m.id} m={m} meKey={meKey} isManager={isManager} blobURL={api.blobURL}
                 grouped={i > 0 && messages[i - 1].author_key === m.author_key && (messages[i - 1].kind || 'msg') === 'msg' && (m.kind || 'msg') === 'msg'}
@@ -723,18 +724,18 @@ export default function Community({ api, role = 'user', features = {}, labels: l
           </div>
         )}
 
-        {error && <div style={{ padding: '4px 12px', color: 'var(--danger-text)', fontSize: 'var(--fs-small,12px)' }}>⚠ {error}</div>}
+        {error && <div style={{ padding: '4px 12px', color: 'var(--dock-danger-text)', fontSize: 'var(--fs-small,12px)' }}>⚠ {error}</div>}
         {/* Restricted (banned / locked): keep the box but the send button + Enter are
             disabled below — no harsh banner. Locked shows a soft lock hint. */}
-        {locked && !isManager && <div style={{ padding: '6px 12px 0', color: 'var(--text-muted)', fontSize: 'var(--fs-micro,10px)', textAlign: 'center' }}>🔒 {L.locked}</div>}
+        {locked && !isManager && <div style={{ padding: '6px 12px 0', color: 'var(--dock-text-muted)', fontSize: 'var(--fs-micro,10px)', textAlign: 'center' }}>🔒 {L.locked}</div>}
 
         {/* input bar: [+]  [textarea]  [send] */}
         {(
           <>
-          {locked && isManager && <div style={{ padding: '4px 12px 0', color: 'var(--warning-text,var(--text-muted))', fontSize: 'var(--fs-micro,10px)', textAlign: 'center' }}>🔒 {L.lockedMgr}</div>}
-          <div style={{ borderTop: '1px solid var(--border-subtle)', padding: 10 }}>
+          {locked && isManager && <div style={{ padding: '4px 12px 0', color: 'var(--dock-warning-text,var(--dock-text-muted))', fontSize: 'var(--fs-micro,10px)', textAlign: 'center' }}>🔒 {L.lockedMgr}</div>}
+          <div style={{ borderTop: '1px solid var(--dock-border-subtle)', padding: 10 }}>
             {reply && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 'var(--fs-small,12px)', color: 'var(--text-secondary)', marginBottom: 6 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 'var(--fs-small,12px)', color: 'var(--dock-text-secondary)', marginBottom: 6 }}>
                 <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>↩ <b>{reply.author_name}</b>: {(reply.body || '첨부').slice(0, 60)}</span>
                 <button onClick={() => setReply(null)} style={actS}><Icon name="close" size={13} /></button>
               </div>
@@ -751,10 +752,10 @@ export default function Community({ api, role = 'user', features = {}, labels: l
               </div>
             )}
             {anonOn && (
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 6, fontSize: 'var(--fs-tiny,11px)', color: 'var(--text-muted)' }} title={L.anonHint}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 6, fontSize: 'var(--fs-tiny,11px)', color: 'var(--dock-text-muted)' }} title={L.anonHint}>
                 {api.rerollAnon && (
                   <button onClick={rerollAnon} title={L.anonReroll}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 3, border: '1px solid var(--border-default)', background: 'var(--surface-2)', borderRadius: 6, cursor: 'pointer', fontSize: 'var(--fs-micro,10px)', color: 'var(--text-secondary)', padding: '2px 7px' }}>
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 3, border: '1px solid var(--dock-border-default)', background: 'var(--dock-surface-2)', borderRadius: 6, cursor: 'pointer', fontSize: 'var(--fs-micro,10px)', color: 'var(--dock-text-secondary)', padding: '2px 7px' }}>
                     🎲 {L.anonReroll}
                   </button>
                 )}
@@ -767,10 +768,10 @@ export default function Community({ api, role = 'user', features = {}, labels: l
                 {plusOpen && (
                   <>
                     <div onClick={() => setPlusOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 40 }} />
-                    <div style={{ position: 'absolute', bottom: 'calc(100% + 8px)', left: 0, zIndex: 41, display: 'flex', flexDirection: 'column', gap: 4, padding: 6, minWidth: 180, background: 'var(--surface)', border: '1px solid var(--border-default)', borderRadius: 12, boxShadow: '0 8px 24px rgba(0,0,0,.18)' }}>
+                    <div style={{ position: 'absolute', bottom: 'calc(100% + 8px)', left: 0, zIndex: 41, display: 'flex', flexDirection: 'column', gap: 4, padding: 6, minWidth: 180, background: 'var(--dock-surface)', border: '1px solid var(--dock-border-default)', borderRadius: 12, boxShadow: '0 8px 24px rgba(0,0,0,.18)' }}>
                       {menu.map((it) => (
-                        <button key={it.id} onClick={it.on} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '7px 10px', borderRadius: 8, border: 'none', cursor: 'pointer', textAlign: 'left', fontSize: 'var(--fs-small,12px)', background: it.active ? 'var(--info-bg)' : 'transparent', color: it.active ? 'var(--info-text)' : 'var(--text-primary)' }}
-                          onMouseEnter={(e) => { if (!it.active) e.currentTarget.style.background = 'var(--surface-2)' }}
+                        <button key={it.id} onClick={it.on} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '7px 10px', borderRadius: 8, border: 'none', cursor: 'pointer', textAlign: 'left', fontSize: 'var(--fs-small,12px)', background: it.active ? 'var(--dock-info-bg)' : 'transparent', color: it.active ? 'var(--dock-info-text)' : 'var(--dock-text-primary)' }}
+                          onMouseEnter={(e) => { if (!it.active) e.currentTarget.style.background = 'var(--dock-surface-2)' }}
                           onMouseLeave={(e) => { if (!it.active) e.currentTarget.style.background = 'transparent' }}>
                           <Icon name={it.icon} size={15} weight={it.active ? 'fill' : 'regular'} /> {it.label}
                         </button>
@@ -778,17 +779,17 @@ export default function Community({ api, role = 'user', features = {}, labels: l
                     </div>
                   </>
                 )}
-                <button onClick={() => setPlusOpen((v) => !v)} title="추가 기능" style={{ width: 36, height: 36, borderRadius: 10, border: '1px solid var(--border-default)', background: plusOpen ? 'var(--surface-3)' : 'var(--surface-2)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>
+                <button onClick={() => setPlusOpen((v) => !v)} title="추가 기능" style={{ width: 36, height: 36, borderRadius: 10, border: '1px solid var(--dock-border-default)', background: plusOpen ? 'var(--dock-surface-3)' : 'var(--dock-surface-2)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: 'var(--dock-text-secondary)' }}>
                   <Icon name="plus" size={18} />
                 </button>
               </div>
               <input id="cm-file" type="file" multiple hidden onChange={(e) => { uploadFiles(e.target.files); e.target.value = '' }} />
               {/* @mention autocomplete */}
               {F.mentions && mention && mentionUsers.length > 0 && (
-                <div style={{ position: 'absolute', bottom: 'calc(100% + 6px)', left: 52, zIndex: 41, minWidth: 180, background: 'var(--surface)', border: '1px solid var(--border-default)', borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,.18)', padding: 4 }}>
+                <div style={{ position: 'absolute', bottom: 'calc(100% + 6px)', left: 52, zIndex: 41, minWidth: 180, background: 'var(--dock-surface)', border: '1px solid var(--dock-border-default)', borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,.18)', padding: 4 }}>
                   {mentionUsers.map((u, i) => (
                     <button key={u.key} onMouseDown={(e) => { e.preventDefault(); applyMention(u.name) }} onMouseEnter={() => setMention((m) => ({ ...m, idx: i }))}
-                      style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '5px 8px', borderRadius: 7, border: 'none', cursor: 'pointer', textAlign: 'left', fontSize: 'var(--fs-small,12px)', background: i === mention.idx ? 'var(--info-bg)' : 'transparent', color: i === mention.idx ? 'var(--info-text)' : 'var(--text-primary)' }}>
+                      style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '5px 8px', borderRadius: 7, border: 'none', cursor: 'pointer', textAlign: 'left', fontSize: 'var(--fs-small,12px)', background: i === mention.idx ? 'var(--dock-info-bg)' : 'transparent', color: i === mention.idx ? 'var(--dock-info-text)' : 'var(--dock-text-primary)' }}>
                       <Avatar icon={u.shape} color={u.color} seed={u.username || u.key} size={18} /> {u.name}
                     </button>
                   ))}
@@ -807,11 +808,11 @@ export default function Community({ api, role = 'user', features = {}, labels: l
                   if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && e.keyCode !== 229) { e.preventDefault(); doSend() }
                 }}
                 placeholder={noticeMode ? '공지를 입력하고 전송하세요…' : qMode ? '질문을 입력하고 전송하세요…' : L.placeholder}
-                style={{ flex: 1, resize: 'none', maxHeight: 120, minHeight: 36, padding: '8px 11px', borderRadius: 10, fontFamily: 'inherit', fontSize: 'var(--fs-body,13px)', lineHeight: 1.4, outline: 'none', background: 'var(--input-bg,var(--surface))', color: 'var(--text-primary)',
-                  border: (qMode || noticeMode) ? '2px solid var(--warning-text)' : '1px solid var(--border-default)' }} />
+                style={{ flex: 1, resize: 'none', maxHeight: 120, minHeight: 36, padding: '8px 11px', borderRadius: 10, fontFamily: 'inherit', fontSize: 'var(--fs-body,13px)', lineHeight: 1.4, outline: 'none', background: 'var(--dock-input-bg,var(--dock-surface))', color: 'var(--dock-text-primary)',
+                  border: (qMode || noticeMode) ? '2px solid var(--dock-warning-text)' : '1px solid var(--dock-border-default)' }} />
               <button onClick={doSend} disabled={cantPost || (!text.trim() && !pending.length)} title={L.send}
                 style={{ width: 36, height: 36, borderRadius: 10, border: 'none', cursor: cantPost ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                  background: (!cantPost && (text.trim() || pending.length)) ? 'var(--btn-primary-bg)' : 'var(--surface-3)', color: (!cantPost && (text.trim() || pending.length)) ? 'var(--btn-primary-text)' : 'var(--text-muted)' }}>
+                  background: (!cantPost && (text.trim() || pending.length)) ? 'var(--dock-btn-primary-bg)' : 'var(--dock-surface-3)', color: (!cantPost && (text.trim() || pending.length)) ? 'var(--dock-btn-primary-text)' : 'var(--dock-text-muted)' }}>
                 <Icon name={uploading ? 'spinner' : 'send'} size={17} weight="fill" />
               </button>
             </div>
@@ -822,19 +823,19 @@ export default function Community({ api, role = 'user', features = {}, labels: l
 
       {/* panel dock — opens attached to the rail on the LEFT (order:1), pushing the chat aside */}
       {panel && (
-        <div style={{ width: 288, order: 1, flexShrink: 0, display: 'flex', flexDirection: 'column', border: '1px solid var(--border-default)', borderRadius: 12, background: 'var(--surface)', overflow: 'hidden' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', borderBottom: '1px solid var(--border-subtle)', background: 'var(--surface-2)' }}>
-            <Icon name={(rail.find((r) => r.id === panel) || {}).icon || 'community'} size={16} color="var(--btn-primary-bg)" />
+        <div style={{ width: 288, order: 1, flexShrink: 0, display: 'flex', flexDirection: 'column', border: '1px solid var(--dock-border-default)', borderRadius: 12, background: 'var(--dock-surface)', overflow: 'hidden' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', borderBottom: '1px solid var(--dock-border-subtle)', background: 'var(--dock-surface-2)' }}>
+            <Icon name={(rail.find((r) => r.id === panel) || {}).icon || 'community'} size={16} color="var(--dock-btn-primary-bg)" />
             <span style={{ fontWeight: 600, fontSize: 'var(--fs-small,12px)', flex: 1 }}>
               {PANEL_TITLES(L)[panel]}
-              {(panel === 'questions' || panel === 'completed') && <span style={{ marginLeft: 6, color: 'var(--text-muted)', fontWeight: 500 }}>{panelList.length}</span>}
+              {(panel === 'questions' || panel === 'completed') && <span style={{ marginLeft: 6, color: 'var(--dock-text-muted)', fontWeight: 500 }}>{panelList.length}</span>}
             </span>
             {panel === 'poll' && isManager && !pollForm && (
               <button title={L.createPoll} onClick={() => setPollForm({ title: '', options: ['', ''], deadline: '', minutes: '', named: true })} style={actS}><Icon name="plus" size={16} /></button>
             )}
             {panel === 'questions' && isManager && panelList.some((m) => !m.done) && (
               <button title={L.completeAll} onClick={completeAllQ}
-                style={{ ...ghostBtnS, padding: '3px 8px', color: confirmCompleteAll ? 'var(--btn-primary-bg)' : 'var(--text-secondary)', borderColor: confirmCompleteAll ? 'var(--btn-primary-bg)' : 'var(--border-default)' }}>
+                style={{ ...ghostBtnS, padding: '3px 8px', color: confirmCompleteAll ? 'var(--dock-btn-primary-bg)' : 'var(--dock-text-secondary)', borderColor: confirmCompleteAll ? 'var(--dock-btn-primary-bg)' : 'var(--dock-border-default)' }}>
                 <Icon name="check" size={12} /> {confirmCompleteAll ? '정말?' : L.completeAll}</button>
             )}
             <button onClick={() => setPanel(null)} title="닫기" style={actS}><Icon name="close" size={15} /></button>
@@ -843,7 +844,7 @@ export default function Community({ api, role = 'user', features = {}, labels: l
             {/* ── 투표 / 설문 ── */}
             {panel === 'poll' && <>
               {pollForm && (
-                <div style={{ border: '1px solid var(--border-default)', borderRadius: 12, background: 'var(--surface)', padding: 12 }}>
+                <div style={{ border: '1px solid var(--dock-border-default)', borderRadius: 12, background: 'var(--dock-surface)', padding: 12 }}>
                   <div style={{ fontWeight: 600, fontSize: 'var(--fs-small,12px)', marginBottom: 8 }}>{L.createPoll}</div>
                   <input value={pollForm.title} onChange={(e) => setPollForm((f) => ({ ...f, title: e.target.value }))} placeholder={L.pollTitle} style={fieldS} />
                   <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
@@ -855,7 +856,7 @@ export default function Community({ api, role = 'user', features = {}, labels: l
                       placeholder={`${L.pollOption} ${i + 1}`} style={{ ...fieldS, marginTop: 6 }} />
                   ))}
                   <button onClick={() => setPollForm((f) => ({ ...f, options: [...f.options, ''] }))} style={{ ...ghostBtnS, marginTop: 6, width: '100%' }}>+ {L.addOption}</button>
-                  <div style={{ marginTop: 8, fontSize: 'var(--fs-tiny,11px)', color: 'var(--text-muted)', marginBottom: 3 }}>{L.closeAfter}</div>
+                  <div style={{ marginTop: 8, fontSize: 'var(--fs-tiny,11px)', color: 'var(--dock-text-muted)', marginBottom: 3 }}>{L.closeAfter}</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                     <input type="number" min="1" value={pollForm.minutes} placeholder="분"
                       onChange={(e) => setPollForm((f) => ({ ...f, minutes: e.target.value }))} style={{ ...fieldS, width: 64 }} />
@@ -864,7 +865,7 @@ export default function Community({ api, role = 'user', features = {}, labels: l
                         style={{ ...ghostBtnS, padding: '3px 8px', ...(String(mm) === pollForm.minutes ? activeGhost : {}) }}>{mm}</button>
                     ))}
                   </div>
-                  <div style={{ marginTop: 8, fontSize: 'var(--fs-tiny,11px)', color: 'var(--text-muted)', marginBottom: 3 }}>{L.orDeadline}</div>
+                  <div style={{ marginTop: 8, fontSize: 'var(--fs-tiny,11px)', color: 'var(--dock-text-muted)', marginBottom: 3 }}>{L.orDeadline}</div>
                   <input type="datetime-local" value={pollForm.deadline} onChange={(e) => setPollForm((f) => ({ ...f, deadline: e.target.value, minutes: '' }))} style={fieldS} />
                   <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
                     <button onClick={submitPoll} style={{ flex: 1, ...primaryBtnS, padding: '6px 0' }}>{L.createPoll}</button>
@@ -872,7 +873,7 @@ export default function Community({ api, role = 'user', features = {}, labels: l
                   </div>
                 </div>
               )}
-              {!pollForm && activePolls.length === 0 && <div style={{ color: 'var(--text-muted)', fontSize: 'var(--fs-small,12px)' }}>{L.noPoll}</div>}
+              {!pollForm && activePolls.length === 0 && <div style={{ color: 'var(--dock-text-muted)', fontSize: 'var(--fs-small,12px)' }}>{L.noPoll}</div>}
               {[...activePolls].sort((a, b) => (b.id === activePollId ? 1 : 0) - (a.id === activePollId ? 1 : 0))
                 .map((p) => <PollCard key={p.id} poll={p} highlight={p.id === activePollId} isManager={isManager} onVote={vote} onClose={closePoll} fetchResults={api.pollResults} labels={L} />)}
               {!pollForm && (closedPolls.length > 0 || showClosed) && (
@@ -881,22 +882,22 @@ export default function Community({ api, role = 'user', features = {}, labels: l
                   {(showClosed ? L.hideClosedPolls : L.showClosedPolls) + (closedPolls.length ? ` (${closedPolls.length})` : '')}
                 </button>
               )}
-              {!pollForm && showClosed && closedPolls.length === 0 && <div style={{ color: 'var(--text-muted)', fontSize: 'var(--fs-small,12px)' }}>{L.noClosedPoll}</div>}
+              {!pollForm && showClosed && closedPolls.length === 0 && <div style={{ color: 'var(--dock-text-muted)', fontSize: 'var(--fs-small,12px)' }}>{L.noClosedPoll}</div>}
               {!pollForm && showClosed && closedPolls
                 .map((p) => <PollCard key={p.id} poll={p} highlight={p.id === activePollId} isManager={isManager} onVote={vote} onClose={closePoll} fetchResults={api.pollResults} labels={L} />)}
             </>}
 
             {/* ── 질문 목록 / 완료 목록 ── */}
             {(panel === 'questions' || panel === 'completed') && <>
-              {panelList.length === 0 && <div style={{ color: 'var(--text-muted)', fontSize: 'var(--fs-small,12px)' }}>{panel === 'completed' ? L.emptyDone : L.emptyQ}</div>}
+              {panelList.length === 0 && <div style={{ color: 'var(--dock-text-muted)', fontSize: 'var(--fs-small,12px)' }}>{panel === 'completed' ? L.emptyDone : L.emptyQ}</div>}
               {panelList.map((m) => (
-                <div key={m.id} style={{ border: '1px solid var(--border-subtle)', borderRadius: 10, background: 'var(--surface-2)', padding: '8px 10px' }}>
+                <div key={m.id} style={{ border: '1px solid var(--dock-border-subtle)', borderRadius: 10, background: 'var(--dock-surface-2)', padding: '8px 10px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
                     <Avatar outline={m.anon} icon={m.author_shape} color={m.anon ? undefined : m.author_color} seed={m.author_username || m.author_key} size={18} />
                     <b style={{ fontSize: 'var(--fs-small,12px)' }}>{m.author_name}</b>
-                    <em style={{ fontStyle: 'normal', fontSize: 'var(--fs-micro,10px)', color: 'var(--text-muted)', marginLeft: 'auto' }}>{timeLabel(m.created_at)}</em>
+                    <em style={{ fontStyle: 'normal', fontSize: 'var(--fs-micro,10px)', color: 'var(--dock-text-muted)', marginLeft: 'auto' }}>{timeLabel(m.created_at)}</em>
                   </div>
-                  <div style={{ fontSize: 'var(--fs-small,12px)', color: 'var(--text-primary)', wordBreak: 'break-word' }}>{m.body}</div>
+                  <div style={{ fontSize: 'var(--fs-small,12px)', color: 'var(--dock-text-primary)', wordBreak: 'break-word' }}>{m.body}</div>
                   <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
                     <button onClick={() => replyFromPanel(m)} style={ghostBtnS}><Icon name="reply" size={12} /> {L.reply}</button>
                     {panel === 'questions' && isManager && !m.done && (
@@ -909,11 +910,11 @@ export default function Community({ api, role = 'user', features = {}, labels: l
 
             {/* ── 첨부 목록 (세로 사진도 비율 유지) ── */}
             {panel === 'files' && <>
-              {allAttachments.length === 0 && <div style={{ color: 'var(--text-muted)', fontSize: 'var(--fs-small,12px)' }}>{L.noAttach}</div>}
+              {allAttachments.length === 0 && <div style={{ color: 'var(--dock-text-muted)', fontSize: 'var(--fs-small,12px)' }}>{L.noAttach}</div>}
               {allAttachments.map((x, k) => (
-                <div key={k} style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 4, borderBottom: '1px solid var(--border-subtle)', paddingBottom: 8 }}>
+                <div key={k} style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 4, borderBottom: '1px solid var(--dock-border-subtle)', paddingBottom: 8 }}>
                   <Attachment att={x.att} blobURL={api.blobURL} />
-                  <span style={{ fontSize: 'var(--fs-micro,10px)', color: 'var(--text-muted)' }}>{x.from} · {timeLabel(x.at)}</span>
+                  <span style={{ fontSize: 'var(--fs-micro,10px)', color: 'var(--dock-text-muted)' }}>{x.from} · {timeLabel(x.at)}</span>
                 </div>
               ))}
             </>}
@@ -922,11 +923,11 @@ export default function Community({ api, role = 'user', features = {}, labels: l
             {panel === 'manage' && isManager && <>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 {api.lockChat && (
-                  <button onClick={toggleLock} style={{ ...ghostBtnS, ...(locked ? { background: 'var(--danger-bg)', color: 'var(--danger-text)', borderColor: 'var(--danger-text)' } : {}) }}>
+                  <button onClick={toggleLock} style={{ ...ghostBtnS, ...(locked ? { background: 'var(--dock-danger-bg)', color: 'var(--dock-danger-text)', borderColor: 'var(--dock-danger-text)' } : {}) }}>
                     <Icon name={locked ? 'lock' : 'lock-open'} size={13} /> {locked ? L.unlockChat : L.lockChat}
                   </button>
                 )}
-                <button onClick={clearAll} style={{ ...ghostBtnS, color: confirmClear ? 'var(--danger-text)' : 'var(--text-secondary)', borderColor: confirmClear ? 'var(--danger-text)' : 'var(--border-default)' }}>
+                <button onClick={clearAll} style={{ ...ghostBtnS, color: confirmClear ? 'var(--dock-danger-text)' : 'var(--dock-text-secondary)', borderColor: confirmClear ? 'var(--dock-danger-text)' : 'var(--dock-border-default)' }}>
                   {confirmClear ? L.confirmClear : L.clearAll}
                 </button>
               </div>
@@ -939,35 +940,35 @@ export default function Community({ api, role = 'user', features = {}, labels: l
               </div>
               {userView === 'ban' && users.length > 0 && (
                 <div style={{ display: 'flex', gap: 6 }}>
-                  <button onClick={() => banAll(true)} style={{ ...ghostBtnS, flex: 1, color: 'var(--danger-text)', borderColor: 'var(--danger-text)' }}>{L.banAll}</button>
+                  <button onClick={() => banAll(true)} style={{ ...ghostBtnS, flex: 1, color: 'var(--dock-danger-text)', borderColor: 'var(--dock-danger-text)' }}>{L.banAll}</button>
                   <button onClick={() => banAll(false)} style={{ ...ghostBtnS, flex: 1 }}>{L.unbanAll}</button>
                 </div>
               )}
               {userView === 'stats' && users.length > 0 && (
-                <div style={{ display: 'flex', fontSize: 'var(--fs-micro,10px)', color: 'var(--text-muted)', padding: '0 8px' }}>
+                <div style={{ display: 'flex', fontSize: 'var(--fs-micro,10px)', color: 'var(--dock-text-muted)', padding: '0 8px' }}>
                   <span style={{ flex: 1 }}>사용자</span><span style={{ width: 46, textAlign: 'right' }}>채팅</span><span style={{ width: 46, textAlign: 'right' }}>질문</span>
                 </div>
               )}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                {users.length === 0 && <span style={{ fontSize: 'var(--fs-tiny,11px)', color: 'var(--text-muted)' }}>사용자 없음</span>}
+                {users.length === 0 && <span style={{ fontSize: 'var(--fs-tiny,11px)', color: 'var(--dock-text-muted)' }}>사용자 없음</span>}
                 {users.map((u) => {
                   const on = onlineKeys.has(u.user_key)   // 접속 중이면 초록 테두리
                   return (
                     <div key={u.user_key} title={on ? '접속 중' : undefined}
                       style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 8px', borderRadius: 8, fontSize: 'var(--fs-small,12px)',
-                        background: u.banned ? 'var(--danger-bg)' : 'var(--surface-2)',
-                        border: on ? '1px solid var(--success-text, #22c55e)' : '1px solid transparent' }}>
+                        background: u.banned ? 'var(--dock-danger-bg)' : 'var(--dock-surface-2)',
+                        border: on ? '1px solid var(--dock-success-text, #22c55e)' : '1px solid transparent' }}>
                       <Avatar seed={u.username || u.name} size={20} />
                       <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.name}</span>
                       {userView === 'ban' && (
-                        <button onClick={() => toggleBan(u)} style={{ ...actS, fontSize: 'var(--fs-micro,10px)', padding: '2px 8px', background: 'var(--surface)', border: '1px solid var(--border-default)', borderRadius: 999, color: u.banned ? 'var(--text-secondary)' : 'var(--danger-text)' }}>{u.banned ? L.unban : L.ban}</button>
+                        <button onClick={() => toggleBan(u)} style={{ ...actS, fontSize: 'var(--fs-micro,10px)', padding: '2px 8px', background: 'var(--dock-surface)', border: '1px solid var(--dock-border-default)', borderRadius: 999, color: u.banned ? 'var(--dock-text-secondary)' : 'var(--dock-danger-text)' }}>{u.banned ? L.unban : L.ban}</button>
                       )}
                       {userView === 'anon' && (u.anon_name
-                        ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: 'var(--text-secondary)' }}><Avatar outline icon={u.anon_shape} size={16} />{u.anon_name}</span>
-                        : <span style={{ color: 'var(--text-muted)' }}>—</span>)}
+                        ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: 'var(--dock-text-secondary)' }}><Avatar outline icon={u.anon_shape} size={16} />{u.anon_name}</span>
+                        : <span style={{ color: 'var(--dock-text-muted)' }}>—</span>)}
                       {userView === 'stats' && <>
                         <span style={{ width: 46, textAlign: 'right' }}>{u.msgs ?? 0}</span>
-                        <span style={{ width: 46, textAlign: 'right', color: 'var(--info-text)' }}>{u.questions ?? 0}</span>
+                        <span style={{ width: 46, textAlign: 'right', color: 'var(--dock-info-text)' }}>{u.questions ?? 0}</span>
                       </>}
                     </div>
                   )
@@ -993,7 +994,7 @@ export default function Community({ api, role = 'user', features = {}, labels: l
                     <div key={b.name} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 'var(--fs-small,12px)' }}>
                       <Avatar icon="robot" color="#8b5cf6" seed={b.name} size={20} /> <b>@{b.name}</b>
                       <button onClick={() => saveBot({ ...b, enabled: !b.enabled })} style={{ ...ghostBtnS, marginLeft: 'auto' }}>{b.enabled ? 'on' : 'off'}</button>
-                      <button onClick={() => delBot(b.name)} style={{ ...actS, color: 'var(--danger-text)' }}><Icon name="trash" size={13} /></button>
+                      <button onClick={() => delBot(b.name)} style={{ ...actS, color: 'var(--dock-danger-text)' }}><Icon name="trash" size={13} /></button>
                     </div>
                   ))}
                   <BotAdd onSave={saveBot} />
@@ -1033,7 +1034,7 @@ export default function Community({ api, role = 'user', features = {}, labels: l
 
             {/* ── 방송(broadcast) 관리 (manager, global) ── */}
             {panel === 'broadcast' && isManager && bcast && <>
-              <div style={{ fontSize: 'var(--fs-micro,10px)', color: 'var(--text-muted)' }}>{L.bcHint}</div>
+              <div style={{ fontSize: 'var(--fs-micro,10px)', color: 'var(--dock-text-muted)' }}>{L.bcHint}</div>
               <button onClick={() => saveBcast({ enabled: !bcast.enabled })} style={{ ...ghostBtnS, alignSelf: 'flex-start', ...(bcast.enabled ? activeGhost : {}) }}>
                 <Icon name={bcast.enabled ? 'megaphone' : 'megaphone'} size={13} /> {L.bcEnabled}: {bcast.enabled ? 'on' : 'off'}
               </button>
@@ -1120,13 +1121,13 @@ function BroadcastBubble({ m, cfg, scale, blobURL }) {
   const size = Math.round(28 * scale)
   return (
     <div style={{ display: 'flex', alignItems: 'flex-end', gap: 7, maxWidth: 320 * scale,
-      background: 'var(--surface, #fff)', border: '1px solid var(--border-default,#ddd)', borderRadius: 14,
+      background: 'var(--dock-surface, #fff)', border: '1px solid var(--dock-border-default,#ddd)', borderRadius: 14,
       padding: `${6 * scale}px ${10 * scale}px`, boxShadow: '0 4px 16px rgba(0,0,0,.18)' }}>
       <Avatar outline={m.anon} icon={m.author_shape} color={m.anon ? undefined : m.author_color} seed={m.author_username || m.author_key} size={size} />
       <div style={{ minWidth: 0 }}>
-        {cfg.show_names && <div style={{ fontWeight: 700, fontSize: 11 * scale, color: 'var(--text-primary)' }}>{m.author_name}</div>}
-        <div style={{ fontSize: 12.5 * scale, color: 'var(--text-primary)', wordBreak: 'break-word', lineHeight: 1.35 }}>
-          {m.kind === 'question' && <span style={{ fontWeight: 700, color: 'var(--info-text)' }}>[질문] </span>}
+        {cfg.show_names && <div style={{ fontWeight: 700, fontSize: 11 * scale, color: 'var(--dock-text-primary)' }}>{m.author_name}</div>}
+        <div style={{ fontSize: 12.5 * scale, color: 'var(--dock-text-primary)', wordBreak: 'break-word', lineHeight: 1.35 }}>
+          {m.kind === 'question' && <span style={{ fontWeight: 700, color: 'var(--dock-info-text)' }}>[질문] </span>}
           {m.body || (m.attachments?.length ? '📎 첨부파일' : '')}
         </div>
       </div>
@@ -1140,21 +1141,21 @@ function hashPos(id) { let h = (id * 2654435761) >>> 0; return h % 997 }
 // right-dock box titles per panel id
 const PANEL_TITLES = (L) => ({ poll: L.poll, questions: L.questionList, completed: L.completedList, files: L.attachList, manage: L.chatManage, plaza: L.plazaManage, broadcast: L.broadcastManage })
 
-const ghostBtnS = { border: '1px solid var(--border-default)', background: 'transparent', borderRadius: 8, padding: '4px 10px', cursor: 'pointer', fontSize: 'var(--fs-small,12px)', color: 'var(--text-secondary)' }
-const activeGhost = { background: 'var(--info-bg)', color: 'var(--info-text)', borderColor: 'var(--info-text)' }
-const fieldS = { width: '100%', boxSizing: 'border-box', padding: '6px 9px', borderRadius: 8, border: '1px solid var(--border-default)', background: 'var(--input-bg,var(--surface))', color: 'var(--text-primary)', fontSize: 'var(--fs-small,12px)', outline: 'none' }
+const ghostBtnS = { border: '1px solid var(--dock-border-default)', background: 'transparent', borderRadius: 8, padding: '4px 10px', cursor: 'pointer', fontSize: 'var(--fs-small,12px)', color: 'var(--dock-text-secondary)' }
+const activeGhost = { background: 'var(--dock-info-bg)', color: 'var(--dock-info-text)', borderColor: 'var(--dock-info-text)' }
+const fieldS = { width: '100%', boxSizing: 'border-box', padding: '6px 9px', borderRadius: 8, border: '1px solid var(--dock-border-default)', background: 'var(--dock-input-bg,var(--dock-surface))', color: 'var(--dock-text-primary)', fontSize: 'var(--fs-small,12px)', outline: 'none' }
 const taS = { ...fieldS, resize: 'vertical', fontFamily: 'inherit' }
-const lblS = { fontSize: 'var(--fs-micro,10px)', color: 'var(--text-muted)', marginBottom: 3 }
-const primaryBtnS = { border: 'none', borderRadius: 8, padding: '6px 12px', background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', cursor: 'pointer', fontSize: 'var(--fs-small,12px)' }
+const lblS = { fontSize: 'var(--fs-micro,10px)', color: 'var(--dock-text-muted)', marginBottom: 3 }
+const primaryBtnS = { border: 'none', borderRadius: 8, padding: '6px 12px', background: 'var(--dock-btn-primary-bg)', color: 'var(--dock-btn-primary-text)', cursor: 'pointer', fontSize: 'var(--fs-small,12px)' }
 
 function BotAdd({ onSave }) {
   const [f, setF] = useState({ name: '', provider: 'echo', model: '', api_key: '', system: '' })
   return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center', paddingTop: 6, borderTop: '1px solid var(--border-subtle)' }}>
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center', paddingTop: 6, borderTop: '1px solid var(--dock-border-subtle)' }}>
       <input value={f.name} onChange={(e) => setF((s) => ({ ...s, name: e.target.value }))} placeholder="봇 이름 (@)" style={{ ...fieldS, width: 110 }} />
-      <select value={f.provider} onChange={(e) => setF((s) => ({ ...s, provider: e.target.value }))} style={{ ...fieldS, width: 110 }}>
+      <Select value={f.provider} onChange={(e) => setF((s) => ({ ...s, provider: e.target.value }))} style={{ ...fieldS, width: 110 }}>
         <option value="echo">echo</option><option value="openai">openai</option><option value="anthropic">anthropic</option>
-      </select>
+      </Select>
       <input value={f.model} onChange={(e) => setF((s) => ({ ...s, model: e.target.value }))} placeholder="model" style={{ ...fieldS, width: 130 }} />
       <input value={f.api_key} onChange={(e) => setF((s) => ({ ...s, api_key: e.target.value }))} placeholder="api key" type="password" style={{ ...fieldS, width: 120 }} />
       <button onClick={() => { if (f.name.trim()) { onSave({ ...f, enabled: 1 }); setF({ name: '', provider: 'echo', model: '', api_key: '', system: '' }) } }} style={primaryBtnS}>추가</button>
@@ -1388,14 +1389,14 @@ function SquareView({ messages, meKey, blobURL, labels, config, clearSignal }) {
 
   const now = Date.now()
   return (
-    <div ref={ref} onDoubleClick={() => setFocusId(null)} style={{ flex: 1, minHeight: 0, position: 'relative', overflow: 'hidden', background: 'var(--surface-2)' }}>
+    <div ref={ref} onDoubleClick={() => setFocusId(null)} style={{ flex: 1, minHeight: 0, position: 'relative', overflow: 'hidden', background: 'var(--dock-surface-2)' }}>
       <style>{SQUARE_CSS}</style>
-      {visible.length === 0 && <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: 'var(--fs-small,12px)' }}>{labels.empty}</div>}
+      {visible.length === 0 && <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--dock-text-muted)', fontSize: 'var(--fs-small,12px)' }}>{labels.empty}</div>}
       <div data-cm-nocapture style={{ position: 'absolute', top: 10, right: 12, zIndex: 10, display: 'flex', gap: 6 }}>
-        <button onClick={capturePlaza} title={labels.plazaShot} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 10px', border: '1px solid var(--border-default)', borderRadius: 999, background: 'var(--surface)', cursor: 'pointer', fontSize: 'var(--fs-tiny,11px)', color: 'var(--text-secondary)' }}>
+        <button onClick={capturePlaza} title={labels.plazaShot} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 10px', border: '1px solid var(--dock-border-default)', borderRadius: 999, background: 'var(--dock-surface)', cursor: 'pointer', fontSize: 'var(--fs-tiny,11px)', color: 'var(--dock-text-secondary)' }}>
           <Icon name="camera" size={13} /> {labels.plazaShot}
         </button>
-        <button onClick={replay} title={labels.plazaReplay} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 10px', border: '1px solid var(--border-default)', borderRadius: 999, background: 'var(--surface)', cursor: 'pointer', fontSize: 'var(--fs-tiny,11px)', color: 'var(--text-secondary)' }}>
+        <button onClick={replay} title={labels.plazaReplay} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 10px', border: '1px solid var(--dock-border-default)', borderRadius: 999, background: 'var(--dock-surface)', cursor: 'pointer', fontSize: 'var(--fs-tiny,11px)', color: 'var(--dock-text-secondary)' }}>
           <Icon name="refresh" size={13} /> {labels.plazaReplay}
         </button>
       </div>
@@ -1427,16 +1428,16 @@ function SquareView({ messages, meKey, blobURL, labels, config, clearSignal }) {
             <div style={{ minWidth: 0 }}>
               {cfg.show_names && (
                 <div className="cm-plaza-info" style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 1 }}>
-                  <span style={{ fontWeight: 600, fontSize: px(12), color: 'var(--text-primary)' }}>{mine ? labels.me : m.author_name}</span>
-                  <em style={{ fontStyle: 'normal', fontSize: px(10), color: 'var(--text-muted)' }}>{timeLabel(m.created_at)}</em>
+                  <span style={{ fontWeight: 600, fontSize: px(12), color: 'var(--dock-text-primary)' }}>{mine ? labels.me : m.author_name}</span>
+                  <em style={{ fontStyle: 'normal', fontSize: px(10), color: 'var(--dock-text-muted)' }}>{timeLabel(m.created_at)}</em>
                 </div>
               )}
               <div className="cm-plaza-bubble" style={{ maxWidth: px(240), minWidth: 0, boxSizing: 'border-box', padding: emph ? `${px(9)}px ${px(14)}px` : `${px(6)}px ${px(11)}px`, borderRadius: '3px 12px 12px 12px',
-                background: (isNotice || isQ) ? 'var(--warning-bg)' : mine ? 'var(--info-bg)' : 'var(--surface)',
-                border: `1px solid ${(isNotice || isQ) ? 'var(--warning-text)' : mine ? 'var(--btn-primary-bg)' : 'var(--border-default)'}`,
+                background: (isNotice || isQ) ? 'var(--dock-warning-bg)' : mine ? 'var(--dock-info-bg)' : 'var(--dock-surface)',
+                border: `1px solid ${(isNotice || isQ) ? 'var(--dock-warning-text)' : mine ? 'var(--dock-btn-primary-bg)' : 'var(--dock-border-default)'}`,
                 fontSize: px(emph ? 15 : 13), fontWeight: 400,
-                color: 'var(--text-primary)', boxShadow: focused ? '0 4px 16px rgba(0,0,0,.16)' : '0 1px 4px rgba(0,0,0,.07)', wordBreak: 'break-word', lineHeight: 1.4 }}>
-                {isNotice && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: px(10), fontWeight: 700, color: 'var(--warning-text)', marginBottom: 2 }}><Icon name="megaphone" size={px(11)} /> {labels.notice}</span>}
+                color: 'var(--dock-text-primary)', boxShadow: focused ? '0 4px 16px rgba(0,0,0,.16)' : '0 1px 4px rgba(0,0,0,.07)', wordBreak: 'break-word', lineHeight: 1.4 }}>
+                {isNotice && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: px(10), fontWeight: 700, color: 'var(--dock-warning-text)', marginBottom: 2 }}><Icon name="megaphone" size={px(11)} /> {labels.notice}</span>}
                 {body && <div><ReactMarkdown remarkPlugins={[remarkGfm]} components={CM_MD}>{mdPrep(body)}</ReactMarkdown></div>}
                 {(m.attachments || []).length > 0 && (
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, maxWidth: '100%', marginTop: body ? 5 : 0 }}>

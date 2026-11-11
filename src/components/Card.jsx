@@ -9,8 +9,8 @@ export default function Card({ title, actions, pad = true, bodyStyle, style, chi
   return (
     <div
       style={{
-        backgroundColor: 'var(--surface)',
-        border: '1px solid var(--border-default)',
+        backgroundColor: 'var(--dock-surface)',
+        border: '1px solid var(--dock-border-default)',
         borderRadius: 'var(--radius-lg, 10px)',
         overflow: 'hidden',
         ...style,
@@ -24,12 +24,12 @@ export default function Card({ title, actions, pad = true, bodyStyle, style, chi
             alignItems: 'center',
             gap: 8,
             padding: '7px 12px',
-            borderBottom: '1px solid var(--border-subtle)',
-            backgroundColor: 'var(--surface)',
+            borderBottom: '1px solid var(--dock-border-subtle)',
+            backgroundColor: 'var(--dock-surface)',
           }}
         >
           {title && (
-            <span style={{ fontSize: 'var(--fs-small, 12px)', fontFamily: 'var(--font-mono, ui-monospace, monospace)', color: 'var(--text-primary)' }}>
+            <span style={{ fontSize: 'var(--fs-small, 12px)', fontFamily: 'var(--font-mono, ui-monospace, monospace)', color: 'var(--dock-text-primary)' }}>
               {title}
             </span>
           )}

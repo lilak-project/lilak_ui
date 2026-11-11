@@ -50,18 +50,18 @@ export default function FormatPicker({ formats = [], onPick, onClose, standardLa
 
   let gi = 0
   return (
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, backgroundColor: 'var(--overlay)' }}>
-      <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: 460, maxHeight: '85vh', overflowY: 'auto', background: 'var(--surface)', border: '1px solid var(--border-default)', borderRadius: 12, padding: 16, fontFamily: 'var(--font-sans)' }}>
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, backgroundColor: 'var(--dock-overlay)' }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: 460, maxHeight: '85vh', overflowY: 'auto', background: 'var(--dock-surface)', border: '1px solid var(--dock-border-default)', borderRadius: 12, padding: 16, fontFamily: 'var(--font-sans)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-          <span style={{ fontSize: 'var(--fs-body, 13px)', fontWeight: 600, color: 'var(--text-primary)' }}>
-            {title} <span style={{ fontSize: 'var(--fs-tiny, 11px)', fontWeight: 400, color: 'var(--text-muted)', marginLeft: 6 }}>↑↓ / jk · Enter</span>
+          <span style={{ fontSize: 'var(--fs-body, 13px)', fontWeight: 600, color: 'var(--dock-text-primary)' }}>
+            {title} <span style={{ fontSize: 'var(--fs-tiny, 11px)', fontWeight: 400, color: 'var(--dock-text-muted)', marginLeft: 6 }}>↑↓ / jk · Enter</span>
           </span>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'inline-flex' }}><Icon name="close" size={14} /></button>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--dock-text-muted)', display: 'inline-flex' }}><Icon name="close" size={14} /></button>
         </div>
         {groups.map((g) => (
           <div key={g.key} style={{ marginBottom: 8 }}>
             {g.label && (
-              <div style={{ fontSize: 'var(--fs-micro, 10px)', letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text-muted)', padding: '4px 2px' }}>
+              <div style={{ fontSize: 'var(--fs-micro, 10px)', letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--dock-text-muted)', padding: '4px 2px' }}>
                 {g.label}{g.sublabel && <span style={{ marginLeft: 6, opacity: 0.7 }}>· {g.sublabel}</span>}
               </div>
             )}
@@ -73,10 +73,10 @@ export default function FormatPicker({ formats = [], onPick, onClose, standardLa
                   onClick={() => onPick?.(f._isStandard ? null : f)}
                   style={{
                     display: 'block', width: '100%', textAlign: 'left', padding: '6px 10px', borderRadius: 7, border: 'none', cursor: 'pointer',
-                    background: on ? 'var(--info-bg)' : 'transparent', color: on ? 'var(--info-text)' : 'var(--text-primary)', fontSize: 'var(--fs-body, 13px)',
+                    background: on ? 'var(--dock-info-bg)' : 'transparent', color: on ? 'var(--dock-info-text)' : 'var(--dock-text-primary)', fontSize: 'var(--fs-body, 13px)',
                   }}>
                   {f.name}
-                  {f.fields?.length > 0 && <span style={{ marginLeft: 8, fontSize: 'var(--fs-tiny, 11px)', color: 'var(--text-muted)' }}>{f.fields.length} fields</span>}
+                  {f.fields?.length > 0 && <span style={{ marginLeft: 8, fontSize: 'var(--fs-tiny, 11px)', color: 'var(--dock-text-muted)' }}>{f.fields.length} fields</span>}
                 </button>
               )
             })}

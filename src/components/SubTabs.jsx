@@ -12,7 +12,7 @@ export default function SubTabs({ tabs = [], active, onChange, right, style }) {
   return (
     <div style={{
       display: 'flex', alignItems: 'center', gap: 2,
-      borderBottomWidth: 1, borderBottomStyle: 'solid', borderBottomColor: 'var(--border-default)',
+      borderBottomWidth: 1, borderBottomStyle: 'solid', borderBottomColor: 'var(--dock-border-default)',
       ...style,
     }}>
       {tabs.map((t) => {
@@ -30,12 +30,12 @@ export default function SubTabs({ tabs = [], active, onChange, right, style }) {
               background: 'none', border: 'none', outline: 'none',
               borderBottomWidth: 2, borderBottomStyle: 'solid',
               fontSize: 'var(--fs-small, 12px)', fontWeight: 500, fontFamily: 'var(--font-sans)',
-              color: on ? 'var(--text-primary)' : 'var(--text-muted)',
-              borderBottomColor: on ? 'var(--text-primary)' : 'transparent',
+              color: on ? 'var(--dock-text-primary)' : 'var(--dock-text-muted)',
+              borderBottomColor: on ? 'var(--dock-text-primary)' : 'transparent',
               transition: 'color .12s, border-color .12s',
             }}
-            onMouseEnter={(e) => { if (!on) e.currentTarget.style.color = 'var(--text-secondary)' }}
-            onMouseLeave={(e) => { if (!on) e.currentTarget.style.color = 'var(--text-muted)' }}
+            onMouseEnter={(e) => { if (!on) e.currentTarget.style.color = 'var(--dock-text-secondary)' }}
+            onMouseLeave={(e) => { if (!on) e.currentTarget.style.color = 'var(--dock-text-muted)' }}
           >
             {icon && <Icon name={icon} size={14} weight={on ? 'fill' : 'regular'} />}
             {label}

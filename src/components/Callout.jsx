@@ -14,11 +14,11 @@
 import Icon from '../icons.jsx'
 
 const TONES = {
-  neutral: { bg: 'var(--surface-2)',  border: 'var(--border-default)', text: 'var(--text-secondary)' },
-  info:    { bg: 'var(--info-bg)',     border: 'var(--info-text)',      text: 'var(--info-text)' },
-  success: { bg: 'var(--success-bg)',  border: 'var(--success-text)',   text: 'var(--success-text)' },
-  warning: { bg: 'var(--warning-bg)',  border: 'var(--warning-text)',   text: 'var(--warning-text)' },
-  danger:  { bg: 'var(--danger-bg)',   border: 'var(--danger-text)',    text: 'var(--danger-text)' },
+  neutral: { bg: 'var(--dock-surface-2)',  border: 'var(--dock-border-default)', text: 'var(--dock-text-secondary)' },
+  info:    { bg: 'var(--dock-info-bg)',     border: 'var(--dock-info-text)',      text: 'var(--dock-info-text)' },
+  success: { bg: 'var(--dock-success-bg)',  border: 'var(--dock-success-text)',   text: 'var(--dock-success-text)' },
+  warning: { bg: 'var(--dock-warning-bg)',  border: 'var(--dock-warning-text)',   text: 'var(--dock-warning-text)' },
+  danger:  { bg: 'var(--dock-danger-bg)',   border: 'var(--dock-danger-text)',    text: 'var(--dock-danger-text)' },
 }
 
 export default function Callout({

@@ -25,15 +25,15 @@ export default function CopyField({ value, mono = true, labels = {}, style, ...r
     <div style={{ display: 'flex', alignItems: 'center', gap: 6, ...style }} {...rest}>
       <code style={{
         flex: 1, minWidth: 0, fontSize: 'var(--fs-tiny, 11px)', padding: '4px 8px', borderRadius: 6,
-        border: '1px solid var(--border-default)', backgroundColor: 'var(--surface-2)',
-        color: 'var(--text-primary)', fontFamily: mono ? 'var(--font-mono, ui-monospace, monospace)' : 'inherit',
+        border: '1px solid var(--dock-border-default)', backgroundColor: 'var(--dock-surface-2)',
+        color: 'var(--dock-text-primary)', fontFamily: mono ? 'var(--font-mono, ui-monospace, monospace)' : 'inherit',
         overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
       }}>{value}</code>
       <button type="button" onClick={copy}
         style={{
           display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0,
           fontSize: 'var(--fs-tiny, 11px)', padding: '4px 8px', borderRadius: 6, cursor: 'pointer',
-          border: '1px solid var(--info-text)', backgroundColor: 'var(--info-bg)', color: 'var(--info-text)',
+          border: '1px solid var(--dock-info-text)', backgroundColor: 'var(--dock-info-bg)', color: 'var(--dock-info-text)',
         }}>
         <Icon name={copied ? 'check' : 'copy'} size={12} weight={copied ? 'bold' : 'regular'} />
         {copied ? L.copied : L.copy}

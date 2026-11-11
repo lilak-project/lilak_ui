@@ -108,7 +108,7 @@ export default function Avatar({ icon, color, seed, size = 36, weight = 'fill', 
   const Cmp = ICONS[icon] || AVATAR_ICON_MAP[icon] || ICONS[det.profile_shape] || AVATAR_ICON_MAP[det.profile_shape]
   // outline = a ghost/anonymous profile: no fill, just a bordered circle + line-colour icon.
   if (outline) {
-    const line = 'var(--text-secondary, #6b7280)'
+    const line = 'var(--dock-text-secondary, #6b7280)'
     return (
       <span
         title={title}

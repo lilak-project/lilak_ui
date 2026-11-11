@@ -62,7 +62,7 @@ export default function DataTable({
                 whiteSpace: 'nowrap',
                 padding: d.headPad,
                 width: c.width,
-                borderBottom: '1px solid var(--border-default)',
+                borderBottom: '1px solid var(--dock-border-default)',
                 position: stickyHeader ? 'sticky' : undefined,
                 top: stickyHeader ? 0 : undefined,
                 zIndex: stickyHeader ? 1 : undefined,
@@ -76,7 +76,7 @@ export default function DataTable({
       <tbody>
         {rows.length === 0 && (
           <tr>
-            <td colSpan={columns.length} style={{ padding: 18, textAlign: 'center', color: 'var(--text-muted)' }}>
+            <td colSpan={columns.length} style={{ padding: 18, textAlign: 'center', color: 'var(--dock-text-muted)' }}>
               {emptyText}
             </td>
           </tr>
@@ -91,12 +91,12 @@ export default function DataTable({
               id={rowId ? rowId(row, i) : undefined}
               onClick={onRowClick ? () => onRowClick(row, i) : undefined}
               style={{
-                backgroundColor: selected ? 'var(--info-bg)' : striped ? 'var(--surface-2)' : 'var(--surface)',
+                backgroundColor: selected ? 'var(--dock-info-bg)' : striped ? 'var(--dock-surface-2)' : 'var(--dock-surface)',
                 cursor: onRowClick ? 'pointer' : 'default',
                 transition: 'background-color .1s',
               }}
-              onMouseEnter={(e) => { if (!selected) e.currentTarget.style.backgroundColor = 'var(--surface-2)' }}
-              onMouseLeave={(e) => { if (!selected) e.currentTarget.style.backgroundColor = striped ? 'var(--surface-2)' : 'var(--surface)' }}
+              onMouseEnter={(e) => { if (!selected) e.currentTarget.style.backgroundColor = 'var(--dock-surface-2)' }}
+              onMouseLeave={(e) => { if (!selected) e.currentTarget.style.backgroundColor = striped ? 'var(--dock-surface-2)' : 'var(--dock-surface)' }}
             >
               {columns.map((c) => (
                 <td
@@ -104,8 +104,8 @@ export default function DataTable({
                   style={{
                     padding: d.cellPad,
                     textAlign: c.align ?? 'left',
-                    borderBottom: '1px solid var(--border-subtle)',
-                    color: c.muted ? 'var(--text-secondary)' : 'var(--text-primary)',
+                    borderBottom: '1px solid var(--dock-border-subtle)',
+                    color: c.muted ? 'var(--dock-text-secondary)' : 'var(--dock-text-primary)',
                     fontFamily: c.mono ? 'var(--font-mono, ui-monospace, monospace)' : 'inherit',
                     // `fit` columns (e.g. action buttons) hug their content and never clip
                     whiteSpace: c.wrap ? 'normal' : 'nowrap',

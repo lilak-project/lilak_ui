@@ -58,7 +58,7 @@ export default function CrudTable({
   const iconBtn = (name, color, onClick, title) => (
     <button onClick={(e) => { e.stopPropagation(); onClick() }} title={title}
       style={{ background: 'transparent', border: 'none', cursor: 'pointer', color, padding: 4, borderRadius: 6, display: 'inline-flex' }}
-      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--surface-3)'}
+      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--dock-surface-3)'}
       onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
       <Icon name={name} size={15} />
     </button>
@@ -73,8 +73,8 @@ export default function CrudTable({
           {/* extraActions gets imperative openers so a custom control (e.g. a
               "Manage" menu) can trigger the built-in edit form / delete flow. */}
           {extraActions?.(row, { openEdit: () => setMode(row), openDelete: () => handleDelete(row) })}
-          {onUpdate && canEdit(row) && formFields && iconBtn('edit', 'var(--text-secondary)', () => setMode(row), L.edit)}
-          {onDelete && canDelete(row) && iconBtn('trash', 'var(--danger-text)', () => handleDelete(row), L.delete)}
+          {onUpdate && canEdit(row) && formFields && iconBtn('edit', 'var(--dock-text-secondary)', () => setMode(row), L.edit)}
+          {onDelete && canDelete(row) && iconBtn('trash', 'var(--dock-danger-text)', () => handleDelete(row), L.delete)}
         </span>
       ),
     })
@@ -98,7 +98,7 @@ export default function CrudTable({
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12, fontFamily: 'var(--font-sans)' }}>
       {(title || onCreate || headerActions) && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {title && <span style={{ fontSize: 'var(--fs-medium, 14px)', fontWeight: 600, color: 'var(--text-primary)' }}>{title}</span>}
+          {title && <span style={{ fontSize: 'var(--fs-medium, 14px)', fontWeight: 600, color: 'var(--dock-text-primary)' }}>{title}</span>}
           <div style={{ flex: 1 }} />
           {headerActions}
           {onCreate && formFields && (
@@ -125,7 +125,7 @@ export default function CrudTable({
         />
       )}
 
-      <div style={{ border: '1px solid var(--border-default)', borderRadius: 10, overflow: 'hidden' }}>
+      <div style={{ border: '1px solid var(--dock-border-default)', borderRadius: 10, overflow: 'hidden' }}>
         <DataTable
           columns={cols}
           rows={loading ? [] : rows}

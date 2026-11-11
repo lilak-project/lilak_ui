@@ -61,9 +61,9 @@ function Chip({ active, onClick, children }) {
       style={{
         height: 30, padding: '0 12px', borderRadius: 8, cursor: 'pointer', fontSize: 'var(--fs-small, 12px)',
         borderWidth: 1, borderStyle: 'solid',
-        borderColor: active ? 'var(--nav-text-muted)' : 'var(--nav-border)',
-        backgroundColor: active ? 'var(--nav-text)' : 'var(--nav-accent)',
-        color: active ? 'var(--nav-bg)' : 'var(--nav-text)',
+        borderColor: active ? 'var(--dock-nav-text-muted)' : 'var(--dock-nav-border)',
+        backgroundColor: active ? 'var(--dock-nav-text)' : 'var(--dock-nav-accent)',
+        color: active ? 'var(--dock-nav-bg)' : 'var(--dock-nav-text)',
         transition: 'background-color .12s, border-color .12s, color .12s',
       }}
     >{children}</button>
@@ -73,7 +73,7 @@ function Chip({ active, onClick, children }) {
 function Section({ label, children }) {
   return (
     <Stack gap={8}>
-      <div style={{ fontSize: 'var(--fs-micro, 10px)', textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--nav-text-muted)' }}>{label}</div>
+      <div style={{ fontSize: 'var(--fs-micro, 10px)', textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--dock-nav-text-muted)' }}>{label}</div>
       {children}
     </Stack>
   )
@@ -91,17 +91,17 @@ function DefaultDrawer({ L, accountName, accountAvatar, accountMeta, onExit, exi
       <div style={{ flex: 2, minWidth: 0, paddingRight: 18 }}>
         <Section label={L.notifications}>
           {notifications != null ? notifications
-            : <div style={{ padding: 24, textAlign: 'center', color: 'var(--nav-text-muted)', fontSize: 'var(--fs-body, 13px)' }}>—</div>}
+            : <div style={{ padding: 24, textAlign: 'center', color: 'var(--dock-nav-text-muted)', fontSize: 'var(--fs-body, 13px)' }}>—</div>}
         </Section>
       </div>
-      <div style={{ flex: 1, minWidth: 0, paddingLeft: 18, borderLeft: '1px solid var(--nav-border)' }}>
+      <div style={{ flex: 1, minWidth: 0, paddingLeft: 18, borderLeft: '1px solid var(--dock-nav-border)' }}>
         <Stack gap={14}>
           <Section label={L.account}>
             <Row gap={14} style={{ alignItems: 'center' }}>
               {accountAvatar}
               <Stack gap={3} style={{ minWidth: 0 }}>
-                <span style={{ fontSize: 'var(--fs-large, 18px)', fontWeight: 700, color: 'var(--nav-text)', lineHeight: 1.15 }}>{accountName}</span>
-                {accountMeta && <span style={{ fontSize: 'var(--fs-small, 12px)', color: 'var(--nav-text-muted)', fontFamily: 'var(--font-mono)', overflow: 'hidden', textOverflow: 'ellipsis' }}>{accountMeta}</span>}
+                <span style={{ fontSize: 'var(--fs-large, 18px)', fontWeight: 700, color: 'var(--dock-nav-text)', lineHeight: 1.15 }}>{accountName}</span>
+                {accountMeta && <span style={{ fontSize: 'var(--fs-small, 12px)', color: 'var(--dock-nav-text-muted)', fontFamily: 'var(--font-mono)', overflow: 'hidden', textOverflow: 'ellipsis' }}>{accountMeta}</span>}
               </Stack>
             </Row>
           </Section>
@@ -122,11 +122,11 @@ function DefaultDrawer({ L, accountName, accountAvatar, accountMeta, onExit, exi
           {onExit && (
             <button onClick={onExit}
               style={{ marginTop: 4, height: 34, padding: '0 14px', borderRadius: 8, cursor: 'pointer',
-                fontSize: 'var(--fs-small, 12px)', fontWeight: 600, border: '1px solid var(--nav-border)',
-                background: 'var(--nav-accent)', color: 'var(--nav-text)', display: 'inline-flex',
+                fontSize: 'var(--fs-small, 12px)', fontWeight: 600, border: '1px solid var(--dock-nav-border)',
+                background: 'var(--dock-nav-accent)', color: 'var(--dock-nav-text)', display: 'inline-flex',
                 alignItems: 'center', justifyContent: 'center', gap: 7, alignSelf: 'flex-start' }}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--nav-text-muted)' }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--nav-border)' }}>
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--dock-nav-text-muted)' }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--dock-nav-border)' }}>
               <Icon name="logout" size={15} />{exitLabel || 'Exit'}
             </button>
           )}
@@ -266,7 +266,7 @@ function AppShellInner({
 
   // Command-mode indicator: the lilak logo mark dims while a bar is open
   // (keyboard commands suspended). Only applied when brandIcon is an icon name.
-  const logoColor = barOpen ? 'var(--nav-text-muted)' : 'var(--nav-text)'
+  const logoColor = barOpen ? 'var(--dock-nav-text-muted)' : 'var(--dock-nav-text)'
   const iconNode = typeof brandIcon === 'string'
     ? <Icon name={brandIcon} size={30} color={logoColor} style={{ height: 30, width: 'auto', display: 'block', transition: 'color .15s' }} />
     : brandIcon
@@ -277,16 +277,16 @@ function AppShellInner({
       onKeyDown={onProjectClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onProjectClick() } } : undefined}
       style={{ marginLeft: 2, padding: '3px 8px', borderRadius: 999, fontFamily: 'var(--font-mono)', fontWeight: 500,
         cursor: onProjectClick ? 'pointer' : 'default', fontSize: 'var(--fs-micro, 10px)', lineHeight: 1.2,
-        backgroundColor: 'var(--nav-accent)', color: 'var(--nav-text-muted)' }}>{project}</span>
+        backgroundColor: 'var(--dock-nav-accent)', color: 'var(--dock-nav-text-muted)' }}>{project}</span>
   ) : null
 
   const accountBtn = (
     <button
       onClick={onAccountClick || (() => setDrawerOpen((o) => !o))}
       style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 28, padding: '0 10px', borderRadius: 8,
-        background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--nav-text)',
+        background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--dock-nav-text)',
         fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-tiny, 11px)' }}
-      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--nav-accent)' }}
+      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--dock-nav-accent)' }}
       onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent' }}
       title={`${L.system}  ( \\ )`}
     >
@@ -301,7 +301,7 @@ function AppShellInner({
   )
 
   return (
-    <div style={{ minHeight: '100vh', height: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--surface)', fontFamily: 'var(--font-sans)' }}>
+    <div style={{ minHeight: '100vh', height: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--dock-surface)', fontFamily: 'var(--font-sans)' }}>
       <TopBar
         brand={brand}
         brandSub={service}

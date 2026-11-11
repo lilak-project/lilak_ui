@@ -44,7 +44,7 @@ export default function Drawer({
         onClick={onClose}
         style={{
           position: 'fixed', inset: 0, top: topOffset, zIndex: 34,
-          backgroundColor: 'var(--overlay)',
+          backgroundColor: 'var(--dock-overlay)',
           opacity: open ? 1 : 0,
           pointerEvents: open ? 'auto' : 'none',
           transition: 'opacity .24s ease',
@@ -58,9 +58,9 @@ export default function Drawer({
           height: h, maxHeight: open ? MAX : 0,
           overflow: 'hidden',
           // The drawer reads as the top bar dropping down: same nav-* colors.
-          backgroundColor: 'var(--nav-bg)',
-          color: 'var(--nav-text)',
-          borderBottom: open ? '1px solid var(--nav-border)' : 'none',
+          backgroundColor: 'var(--dock-nav-bg)',
+          color: 'var(--dock-nav-text)',
+          borderBottom: open ? '1px solid var(--dock-nav-border)' : 'none',
           boxShadow: open ? '0 14px 30px rgba(0,0,0,0.28)' : 'none',
           transition: 'max-height .28s cubic-bezier(.4,0,.2,1)',
           fontFamily: 'var(--font-sans)',
@@ -71,10 +71,10 @@ export default function Drawer({
           <div style={{
             display: 'flex', alignItems: 'center', gap: 10,
             padding: '10px 18px', flexShrink: 0,
-            borderBottom: '1px solid var(--nav-border)',
-            backgroundColor: 'var(--nav-bg)',
+            borderBottom: '1px solid var(--dock-nav-border)',
+            backgroundColor: 'var(--dock-nav-bg)',
           }}>
-            {title && <span style={{ fontSize: 'var(--fs-medium, 14px)', fontWeight: 600, color: 'var(--nav-text)' }}>{title}</span>}
+            {title && <span style={{ fontSize: 'var(--fs-medium, 14px)', fontWeight: 600, color: 'var(--dock-nav-text)' }}>{title}</span>}
             <div style={{ flex: 1 }} />
             {right}
             <button
@@ -82,10 +82,10 @@ export default function Drawer({
               aria-label="Close"
               style={{
                 background: 'transparent', border: 'none', cursor: 'pointer',
-                color: 'var(--nav-text-muted)', fontSize: 'var(--fs-xlarge, 18px)', lineHeight: 1, padding: '2px 6px', borderRadius: 6,
+                color: 'var(--dock-nav-text-muted)', fontSize: 'var(--fs-xlarge, 18px)', lineHeight: 1, padding: '2px 6px', borderRadius: 6,
               }}
-              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--nav-accent)'; e.currentTarget.style.color = 'var(--nav-text)' }}
-              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--nav-text-muted)' }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--dock-nav-accent)'; e.currentTarget.style.color = 'var(--dock-nav-text)' }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--dock-nav-text-muted)' }}
             ><Icon name="close" size={16} /></button>
           </div>
         )}

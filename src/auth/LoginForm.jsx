@@ -14,8 +14,8 @@ import { useIdentity } from '../identity.jsx'
 import Icon from '../icons.jsx'
 
 const inputStyle = {
-  width: '100%', background: 'var(--input-bg)', border: '1px solid var(--input-border)',
-  borderRadius: 8, padding: '8px 10px', fontSize: 'var(--fs-body, 13px)', color: 'var(--text-primary)', outline: 'none',
+  width: '100%', background: 'var(--dock-input-bg)', border: '1px solid var(--dock-input-border)',
+  borderRadius: 8, padding: '8px 10px', fontSize: 'var(--fs-body, 13px)', color: 'var(--dock-text-primary)', outline: 'none',
 }
 
 function EyeIcon({ off }) {
@@ -46,18 +46,18 @@ export default function LoginForm({ onSuccess, labels = {} }) {
 
   return (
     <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 10, fontFamily: 'var(--font-sans)' }}>
-      <div style={{ fontSize: 'var(--fs-medium, 14px)', fontWeight: 600, color: 'var(--text-primary)' }}>{L.title}</div>
+      <div style={{ fontSize: 'var(--fs-medium, 14px)', fontWeight: 600, color: 'var(--dock-text-primary)' }}>{L.title}</div>
       <input autoFocus value={form.username} onChange={(e) => setForm((f) => ({ ...f, username: e.target.value }))} placeholder={L.username} style={inputStyle} />
       <div style={{ position: 'relative' }}>
         <input type={show ? 'text' : 'password'} value={form.password} onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))} placeholder={L.password} style={{ ...inputStyle, paddingRight: 36 }} />
         <button type="button" tabIndex={-1} onClick={() => setShow((s) => !s)}
-          style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'inline-flex' }}>
+          style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--dock-text-muted)', display: 'inline-flex' }}>
           <EyeIcon off={show} />
         </button>
       </div>
-      {error && <div style={{ fontSize: 'var(--fs-small, 12px)', color: 'var(--danger-text)' }}>{error}</div>}
+      {error && <div style={{ fontSize: 'var(--fs-small, 12px)', color: 'var(--dock-danger-text)' }}>{error}</div>}
       <button type="submit" disabled={loading}
-        style={{ border: '1px solid var(--btn-primary-bg)', background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', borderRadius: 8, padding: '8px 0', fontSize: 'var(--fs-body, 13px)', fontWeight: 500, cursor: 'pointer', opacity: loading ? 0.6 : 1 }}>
+        style={{ border: '1px solid var(--dock-btn-primary-bg)', background: 'var(--dock-btn-primary-bg)', color: 'var(--dock-btn-primary-text)', borderRadius: 8, padding: '8px 0', fontSize: 'var(--fs-body, 13px)', fontWeight: 500, cursor: 'pointer', opacity: loading ? 0.6 : 1 }}>
         {L.submit}
       </button>
     </form>

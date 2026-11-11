@@ -12,8 +12,8 @@ import { computeNumberEntry } from './formatUtils.js'
 import Icon from '../icons.jsx'
 
 const inputStyle = {
-  width: '100%', background: 'var(--input-bg)', border: '1px solid var(--input-border)',
-  borderRadius: 6, padding: '4px 8px', fontSize: 'var(--fs-small, 12px)', color: 'var(--text-primary)',
+  width: '100%', background: 'var(--dock-input-bg)', border: '1px solid var(--dock-input-border)',
+  borderRadius: 6, padding: '4px 8px', fontSize: 'var(--fs-small, 12px)', color: 'var(--dock-text-primary)',
   outline: 'none', fontFamily: 'var(--font-mono)',
 }
 
@@ -32,15 +32,15 @@ function fmt(n) {
 function ResultPreview({ canonical }) {
   const { value, error } = canonical
   return (
-    <div style={{ fontSize: 'var(--fs-tiny, 11px)', whiteSpace: 'nowrap', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>
-      = <strong style={{ color: 'var(--text-primary)' }}>{fmt(value)}</strong>{error ? <> ± {fmt(error)}</> : null}
+    <div style={{ fontSize: 'var(--fs-tiny, 11px)', whiteSpace: 'nowrap', fontFamily: 'var(--font-mono)', color: 'var(--dock-text-secondary)' }}>
+      = <strong style={{ color: 'var(--dock-text-primary)' }}>{fmt(value)}</strong>{error ? <> ± {fmt(error)}</> : null}
     </div>
   )
 }
 
 const addBtnStyle = {
-  border: '1px solid var(--border-default)', borderRadius: 6, fontSize: 'var(--fs-body, 13px)', fontWeight: 500,
-  padding: '0 8px', color: 'var(--text-secondary)', background: 'var(--surface-2)', cursor: 'pointer',
+  border: '1px solid var(--dock-border-default)', borderRadius: 6, fontSize: 'var(--fs-body, 13px)', fontWeight: 500,
+  padding: '0 8px', color: 'var(--dock-text-secondary)', background: 'var(--dock-surface-2)', cursor: 'pointer',
 }
 
 export default function NumberEntryField({ variant = 'single', value, onChange, disabled = false, inline = false }) {
@@ -51,7 +51,7 @@ export default function NumberEntryField({ variant = 'single', value, onChange, 
     return (
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
         <NumInput value={v.min} onChange={(x) => onChange({ ...v, min: x })} placeholder="min" />
-        <span style={{ color: 'var(--text-muted)' }}>~</span>
+        <span style={{ color: 'var(--dock-text-muted)' }}>~</span>
         <NumInput value={v.max} onChange={(x) => onChange({ ...v, max: x })} placeholder="max" />
         <ResultPreview canonical={canonical} />
       </div>
@@ -71,7 +71,7 @@ export default function NumberEntryField({ variant = 'single', value, onChange, 
           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 2, width: 90 }}>
             <NumInput value={s} onChange={(x) => setSlot(i, x)} placeholder={`#${i + 1}`} />
             {slots.length > 1 && !disabled && (
-              <button type="button" onClick={() => removeSlot(i)} style={{ color: 'var(--danger-text)', background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex' }} title="remove"><Icon name="close" size={12} /></button>
+              <button type="button" onClick={() => removeSlot(i)} style={{ color: 'var(--dock-danger-text)', background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex' }} title="remove"><Icon name="close" size={12} /></button>
             )}
           </div>
         ))}

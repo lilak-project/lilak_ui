@@ -10,9 +10,9 @@
 import Icon from '../icons.jsx'
 
 export default function NotificationBell({ count = 0, onClick, tone = 'nav', title = 'Notifications' }) {
-  const color = tone === 'nav' ? 'var(--nav-text)' : 'var(--text-secondary)'
-  const muted = tone === 'nav' ? 'var(--nav-text-muted)' : 'var(--text-muted)'
-  const hoverBg = tone === 'nav' ? 'var(--nav-accent)' : 'var(--surface-2)'
+  const color = tone === 'nav' ? 'var(--dock-nav-text)' : 'var(--dock-text-secondary)'
+  const muted = tone === 'nav' ? 'var(--dock-nav-text-muted)' : 'var(--dock-text-muted)'
+  const hoverBg = tone === 'nav' ? 'var(--dock-nav-accent)' : 'var(--dock-surface-2)'
   const has = count > 0
   return (
     <button
@@ -31,7 +31,7 @@ export default function NotificationBell({ count = 0, onClick, tone = 'nav', tit
       {has && (
         <span style={{
           position: 'absolute', top: -1, right: -1, minWidth: 14, height: 14, padding: '0 3px',
-          borderRadius: 999, backgroundColor: 'var(--danger-text, #dc2626)', color: '#fff',
+          borderRadius: 999, backgroundColor: 'var(--dock-danger-text, #dc2626)', color: '#fff',
           fontSize: 'var(--fs-micro, 10px)', fontWeight: 700, lineHeight: '14px', textAlign: 'center',
           fontFamily: 'var(--font-mono)',
         }}>{count > 99 ? '99+' : count}</span>

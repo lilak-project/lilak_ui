@@ -68,13 +68,13 @@ export function setActivePreset(id) {
 export function clearOverrides() {
   if (typeof document === 'undefined') return
   const style = document.documentElement.style
-  for (const name of Object.keys(TOKENS)) style.removeProperty(`--${name}`)
+  for (const name of Object.keys(TOKENS)) style.removeProperty(`--dock-${name}`)
 }
 
 /** Live-override one token (does not persist). */
 export function setTokenOverride(name, value) {
   if (typeof document === 'undefined') return
-  document.documentElement.style.setProperty(`--${name}`, value)
+  document.documentElement.style.setProperty(`--dock-${name}`, value)
 }
 
 /** Apply a preset by id: set its base theme, clear old overrides, apply its own. */

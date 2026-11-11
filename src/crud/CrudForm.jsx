@@ -19,15 +19,16 @@
  * field.type: text(default) | number | email | password | textarea | select |
  *             checkbox | color | custom (use field.render). `full` spans the row.
  */
+import Select from '../components/Select.jsx'
 import { useState } from 'react'
 import Button from '../components/Button.jsx'
 import ColorPicker from '../components/ColorPicker.jsx'
 import Icon from '../icons.jsx'
 
 const fieldStyle = {
-  width: '100%', background: 'var(--input-bg)', borderWidth: 1, borderStyle: 'solid',
-  borderColor: 'var(--input-border)', borderRadius: 7, padding: '6px 9px', fontSize: 'var(--fs-body, 13px)',
-  outline: 'none', color: 'var(--text-primary)', fontFamily: 'var(--font-sans)', boxSizing: 'border-box',
+  width: '100%', background: 'var(--dock-input-bg)', borderWidth: 1, borderStyle: 'solid',
+  borderColor: 'var(--dock-input-border)', borderRadius: 7, padding: '6px 9px', fontSize: 'var(--fs-body, 13px)',
+  outline: 'none', color: 'var(--dock-text-primary)', fontFamily: 'var(--font-sans)', boxSizing: 'border-box',
 }
 
 /** Password input with an eye toggle (same look as the rest of the fields). */
@@ -40,7 +41,7 @@ function PasswordInput({ value, onChange, placeholder, required, disabled }) {
         style={{ ...fieldStyle, paddingRight: 34, opacity: disabled ? 0.6 : 1 }} />
       <button type="button" tabIndex={-1} onClick={() => setShow((s) => !s)}
         style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)',
-          background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'inline-flex' }}>
+          background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--dock-text-muted)', display: 'inline-flex' }}>
         <Icon name={show ? 'eye-off' : 'eye'} size={15} />
       </button>
     </div>
@@ -84,18 +85,18 @@ export default function CrudForm({
           disabled={disabled} style={{ ...fieldStyle, resize: 'vertical', ...dis }} />
       case 'select':
         return (
-          <select value={v} onChange={(e) => set(f.key, e.target.value)} disabled={disabled} style={{ ...fieldStyle, ...dis }}>
+          <Select value={v} onChange={(e) => set(f.key, e.target.value)} disabled={disabled} style={{ ...fieldStyle, ...dis }}>
             {!required && <option value="">{f.placeholder || '—'}</option>}
             {(f.options || []).map((o) => {
               const val = typeof o === 'object' ? o.value : o
               const lbl = typeof o === 'object' ? o.label : o
               return <option key={val} value={val}>{lbl}</option>
             })}
-          </select>
+          </Select>
         )
       case 'checkbox':
         return (
-          <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 'var(--fs-body, 13px)', color: 'var(--text-primary)' }}>
+          <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 'var(--fs-body, 13px)', color: 'var(--dock-text-primary)' }}>
             <input type="checkbox" checked={!!v} onChange={(e) => set(f.key, e.target.checked)} disabled={disabled} />
             {f.checkboxLabel || ''}
           </label>
@@ -117,16 +118,16 @@ export default function CrudForm({
         else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); submit(e) }
       }}
       style={{
-      border: '1px solid var(--border-default)', borderRadius: 10, background: 'var(--surface)',
+      border: '1px solid var(--dock-border-default)', borderRadius: 10, background: 'var(--dock-surface)',
       padding: 16, fontFamily: 'var(--font-sans)', display: 'flex', flexDirection: 'column', gap: 12,
     }}>
-      {title && <div style={{ fontSize: 'var(--fs-medium, 14px)', fontWeight: 600, color: 'var(--text-primary)' }}>{title}</div>}
-      {error && <div style={{ fontSize: 'var(--fs-small, 12px)', padding: '6px 10px', borderRadius: 7, backgroundColor: 'var(--danger-bg)', color: 'var(--danger-text)' }}>{error}</div>}
+      {title && <div style={{ fontSize: 'var(--fs-medium, 14px)', fontWeight: 600, color: 'var(--dock-text-primary)' }}>{title}</div>}
+      {error && <div style={{ fontSize: 'var(--fs-small, 12px)', padding: '6px 10px', borderRadius: 7, backgroundColor: 'var(--dock-danger-bg)', color: 'var(--dock-danger-text)' }}>{error}</div>}
 
       <div style={{ display: 'grid', gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`, gap: 12 }}>
         {fields.map((f) => (
           <div key={f.key} style={{ gridColumn: f.full || f.type === 'textarea' ? '1 / -1' : undefined }}>
-            <div style={{ fontSize: 'var(--fs-tiny, 11px)', color: 'var(--text-muted)', marginBottom: 3 }}>{f.label}{f.required ? ' *' : ''}</div>
+            <div style={{ fontSize: 'var(--fs-tiny, 11px)', color: 'var(--dock-text-muted)', marginBottom: 3 }}>{f.label}{f.required ? ' *' : ''}</div>
             {renderInput(f)}
           </div>
         ))}

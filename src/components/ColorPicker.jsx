@@ -26,14 +26,14 @@ function normHex(s) {
 function Swatch({ color, size = 20, onClick, title, tri }) {
   const base = {
     width: size, height: size, borderRadius: 5, cursor: 'pointer', flexShrink: 0,
-    borderWidth: 1, borderStyle: 'solid', borderColor: 'var(--border-default)', padding: 0,
+    borderWidth: 1, borderStyle: 'solid', borderColor: 'var(--dock-border-default)', padding: 0,
   }
   if (tri) {
     return (
       <button title={title} onClick={onClick} style={{
         ...base, backgroundColor: tri.background || 'transparent',
-        borderColor: tri.border || 'var(--border-default)', borderWidth: 2,
-        color: tri.text || 'var(--text-primary)', fontSize: 'var(--fs-tiny, 11px)', lineHeight: `${size - 4}px`, fontWeight: 700,
+        borderColor: tri.border || 'var(--dock-border-default)', borderWidth: 2,
+        color: tri.text || 'var(--dock-text-primary)', fontSize: 'var(--fs-tiny, 11px)', lineHeight: `${size - 4}px`, fontWeight: 700,
       }}>A</button>
     )
   }
@@ -56,18 +56,18 @@ function ColorField({ label, value, onChange }) {
   function copy() { try { navigator.clipboard.writeText(hex) } catch { /* ignore */ } }
 
   const iconBtn = {
-    border: '1px solid var(--border-default)', background: 'var(--surface)', color: 'var(--text-secondary)',
+    border: '1px solid var(--dock-border-default)', background: 'var(--dock-surface)', color: 'var(--dock-text-secondary)',
     borderRadius: 5, fontSize: 'var(--fs-tiny, 11px)', padding: '3px 7px', cursor: 'pointer', whiteSpace: 'nowrap',
   }
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-      {label && <span style={{ fontSize: 'var(--fs-tiny, 11px)', color: 'var(--text-muted)', width: 64, flexShrink: 0 }}>{label}</span>}
+      {label && <span style={{ fontSize: 'var(--fs-tiny, 11px)', color: 'var(--dock-text-muted)', width: 64, flexShrink: 0 }}>{label}</span>}
       <input type="color" value={hex} onChange={(e) => { setText(e.target.value); onChange(e.target.value) }}
-        style={{ width: 28, height: 24, padding: 0, border: '1px solid var(--border-default)', borderRadius: 5, background: 'none', cursor: 'pointer' }} />
+        style={{ width: 28, height: 24, padding: 0, border: '1px solid var(--dock-border-default)', borderRadius: 5, background: 'none', cursor: 'pointer' }} />
       <input value={text} onChange={(e) => { setText(e.target.value); const h = normHex(e.target.value); if (h) onChange(h) }}
         spellCheck={false} placeholder="#rrggbb"
         style={{ width: 88, fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-small, 12px)', padding: '4px 6px', borderRadius: 5,
-          border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-primary)', outline: 'none' }} />
+          border: '1px solid var(--dock-input-border)', background: 'var(--dock-input-bg)', color: 'var(--dock-text-primary)', outline: 'none' }} />
       <button onClick={copy} style={{ ...iconBtn, display: 'inline-flex', alignItems: 'center' }} title="Copy"><Icon name="copy" size={14} /></button>
       <button onClick={paste} style={{ ...iconBtn, display: 'inline-flex', alignItems: 'center' }} title="Paste"><Icon name="paste" size={14} /></button>
     </div>
@@ -112,7 +112,7 @@ export default function ColorPicker({
   const popover = open && createPortal(
     <div ref={popRef} style={{
       position: 'fixed', top: pos.top, left: pos.left, zIndex: 70,
-      background: 'var(--surface)', border: '1px solid var(--border-default)', borderRadius: 10,
+      background: 'var(--dock-surface)', border: '1px solid var(--dock-border-default)', borderRadius: 10,
       boxShadow: '0 10px 28px rgba(0,0,0,0.25)', padding: 12, display: 'flex', flexDirection: 'column', gap: 8,
       fontFamily: 'var(--font-sans)', minWidth: 240,
     }}>
@@ -122,8 +122,8 @@ export default function ColorPicker({
           <ColorField label={labels.border} value={parts.border} onChange={(v) => setPart('border', v)} />
           <ColorField label={labels.text} value={parts.text} onChange={(v) => setPart('text', v)} />
           <div style={{ marginTop: 2, alignSelf: 'flex-start', padding: '2px 10px', borderRadius: 999, fontSize: 'var(--fs-small, 12px)',
-            backgroundColor: parts.background || 'transparent', color: parts.text || 'var(--text-primary)',
-            border: `1.5px solid ${parts.border || 'var(--border-default)'}` }}>#preview</div>
+            backgroundColor: parts.background || 'transparent', color: parts.text || 'var(--dock-text-primary)',
+            border: `1.5px solid ${parts.border || 'var(--dock-border-default)'}` }}>#preview</div>
         </>
       ) : (
         <ColorField value={value} onChange={onChange} />

@@ -50,8 +50,8 @@ export default function TimeRangePicker({ range = '6h', refresh = 'off', onRange
 
   const pill = {
     display: 'inline-flex', alignItems: 'center', gap: 6, height: 28, padding: '0 10px',
-    border: '1px solid var(--border-default)', borderRadius: 8, cursor: 'pointer',
-    background: 'var(--surface)', color: 'var(--text-primary)', fontSize: 'var(--fs-small, 12px)',
+    border: '1px solid var(--dock-border-default)', borderRadius: 8, cursor: 'pointer',
+    background: 'var(--dock-surface)', color: 'var(--dock-text-primary)', fontSize: 'var(--fs-small, 12px)',
   }
 
   return (

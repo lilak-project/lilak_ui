@@ -44,7 +44,7 @@ export default function Modal({ title, onClose, onSubmit, width = 540, children,
           color: modalFrame.color,
           borderWidth: 1,
           borderStyle: 'solid',
-          borderColor: 'var(--border-default)',
+          borderColor: 'var(--dock-border-default)',
           borderRadius: 'var(--radius-lg, 10px)',
           width,
           maxWidth: '92vw',
@@ -59,7 +59,7 @@ export default function Modal({ title, onClose, onSubmit, width = 540, children,
             backgroundColor: modalHeader.backgroundColor,
             color: modalHeader.color,
             display: 'flex', alignItems: 'center', padding: '8px 12px',
-            borderBottomWidth: 1, borderBottomStyle: 'solid', borderBottomColor: 'var(--border-subtle)',
+            borderBottomWidth: 1, borderBottomStyle: 'solid', borderBottomColor: 'var(--dock-border-subtle)',
           }}>
             <span style={{ fontSize: 'var(--fs-body, 13px)', fontWeight: 500 }}>{title}</span>
             <div style={{ marginLeft: 'auto' }}>
@@ -73,7 +73,7 @@ export default function Modal({ title, onClose, onSubmit, width = 540, children,
             backgroundColor: modalHeader.backgroundColor,
             color: modalHeader.color,
             display: 'flex', justifyContent: 'flex-end', gap: 8, padding: '8px 12px',
-            borderTopWidth: 1, borderTopStyle: 'solid', borderTopColor: 'var(--border-subtle)',
+            borderTopWidth: 1, borderTopStyle: 'solid', borderTopColor: 'var(--dock-border-subtle)',
           }}>
             {footer}
           </div>

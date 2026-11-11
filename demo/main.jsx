@@ -25,7 +25,7 @@ function TagColorDemo() {
           labels={{ background: 'Background', border: 'Line', text: 'Text' }} />
         <span style={{ padding: '3px 12px', borderRadius: 999, fontSize: 13,
           backgroundColor: c.background, color: c.text, border: `1.5px solid ${c.border}` }}>#sample-tag</span>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text-muted)' }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--dock-text-muted)' }}>
           {c.background} / {c.border} / {c.text}
         </span>
       </div>
@@ -235,10 +235,10 @@ function Shell() {
       style={{
         display: 'inline-flex', alignItems: 'center', gap: 6, height: 28, padding: '0 10px',
         borderRadius: 8, border: 'none', cursor: 'pointer',
-        background: sysOpen ? 'var(--nav-accent)' : 'transparent',
-        color: 'var(--nav-text)', fontSize: 'var(--fs-tiny, 11px)', fontFamily: 'var(--font-mono)',
+        background: sysOpen ? 'var(--dock-nav-accent)' : 'transparent',
+        color: 'var(--dock-nav-text)', fontSize: 'var(--fs-tiny, 11px)', fontFamily: 'var(--font-mono)',
       }}
-      onMouseEnter={(e) => { if (!sysOpen) e.currentTarget.style.backgroundColor = 'var(--nav-accent)' }}
+      onMouseEnter={(e) => { if (!sysOpen) e.currentTarget.style.backgroundColor = 'var(--dock-nav-accent)' }}
       onMouseLeave={(e) => { if (!sysOpen) e.currentTarget.style.backgroundColor = 'transparent' }}
     >
       <Icon name="user" size={15} />
@@ -254,7 +254,7 @@ function Shell() {
         brandIcon={<Icon name="lilak" size={isPhone ? 26 : 30} style={{ height: isPhone ? 26 : 30, width: 'auto', display: 'block' }} />}
         brandSuffix={
           <span style={{ marginLeft: 2, padding: '3px 8px', borderRadius: 999, fontFamily: 'var(--font-mono)', fontWeight: 500,
-            fontSize: 'var(--fs-micro, 10px)', lineHeight: 1.2, backgroundColor: 'var(--nav-accent)', color: 'var(--nav-text-muted)' }}>
+            fontSize: 'var(--fs-micro, 10px)', lineHeight: 1.2, backgroundColor: 'var(--dock-nav-accent)', color: 'var(--dock-nav-text-muted)' }}>
             lilak_ui
           </span>
         }
@@ -291,7 +291,7 @@ function Shell() {
         {/* ── Log tab: elog-style feed (LogFeed) with keyboard nav + composer ── */}
         {tab === 'log' && (
           <>
-            <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t('log_help')}</div>
+            <div style={{ fontSize: 12, color: 'var(--dock-text-muted)' }}>{t('log_help')}</div>
             {/* Edit-mode LogComposer demo: pre-filled from an existing entry. */}
             <Card title="LogComposer — edit mode (pre-filled, Save / Cancel)">
               <LogComposer
@@ -322,7 +322,7 @@ function Shell() {
         {/* ── ROOT tab: placeholder ── */}
         {tab === 'root' && (
           <Card>
-            <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>{t('root_hint')}</div>
+            <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--dock-text-muted)', fontSize: 13 }}>{t('root_hint')}</div>
           </Card>
         )}
 
@@ -338,13 +338,13 @@ function Shell() {
           </div>
         )}
 
-        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+        <div style={{ fontSize: 12, color: 'var(--dock-text-muted)' }}>
           {prettyKey('/')} command · {prettyKey('\\')} settings · {prettyKey('[')} {prettyKey(']')} tabs · {prettyKey('?')} help
         </div>
 
         {log.length > 0 && (
           <Card title="command log">
-            {log.map((l, i) => <div key={i} style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text-secondary)' }}>{l}</div>)}
+            {log.map((l, i) => <div key={i} style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--dock-text-secondary)' }}>{l}</div>)}
           </Card>
         )}
       </div>
@@ -386,11 +386,11 @@ function Shell() {
 
 // ── content of the system drop-down panel: left 2/3 logs · right 1/3 settings ──
 function SystemPanelContent({ t, theme, lang, langs, onTheme, onLang, entries, userName, onName, isPhone }) {
-  const sectionTitle = { fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--nav-text-muted)', marginBottom: 8 }
-  const muted = { color: 'var(--nav-text-muted)' }
+  const sectionTitle = { fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--dock-nav-text-muted)', marginBottom: 8 }
+  const muted = { color: 'var(--dock-nav-text-muted)' }
   const chip = (active) => ({
-    border: '1px solid var(--nav-border)', borderRadius: 7, padding: '4px 12px', fontSize: 12.5, cursor: 'pointer',
-    background: active ? 'var(--nav-accent)' : 'transparent', color: 'var(--nav-text)',
+    border: '1px solid var(--dock-nav-border)', borderRadius: 7, padding: '4px 12px', fontSize: 12.5, cursor: 'pointer',
+    background: active ? 'var(--dock-nav-accent)' : 'transparent', color: 'var(--dock-nav-text)',
   })
 
   return (
@@ -399,18 +399,18 @@ function SystemPanelContent({ t, theme, lang, langs, onTheme, onLang, entries, u
       <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, paddingRight: isPhone ? 0 : 16 }}>
         <div style={sectionTitle}>{t('sys_recent')}</div>
         <div style={{ display: 'flex', gap: 14, marginBottom: 10, fontSize: 12.5 }}>
-          <span style={muted}>{t('sys_daq')}: <span style={{ color: 'var(--success-text)' }}>● {t('sys_online')}</span></span>
-          <span style={muted}>{t('sys_disk')}: <span style={{ color: 'var(--nav-text)' }}>64%</span></span>
-          <span style={muted}>{t('sys_lastrun')}: <span style={{ color: 'var(--nav-text)', fontFamily: 'var(--font-mono)' }}>run 253</span></span>
+          <span style={muted}>{t('sys_daq')}: <span style={{ color: 'var(--dock-success-text)' }}>● {t('sys_online')}</span></span>
+          <span style={muted}>{t('sys_disk')}: <span style={{ color: 'var(--dock-nav-text)' }}>64%</span></span>
+          <span style={muted}>{t('sys_lastrun')}: <span style={{ color: 'var(--dock-nav-text)', fontFamily: 'var(--font-mono)' }}>run 253</span></span>
         </div>
-        <div style={{ flex: 1, overflowY: 'auto', borderTop: '1px solid var(--nav-border)', paddingTop: 6 }}>
+        <div style={{ flex: 1, overflowY: 'auto', borderTop: '1px solid var(--dock-nav-border)', paddingTop: 6 }}>
           {entries.map((e) => (
             <div key={e.id} style={{ display: 'flex', gap: 10, alignItems: 'baseline', padding: '4px 0', fontSize: 13 }}>
-              <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--nav-text-muted)', fontSize: 11.5 }}>
+              <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--dock-nav-text-muted)', fontSize: 11.5 }}>
                 {new Date(e.created_at).toLocaleTimeString()}
               </span>
-              <span style={{ color: 'var(--nav-text)', flex: 1 }}>{e.title}</span>
-              {e.tags?.map((tg) => <span key={tg.name} style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--nav-text-muted)' }}>#{tg.name}</span>)}
+              <span style={{ color: 'var(--dock-nav-text)', flex: 1 }}>{e.title}</span>
+              {e.tags?.map((tg) => <span key={tg.name} style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--dock-nav-text-muted)' }}>#{tg.name}</span>)}
             </div>
           ))}
         </div>
@@ -418,14 +418,14 @@ function SystemPanelContent({ t, theme, lang, langs, onTheme, onLang, entries, u
 
       {/* RIGHT 1/3 — settings (flat, divider instead of a card box) */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14, paddingLeft: isPhone ? 0 : 16,
-        borderLeft: isPhone ? 'none' : '1px solid var(--nav-border)', borderTop: isPhone ? '1px solid var(--nav-border)' : 'none', paddingTop: isPhone ? 14 : 0 }}>
+        borderLeft: isPhone ? 'none' : '1px solid var(--dock-nav-border)', borderTop: isPhone ? '1px solid var(--dock-nav-border)' : 'none', paddingTop: isPhone ? 14 : 0 }}>
         <div>
           <div style={sectionTitle}>{t('sys_name')}</div>
           <input
             defaultValue={userName}
             onKeyDown={(e) => { if (e.key === 'Enter') onName(e.target.value) }}
             onBlur={(e) => onName(e.target.value)}
-            style={{ width: '100%', background: 'var(--input-bg)', border: '1px solid var(--nav-border)', borderRadius: 7, padding: '5px 8px', fontSize: 13, color: 'var(--nav-text)', outline: 'none' }}
+            style={{ width: '100%', background: 'var(--dock-input-bg)', border: '1px solid var(--dock-nav-border)', borderRadius: 7, padding: '5px 8px', fontSize: 13, color: 'var(--dock-nav-text)', outline: 'none' }}
           />
           <div style={{ ...muted, fontSize: 11, marginTop: 4 }}>{t('sys_name_hint')}</div>
         </div>

@@ -32,7 +32,7 @@ export default function LogList({
   groupBy = 'run',
   reverse = true,
   gap = 3,
-  dividerColor = 'var(--border-default)',
+  dividerColor = 'var(--dock-border-default)',
   renderItem,
 }) {
   const accessor = typeof groupBy === 'function' ? groupBy : (GROUP_ACCESSORS[groupBy] || GROUP_ACCESSORS.none)

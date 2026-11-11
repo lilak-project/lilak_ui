@@ -41,8 +41,8 @@ export default function Menu({ trigger, sections = [], align = 'right', width = 
             [align]: 0,
             zIndex: 60,
             width,
-            backgroundColor: 'var(--surface)',
-            border: '1px solid var(--border-default)',
+            backgroundColor: 'var(--dock-surface)',
+            border: '1px solid var(--dock-border-default)',
             borderRadius: 'var(--radius-md, 8px)',
             boxShadow: '0 6px 20px rgba(0,0,0,0.18)',
             padding: 4,
@@ -50,9 +50,9 @@ export default function Menu({ trigger, sections = [], align = 'right', width = 
           }}
         >
           {sections.map((sec, si) => (
-            <div key={si} style={{ marginTop: si ? 4 : 0, paddingTop: si ? 4 : 0, borderTop: si ? '1px solid var(--border-subtle)' : 'none' }}>
+            <div key={si} style={{ marginTop: si ? 4 : 0, paddingTop: si ? 4 : 0, borderTop: si ? '1px solid var(--dock-border-subtle)' : 'none' }}>
               {sec.label && (
-                <div style={{ fontSize: 'var(--fs-micro, 10px)', letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--text-muted)', padding: '4px 8px 2px' }}>
+                <div style={{ fontSize: 'var(--fs-micro, 10px)', letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--dock-text-muted)', padding: '4px 8px 2px' }}>
                   {sec.label}
                 </div>
               )}
@@ -63,18 +63,18 @@ export default function Menu({ trigger, sections = [], align = 'right', width = 
                   disabled={it.disabled}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 8, width: '100%',
-                    background: it.active ? 'var(--info-bg)' : 'transparent',
+                    background: it.active ? 'var(--dock-info-bg)' : 'transparent',
                     border: 'none', borderRadius: 6, padding: '5px 8px',
                     fontSize: 'var(--fs-small, 12px)', textAlign: 'left',
                     cursor: it.disabled ? 'not-allowed' : 'pointer', opacity: it.disabled ? 0.4 : 1,
-                    color: it.danger ? 'var(--danger-text)' : it.active ? 'var(--info-text)' : 'var(--text-primary)',
+                    color: it.danger ? 'var(--dock-danger-text)' : it.active ? 'var(--dock-info-text)' : 'var(--dock-text-primary)',
                   }}
-                  onMouseEnter={(e) => { if (!it.active) e.currentTarget.style.background = 'var(--surface-2)' }}
+                  onMouseEnter={(e) => { if (!it.active) e.currentTarget.style.background = 'var(--dock-surface-2)' }}
                   onMouseLeave={(e) => { if (!it.active) e.currentTarget.style.background = 'transparent' }}
                 >
                   <span style={{ width: 14, display: 'inline-flex', justifyContent: 'center' }}>{it.active ? <Icon name="check" size={13} weight="bold" /> : ''}</span>
                   <span style={{ flex: 1 }}>{it.label}</span>
-                  {it.hint && <span style={{ fontSize: 'var(--fs-tiny, 11px)', color: 'var(--text-muted)' }}>{it.hint}</span>}
+                  {it.hint && <span style={{ fontSize: 'var(--fs-tiny, 11px)', color: 'var(--dock-text-muted)' }}>{it.hint}</span>}
                 </button>
               ))}
             </div>

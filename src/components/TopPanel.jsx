@@ -24,7 +24,7 @@ export default function TopPanel({ open, onClose, topOffset = 46, height = '66vh
         onClick={onClose}
         style={{
           position: 'fixed', inset: 0, top: topOffset, zIndex: 24,
-          backgroundColor: 'var(--overlay)',
+          backgroundColor: 'var(--dock-overlay)',
           opacity: open ? 1 : 0,
           pointerEvents: open ? 'auto' : 'none',
           transition: 'opacity .24s ease',
@@ -37,8 +37,8 @@ export default function TopPanel({ open, onClose, topOffset = 46, height = '66vh
           height,
           maxHeight: open ? height : 0,
           overflow: 'hidden',
-          backgroundColor: 'var(--nav-bg)',
-          borderBottom: open ? '1px solid var(--nav-border)' : 'none',
+          backgroundColor: 'var(--dock-nav-bg)',
+          borderBottom: open ? '1px solid var(--dock-nav-border)' : 'none',
           boxShadow: open ? '0 10px 24px rgba(0,0,0,0.25)' : 'none',
           transition: 'max-height .28s cubic-bezier(.4,0,.2,1)',
           fontFamily: 'var(--font-sans)',

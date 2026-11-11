@@ -7,7 +7,7 @@
  *
  * These are exposed as CSS custom properties in index.css under the
  * matching `[data-theme="..."]` selector, so components can reference them
- * via `var(--token-name)` or via the Tailwind classes that get remapped
+ * via `var(--dock-token-name)` (DOCK, see the README) or via the Tailwind classes that get remapped
  * in index.css.
  *
  * Categories are presentation-only (used by the Settings viewer).

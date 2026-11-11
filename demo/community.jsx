@@ -100,10 +100,10 @@ const activeApi = USE_REAL ? realApi : api
 function Harness() {
   const [role, setRole] = useState('manager')
   return (
-    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', padding: 16, boxSizing: 'border-box', gap: 10, background: 'var(--app-bg)' }}>
+    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', padding: 16, boxSizing: 'border-box', gap: 10, background: 'var(--dock-app-bg)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <strong>Community demo</strong>
-        <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>{USE_REAL ? 'REAL backend (community.py · SQLite)' : 'mock backend'} · features all on</span>
+        <span style={{ color: 'var(--dock-text-muted)', fontSize: 12 }}>{USE_REAL ? 'REAL backend (community.py · SQLite)' : 'mock backend'} · features all on</span>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
           <Button size="sm" variant={role === 'manager' ? 'primary' : 'secondary'} onClick={() => setRole('manager')}>manager</Button>
           <Button size="sm" variant={role === 'user' ? 'primary' : 'secondary'} onClick={() => setRole('user')}>user</Button>

@@ -21,10 +21,10 @@ const TARGET = { backgroundColor: '#db2777', color: '#fff' }
 
 function severityStyle(level) {
   switch (level) {
-    case 'warning':  return { backgroundColor: 'var(--warning-bg)', color: 'var(--warning-text)' }
-    case 'error':    return { backgroundColor: 'var(--danger-bg)',  color: 'var(--danger-text)' }
-    case 'critical': return { backgroundColor: 'var(--btn-danger-bg)', color: 'var(--btn-danger-text)' }
-    default:         return { backgroundColor: 'var(--info-bg)',    color: 'var(--info-text)' }
+    case 'warning':  return { backgroundColor: 'var(--dock-warning-bg)', color: 'var(--dock-warning-text)' }
+    case 'error':    return { backgroundColor: 'var(--dock-danger-bg)',  color: 'var(--dock-danger-text)' }
+    case 'critical': return { backgroundColor: 'var(--dock-btn-danger-bg)', color: 'var(--dock-btn-danger-text)' }
+    default:         return { backgroundColor: 'var(--dock-info-bg)',    color: 'var(--dock-info-text)' }
   }
 }
 
@@ -35,18 +35,18 @@ export function isPolling(entry) {
 }
 
 function cardFrameStyle(entry, focused) {
-  if (focused)          return { backgroundColor: 'var(--info-bg)',   borderColor: 'var(--border-focus)' }
-  if (entry.is_deleted) return { backgroundColor: 'var(--danger-bg)', borderColor: 'var(--danger-bg)', opacity: 0.6 }
+  if (focused)          return { backgroundColor: 'var(--dock-info-bg)',   borderColor: 'var(--dock-border-focus)' }
+  if (entry.is_deleted) return { backgroundColor: 'var(--dock-danger-bg)', borderColor: 'var(--dock-danger-bg)', opacity: 0.6 }
   // A green edge means "this one is still moving": a service is refilling it on
   // an interval, so its numbers are not final. Worth seeing from the feed —
   // otherwise a live log and a closed one look identical.
   if (isPolling(entry))
-    return { backgroundColor: 'var(--surface-2)', borderColor: 'var(--success-border)' }
+    return { backgroundColor: 'var(--dock-surface-2)', borderColor: 'var(--dock-success-border)' }
   // `border-default`, not `border-subtle`: in the bright theme the subtle border
   // is #f1f5f9 — the exact colour of the surface-2 the card is painted in. The
   // card carried a 1px border nobody could ever see, so a feed of them read as
   // one undivided block instead of a list of entries.
-  return                       { backgroundColor: 'var(--surface-2)', borderColor: 'var(--border-default)' }
+  return                       { backgroundColor: 'var(--dock-surface-2)', borderColor: 'var(--dock-border-default)' }
 }
 
 function stripMarkdown(text = '') {
@@ -77,7 +77,7 @@ const CHIP = { fontSize: 'var(--fs-tiny, 11px)', padding: '1px 8px', borderRadiu
 export default function LogEntryCard({ entry, viewMode = 'normal', focused = false, expanded = false, onClick, tagColorMap, indexPrefix = '_', showIndex = true }) {
   const sev = severityStyle(entry.level)
   const frame = cardFrameStyle(entry, focused)
-  const idPill = { fontSize: 'var(--fs-small, 12px)', fontFamily: 'var(--font-mono)', padding: '2px 6px', borderRadius: 4, backgroundColor: 'var(--surface-2)', color: 'var(--text-muted)', flexShrink: 0 }
+  const idPill = { fontSize: 'var(--fs-small, 12px)', fontFamily: 'var(--font-mono)', padding: '2px 6px', borderRadius: 4, backgroundColor: 'var(--dock-surface-2)', color: 'var(--dock-text-muted)', flexShrink: 0 }
   // elog LogCard shows the raw title; run context is carried by the run badges + status tag.
   const title = entry.title
 
@@ -104,15 +104,15 @@ export default function LogEntryCard({ entry, viewMode = 'normal', focused = fal
     return (
       <div onClick={onClick} style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, padding: '6px 12px', borderRadius: 8, border: '1px solid', cursor: 'pointer', ...frame }}>
         {showIndex && <span style={idPill}>{indexPrefix}{entry.log_index ?? entry.id}</span>}
-        {entry.is_deleted && <span style={{ ...CHIP, backgroundColor: 'var(--danger-bg)', color: 'var(--danger-text)' }}>DELETED</span>}
+        {entry.is_deleted && <span style={{ ...CHIP, backgroundColor: 'var(--dock-danger-bg)', color: 'var(--dock-danger-text)' }}>DELETED</span>}
         {entry.level && entry.level !== 'info' && <span style={{ ...sev, fontSize: 'var(--fs-tiny, 11px)', padding: '1px 6px', borderRadius: 4, flexShrink: 0 }}>{entry.level.toUpperCase()}</span>}
         <RunBadges entry={entry} sm />
-        <span style={{ fontFamily: 'var(--font-sans)', fontSize: 'var(--fs-body, 13px)', fontWeight: 500, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{title}</span>
+        <span style={{ fontFamily: 'var(--font-sans)', fontSize: 'var(--fs-body, 13px)', fontWeight: 500, color: 'var(--dock-text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{title}</span>
         {tagChips}
         <span style={{ flex: 1 }} />
-        {entry.attachment_count > 0 && <span style={{ fontSize: 'var(--fs-tiny, 11px)', color: 'var(--text-muted)', flexShrink: 0 }}>[{entry.attachment_count}]</span>}
-        <span style={{ fontSize: 'var(--fs-tiny, 11px)', color: 'var(--text-muted)', flexShrink: 0 }}>{entry.author_name}</span>
-        <span style={{ fontSize: 'var(--fs-tiny, 11px)', color: 'var(--text-muted)', flexShrink: 0 }}>{formatLogStamp(entry.created_at)}</span>
+        {entry.attachment_count > 0 && <span style={{ fontSize: 'var(--fs-tiny, 11px)', color: 'var(--dock-text-muted)', flexShrink: 0 }}>[{entry.attachment_count}]</span>}
+        <span style={{ fontSize: 'var(--fs-tiny, 11px)', color: 'var(--dock-text-muted)', flexShrink: 0 }}>{entry.author_name}</span>
+        <span style={{ fontSize: 'var(--fs-tiny, 11px)', color: 'var(--dock-text-muted)', flexShrink: 0 }}>{formatLogStamp(entry.created_at)}</span>
       </div>
     )
   }
@@ -124,29 +124,29 @@ export default function LogEntryCard({ entry, viewMode = 'normal', focused = fal
         {/* row 1: id + level + run badges */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
           {showIndex && <span style={idPill}>{indexPrefix}{entry.log_index ?? entry.id}</span>}
-          {entry.is_deleted && <span style={{ ...CHIP, backgroundColor: 'var(--danger-bg)', color: 'var(--danger-text)' }}>DELETED</span>}
+          {entry.is_deleted && <span style={{ ...CHIP, backgroundColor: 'var(--dock-danger-bg)', color: 'var(--dock-danger-text)' }}>DELETED</span>}
           {entry.level && entry.level !== 'info' && <span style={{ ...sev, fontSize: 'var(--fs-tiny, 11px)', padding: '1px 8px', borderRadius: 999, flexShrink: 0 }}>{entry.level.toUpperCase()}</span>}
           <RunBadges entry={entry} />
         </div>
         {/* row 2: title */}
-        <div style={{ fontFamily: 'var(--font-sans)', fontSize: viewMode === 'rich' ? 15 : 14, fontWeight: 500, lineHeight: 1.35, color: 'var(--text-primary)' }}>{title}</div>
+        <div style={{ fontFamily: 'var(--font-sans)', fontSize: viewMode === 'rich' ? 15 : 14, fontWeight: 500, lineHeight: 1.35, color: 'var(--dock-text-primary)' }}>{title}</div>
         {/* row 3: tags */}
         {(runTag || isPending || entry.is_auto || entry.parent_log_id || entry.tags?.length > 0) && (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>{tagChips}</div>
         )}
         {/* row 4: author / date / source / attachments */}
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', fontSize: 'var(--fs-small, 12px)', color: 'var(--text-secondary)' }}>
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', fontSize: 'var(--fs-small, 12px)', color: 'var(--dock-text-secondary)' }}>
           <span>{entry.author_name}</span>
           <span>{formatLogStamp(entry.created_at)}</span>
-          {entry.source && entry.source !== 'human' && <span style={{ color: 'var(--text-link)' }}>{entry.source}</span>}
+          {entry.source && entry.source !== 'human' && <span style={{ color: 'var(--dock-text-link)' }}>{entry.source}</span>}
           {entry.attachment_count > 0 && <span>[{entry.attachment_count}]</span>}
         </div>
         {/* body: full markdown (expanded) or excerpt (rich) */}
         {expanded && entry.body && (
-          <div style={{ marginTop: 6, paddingTop: 6, borderTop: '1px solid var(--border-subtle)' }}><Markdown>{entry.body}</Markdown></div>
+          <div style={{ marginTop: 6, paddingTop: 6, borderTop: '1px solid var(--dock-border-subtle)' }}><Markdown>{entry.body}</Markdown></div>
         )}
         {!expanded && viewMode === 'rich' && (entry.body_excerpt || entry.body) && (
-          <div style={{ marginTop: 4, paddingTop: 8, borderTop: '1px solid var(--border-subtle)', fontSize: 'var(--fs-body, 13px)', lineHeight: 1.5, color: 'var(--text-secondary)' }}>
+          <div style={{ marginTop: 4, paddingTop: 8, borderTop: '1px solid var(--dock-border-subtle)', fontSize: 'var(--fs-body, 13px)', lineHeight: 1.5, color: 'var(--dock-text-secondary)' }}>
             {stripMarkdown(entry.body_excerpt || entry.body).slice(0, 280)}{(entry.body_excerpt || entry.body).length >= 300 ? '…' : ''}
           </div>
         )}

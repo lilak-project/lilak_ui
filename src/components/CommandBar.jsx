@@ -241,7 +241,7 @@ export default function CommandBar({
 
   // ── Slot mode: empty always-expanded container; the page portals into it ──
   if (slot) {
-    return <div ref={setBarSlotEl} style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 40, backgroundColor: 'var(--nav-bg)', color: 'var(--nav-text)', fontFamily: 'var(--font-sans)' }} />
+    return <div ref={setBarSlotEl} style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 40, backgroundColor: 'var(--dock-nav-bg)', color: 'var(--dock-nav-text)', fontFamily: 'var(--font-sans)' }} />
   }
 
   // ── Free-text input mode: the bar IS the text input (full width, expanded) ──
@@ -256,10 +256,10 @@ export default function CommandBar({
     }
     const Field = input.multiline ? 'textarea' : 'input'
     return (
-      <div style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 40, backgroundColor: 'var(--nav-bg)', color: 'var(--nav-text)', fontFamily: 'var(--font-sans)' }}>
+      <div style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 40, backgroundColor: 'var(--dock-nav-bg)', color: 'var(--dock-nav-text)', fontFamily: 'var(--font-sans)' }}>
         {input.contextNode}
-        <form onSubmit={(e) => { e.preventDefault(); submit() }} style={{ display: 'flex', alignItems: 'center', gap: 8, minHeight: OPEN_H, padding: '0 14px', borderTop: '1px solid var(--nav-border)' }}>
-          {input.label && <span style={{ flexShrink: 0, fontSize: 'var(--fs-small, 12px)', color: 'var(--nav-text-muted)', whiteSpace: 'nowrap' }}>{input.label}</span>}
+        <form onSubmit={(e) => { e.preventDefault(); submit() }} style={{ display: 'flex', alignItems: 'center', gap: 8, minHeight: OPEN_H, padding: '0 14px', borderTop: '1px solid var(--dock-nav-border)' }}>
+          {input.label && <span style={{ flexShrink: 0, fontSize: 'var(--fs-small, 12px)', color: 'var(--dock-nav-text-muted)', whiteSpace: 'nowrap' }}>{input.label}</span>}
           <Field
             ref={textRef}
             autoFocus
@@ -272,9 +272,9 @@ export default function CommandBar({
             type={input.secure && !input.multiline ? 'password' : undefined}
             inputMode={input.inputMode}
             spellCheck={false}
-            style={{ flex: 1, minWidth: 0, background: 'transparent', border: 'none', outline: 'none', resize: 'none', color: 'var(--nav-text)', fontSize: 'var(--fs-small, 12px)', fontFamily: 'inherit', lineHeight: 1.4, maxHeight: input.multiline ? 72 : undefined, padding: input.multiline ? '10px 0' : 0 }}
+            style={{ flex: 1, minWidth: 0, background: 'transparent', border: 'none', outline: 'none', resize: 'none', color: 'var(--dock-nav-text)', fontSize: 'var(--fs-small, 12px)', fontFamily: 'inherit', lineHeight: 1.4, maxHeight: input.multiline ? 72 : undefined, padding: input.multiline ? '10px 0' : 0 }}
           />
-          {input.hint && <span style={{ flexShrink: 0, fontSize: 'var(--fs-tiny, 11px)', color: 'var(--nav-text-muted)' }}>{input.hint}</span>}
+          {input.hint && <span style={{ flexShrink: 0, fontSize: 'var(--fs-tiny, 11px)', color: 'var(--dock-nav-text-muted)' }}>{input.hint}</span>}
         </form>
       </div>
     )
@@ -290,9 +290,9 @@ export default function CommandBar({
         height: compact ? COMPACT_H : (expanded ? OPEN_H : PILL),
         marginLeft: compact ? 16 : (expanded ? 0 : 16),
         marginBottom: compact ? 16 : (expanded ? 0 : 16),
-        backgroundColor: 'var(--nav-bg)',
-        borderTop: (expanded && !compact) ? '1px solid var(--nav-border)' : 'none',
-        border: (expanded && !compact) ? undefined : '1px solid var(--nav-border)',
+        backgroundColor: 'var(--dock-nav-bg)',
+        borderTop: (expanded && !compact) ? '1px solid var(--dock-nav-border)' : 'none',
+        border: (expanded && !compact) ? undefined : '1px solid var(--dock-nav-border)',
         borderRadius: compact ? 999 : (expanded ? 0 : '50%'),
         boxShadow: (expanded && !compact) ? 'none' : '0 2px 6px rgba(0,0,0,0.25)',
         cursor: expanded ? 'default' : 'pointer',
@@ -305,10 +305,10 @@ export default function CommandBar({
         <div style={{
           position: 'absolute', left: 0, right: 0, bottom: '100%',
           maxHeight: 300, overflowY: 'auto',
-          backgroundColor: 'var(--nav-bg)', borderTop: '1px solid var(--nav-border)',
+          backgroundColor: 'var(--dock-nav-bg)', borderTop: '1px solid var(--dock-nav-border)',
         }}>
           {helpText && (
-            <div style={{ padding: '6px 16px', fontSize: 'var(--fs-tiny, 11px)', color: 'var(--nav-text-muted)', borderBottom: '1px solid var(--nav-border)' }}>
+            <div style={{ padding: '6px 16px', fontSize: 'var(--fs-tiny, 11px)', color: 'var(--dock-nav-text-muted)', borderBottom: '1px solid var(--dock-nav-border)' }}>
               {helpText}
             </div>
           )}
@@ -320,30 +320,30 @@ export default function CommandBar({
               style={{
                 display: 'flex', gap: 10, alignItems: 'baseline',
                 padding: '6px 16px', cursor: 'pointer',
-                backgroundColor: i === sel ? 'var(--nav-accent)' : 'transparent',
+                backgroundColor: i === sel ? 'var(--dock-nav-accent)' : 'transparent',
               }}
             >
               {s.kind === 'find' ? (
                 <>
-                  <span style={{ fontSize: 'var(--fs-body, 13px)', color: 'var(--nav-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '46%' }}>{s.label}</span>
+                  <span style={{ fontSize: 'var(--fs-body, 13px)', color: 'var(--dock-nav-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '46%' }}>{s.label}</span>
                   {s.tags?.length > 0 && (
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-tiny, 11px)', color: 'var(--nav-text-muted)' }}>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-tiny, 11px)', color: 'var(--dock-nav-text-muted)' }}>
                       {s.tags.map((tg) => '#' + tg).join(' ')}
                     </span>
                   )}
                   <span style={{ flex: 1 }} />
-                  {s.kindLabel && <span style={{ fontSize: 'var(--fs-micro, 10px)', color: 'var(--nav-text-muted)', flexShrink: 0 }}>{s.kindLabel}</span>}
+                  {s.kindLabel && <span style={{ fontSize: 'var(--fs-micro, 10px)', color: 'var(--dock-nav-text-muted)', flexShrink: 0 }}>{s.kindLabel}</span>}
                 </>
               ) : s.kind === 'arg' ? (
                 <>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-small, 12px)', color: 'var(--nav-text)' }}>{s.label}</span>
-                  {s.secondary && <span style={{ fontSize: 'var(--fs-small, 12px)', color: 'var(--nav-text-muted)' }}>{s.secondary}</span>}
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-small, 12px)', color: 'var(--dock-nav-text)' }}>{s.label}</span>
+                  {s.secondary && <span style={{ fontSize: 'var(--fs-small, 12px)', color: 'var(--dock-nav-text-muted)' }}>{s.secondary}</span>}
                 </>
               ) : (
                 <>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-small, 12px)', color: 'var(--nav-text)' }}>{s.label}</span>
-                  <span style={{ fontSize: 'var(--fs-small, 12px)', color: 'var(--nav-text-muted)' }}>{s.secondary}</span>
-                  {s.hasArgs && <span style={{ marginLeft: 'auto', display: 'inline-flex', color: 'var(--nav-text-muted)' }}><Icon name="caret-right" size={12} /></span>}
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-small, 12px)', color: 'var(--dock-nav-text)' }}>{s.label}</span>
+                  <span style={{ fontSize: 'var(--fs-small, 12px)', color: 'var(--dock-nav-text-muted)' }}>{s.secondary}</span>
+                  {s.hasArgs && <span style={{ marginLeft: 'auto', display: 'inline-flex', color: 'var(--dock-nav-text-muted)' }}><Icon name="caret-right" size={12} /></span>}
                 </>
               )}
             </div>
@@ -360,7 +360,7 @@ export default function CommandBar({
       }}>
         {compact ? (
           <>
-            {input?.label && <span style={{ flexShrink: 0, fontSize: 'var(--fs-small, 12px)', color: 'var(--nav-text-muted)', fontFamily: 'var(--font-mono)' }}>{input.label}</span>}
+            {input?.label && <span style={{ flexShrink: 0, fontSize: 'var(--fs-small, 12px)', color: 'var(--dock-nav-text-muted)', fontFamily: 'var(--font-mono)' }}>{input.label}</span>}
             <input
               ref={textRef}
               className="bg-transparent"
@@ -378,12 +378,12 @@ export default function CommandBar({
               placeholder={input?.placeholder || ''}
               spellCheck={false}
               style={{ flex: 1, minWidth: 0, width: 40, background: 'transparent', border: 'none', outline: 'none',
-                color: 'var(--nav-text)', fontSize: 'var(--fs-small, 12px)', fontFamily: 'var(--font-mono)' }}
+                color: 'var(--dock-nav-text)', fontSize: 'var(--fs-small, 12px)', fontFamily: 'var(--font-mono)' }}
             />
           </>
         ) : (
           <>
-            {secure && <Icon name="key" size={13} style={{ flexShrink: 0, color: 'var(--nav-text-muted)' }} />}
+            {secure && <Icon name="key" size={13} style={{ flexShrink: 0, color: 'var(--dock-nav-text-muted)' }} />}
             <input
               ref={inputRef}
               id={inputId}
@@ -404,10 +404,10 @@ export default function CommandBar({
               spellCheck={false}
               style={{
                 flex: 1, minWidth: 0, background: 'transparent', border: 'none', outline: 'none',
-                color: 'var(--nav-text)', fontSize: 'var(--fs-body, 13px)', fontFamily: 'var(--font-mono)',
+                color: 'var(--dock-nav-text)', fontSize: 'var(--fs-body, 13px)', fontFamily: 'var(--font-mono)',
               }}
             />
-            {(mode?.hint || hint) && <span style={{ fontSize: 'var(--fs-tiny, 11px)', color: 'var(--nav-text-muted)', flexShrink: 0 }}>{mode?.hint || hint}</span>}
+            {(mode?.hint || hint) && <span style={{ fontSize: 'var(--fs-tiny, 11px)', color: 'var(--dock-nav-text-muted)', flexShrink: 0 }}>{mode?.hint || hint}</span>}
           </>
         )}
       </div>

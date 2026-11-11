@@ -6,11 +6,11 @@
  *   <Badge tone="success" dot>live</Badge>
  */
 const TONES = {
-  neutral: { backgroundColor: 'var(--surface-2)',  color: 'var(--text-secondary)' },
-  info:    { backgroundColor: 'var(--info-bg)',     color: 'var(--info-text)' },
-  success: { backgroundColor: 'var(--success-bg)',  color: 'var(--success-text)' },
-  warning: { backgroundColor: 'var(--warning-bg)',  color: 'var(--warning-text)' },
-  danger:  { backgroundColor: 'var(--danger-bg)',   color: 'var(--danger-text)' },
+  neutral: { backgroundColor: 'var(--dock-surface-2)',  color: 'var(--dock-text-secondary)' },
+  info:    { backgroundColor: 'var(--dock-info-bg)',     color: 'var(--dock-info-text)' },
+  success: { backgroundColor: 'var(--dock-success-bg)',  color: 'var(--dock-success-text)' },
+  warning: { backgroundColor: 'var(--dock-warning-bg)',  color: 'var(--dock-warning-text)' },
+  danger:  { backgroundColor: 'var(--dock-danger-bg)',   color: 'var(--dock-danger-text)' },
 }
 
 export default function Badge({ tone = 'neutral', dot = false, mono = false, style, children, ...rest }) {

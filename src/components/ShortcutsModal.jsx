@@ -15,8 +15,8 @@ function Key({ combo }) {
   return (
     <span style={{
       fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-tiny, 11px)', padding: '2px 7px', borderRadius: 6,
-      backgroundColor: 'var(--surface-3)', color: 'var(--text-primary)',
-      borderWidth: 1, borderStyle: 'solid', borderColor: 'var(--border-default)', whiteSpace: 'nowrap',
+      backgroundColor: 'var(--dock-surface-3)', color: 'var(--dock-text-primary)',
+      borderWidth: 1, borderStyle: 'solid', borderColor: 'var(--dock-border-default)', whiteSpace: 'nowrap',
     }}>{prettyKey(combo)}</span>
   )
 }
@@ -46,12 +46,12 @@ export default function ShortcutsModal({ open, onClose, title = 'Keyboard shortc
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 18 }}>
         {cats.map((cat) => (
           <div key={cat}>
-            <div style={{ fontSize: 'var(--fs-micro, 10px)', textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--text-muted)', marginBottom: 6 }}>{cat}</div>
+            <div style={{ fontSize: 'var(--fs-micro, 10px)', textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--dock-text-muted)', marginBottom: 6 }}>{cat}</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
               {groups[cat].map((b, i) => (
                 <div key={b.combo + i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <Key combo={b.combo} />
-                  <span style={{ fontSize: 'var(--fs-small, 12px)', color: 'var(--text-secondary)' }}>{b.label}</span>
+                  <span style={{ fontSize: 'var(--fs-small, 12px)', color: 'var(--dock-text-secondary)' }}>{b.label}</span>
                 </div>
               ))}
             </div>

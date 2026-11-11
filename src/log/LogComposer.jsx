@@ -21,6 +21,7 @@
  *     format_fields_json:{ key: value|{raw,variant,value,error} },
  *     attachments:[{name}] }
  */
+import Select from '../components/Select.jsx'
 import { useEffect, useState } from 'react'
 import { getFields, normalizeBuiltinId, RUN_TYPES, computeNumberEntry } from './formatUtils.js'
 import NumberEntryField from './NumberEntryField.jsx'
@@ -45,11 +46,11 @@ function buildDraft(initial) {
 }
 
 const field = {
-  background: 'var(--input-bg)', border: '1px solid var(--input-border)',
+  background: 'var(--dock-input-bg)', border: '1px solid var(--dock-input-border)',
   borderRadius: 6, padding: '5px 8px', fontSize: 'var(--fs-small, 12px)', outline: 'none',
-  color: 'var(--text-primary)', fontFamily: 'var(--font-sans)',
+  color: 'var(--dock-text-primary)', fontFamily: 'var(--font-sans)',
 }
-const labelCls = { fontSize: 'var(--fs-tiny, 11px)', color: 'var(--text-muted)', marginBottom: 3 }
+const labelCls = { fontSize: 'var(--fs-tiny, 11px)', color: 'var(--dock-text-muted)', marginBottom: 3 }
 
 export default function LogComposer({
   formats = null, format = null, onFormatChange,
@@ -131,12 +132,12 @@ export default function LogComposer({
   const addFiles = (list) => setFiles((prev) => [...prev, ...Array.from(list).map((file) => ({ name: file.name, file }))])
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: 10, background: 'var(--surface)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-lg, 10px)' }} onKeyDown={onEnter}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: 10, background: 'var(--dock-surface)', border: '1px solid var(--dock-border-default)', borderRadius: 'var(--radius-lg, 10px)' }} onKeyDown={onEnter}>
 
       {/* format picker bar */}
       {formats && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 'var(--fs-small, 12px)' }}>
-          <span style={{ color: 'var(--text-muted)' }}>{L.format}:</span>
+          <span style={{ color: 'var(--dock-text-muted)' }}>{L.format}:</span>
           <button onClick={() => setPickerOpen(true)} style={{ ...field, width: 'auto', padding: '3px 10px', cursor: 'pointer', fontFamily: 'var(--font-sans)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
             {format?.name ?? L.standard} <Icon name="caret-down" size={12} />
           </button>
@@ -146,9 +147,9 @@ export default function LogComposer({
       {/* run row — wraps on narrow widths instead of squishing the fields */}
       {has('run') && (
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-          <select value={draft.run_type} onChange={(e) => set('run_type', e.target.value)} style={{ ...field, width: 130, fontFamily: 'var(--font-mono)' }}>
+          <Select value={draft.run_type} onChange={(e) => set('run_type', e.target.value)} style={{ ...field, width: 130, fontFamily: 'var(--font-mono)' }}>
             {RUN_TYPES.map((rt) => <option key={rt.id} value={rt.id}>{rt.id} · {rt.labelEn}</option>)}
-          </select>
+          </Select>
           <input value={draft.run_number} onChange={(e) => set('run_number', e.target.value)} placeholder={L.run} style={{ ...field, width: 110, fontFamily: 'var(--font-mono)' }} />
           {has('beam') && <input value={draft.beam} onChange={(e) => set('beam', e.target.value)} placeholder={L.beam} style={{ ...field, flex: 1, minWidth: 120, fontFamily: 'var(--font-mono)' }} />}
           {has('target') && <input value={draft.target} onChange={(e) => set('target', e.target.value)} placeholder={L.target} style={{ ...field, flex: 1, minWidth: 120, fontFamily: 'var(--font-mono)' }} />}
@@ -158,9 +159,9 @@ export default function LogComposer({
       {/* title + level */}
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
         {has('title') && <input value={draft.title} onChange={(e) => set('title', e.target.value)} placeholder={L.title} style={{ ...field, flex: 1, minWidth: 160 }} />}
-        <select value={draft.level} onChange={(e) => set('level', e.target.value)} style={{ ...field, width: 110 }}>
+        <Select value={draft.level} onChange={(e) => set('level', e.target.value)} style={{ ...field, width: 110 }}>
           {LEVELS.map((lv) => <option key={lv} value={lv}>{lv}</option>)}
-        </select>
+        </Select>
       </div>
 
       {/* custom fields */}
@@ -189,15 +190,15 @@ export default function LogComposer({
             {[['write', L.write], ['preview', L.preview]].map(([id, lbl]) => (
               <button key={id} onClick={() => setShowPreview(id === 'preview')}
                 style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 'var(--fs-small, 12px)', padding: '2px 8px',
-                  borderBottom: `2px solid ${(showPreview === (id === 'preview')) ? 'var(--border-focus)' : 'transparent'}`,
-                  color: (showPreview === (id === 'preview')) ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+                  borderBottom: `2px solid ${(showPreview === (id === 'preview')) ? 'var(--dock-border-focus)' : 'transparent'}`,
+                  color: (showPreview === (id === 'preview')) ? 'var(--dock-text-primary)' : 'var(--dock-text-muted)' }}>
                 {lbl}
               </button>
             ))}
           </div>
           {showPreview ? (
             <div style={{ ...field, minHeight: 56, fontFamily: 'var(--font-sans)' }}>
-              {draft.body.trim() ? <Markdown>{draft.body}</Markdown> : <span style={{ color: 'var(--text-muted)' }}>—</span>}
+              {draft.body.trim() ? <Markdown>{draft.body}</Markdown> : <span style={{ color: 'var(--dock-text-muted)' }}>—</span>}
             </div>
           ) : (
             <textarea value={draft.body} onChange={(e) => set('body', e.target.value)} placeholder={L.body} rows={3}
@@ -211,17 +212,17 @@ export default function LogComposer({
         <div
           onDragOver={(e) => e.preventDefault()}
           onDrop={(e) => { e.preventDefault(); addFiles(e.dataTransfer.files) }}
-          style={{ border: '1px dashed var(--border-strong)', borderRadius: 8, padding: 8, fontSize: 'var(--fs-small, 12px)' }}>
-          <label style={{ cursor: 'pointer', color: 'var(--text-link)' }}>
+          style={{ border: '1px dashed var(--dock-border-strong)', borderRadius: 8, padding: 8, fontSize: 'var(--fs-small, 12px)' }}>
+          <label style={{ cursor: 'pointer', color: 'var(--dock-text-link)' }}>
             {L.drop}
             <input type="file" multiple style={{ display: 'none' }} onChange={(e) => addFiles(e.target.files)} />
           </label>
           {files.length > 0 && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
               {files.map((f, i) => (
-                <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 'var(--fs-tiny, 11px)', fontFamily: 'var(--font-mono)', background: 'var(--surface-2)', borderRadius: 6, padding: '2px 8px' }}>
+                <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 'var(--fs-tiny, 11px)', fontFamily: 'var(--font-mono)', background: 'var(--dock-surface-2)', borderRadius: 6, padding: '2px 8px' }}>
                   {f.name}
-                  <button onClick={() => setFiles((p) => p.filter((_, j) => j !== i))} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--danger-text)', display: 'inline-flex' }}><Icon name="close" size={12} /></button>
+                  <button onClick={() => setFiles((p) => p.filter((_, j) => j !== i))} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--dock-danger-text)', display: 'inline-flex' }}><Icon name="close" size={12} /></button>
                 </span>
               ))}
             </div>
@@ -231,11 +232,11 @@ export default function LogComposer({
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
         {onCancel && (
-          <button onClick={onCancel} style={{ minWidth: 70, border: '1px solid var(--border-default)', background: 'var(--surface)', color: 'var(--text-secondary)', borderRadius: 6, fontSize: 'var(--fs-small, 12px)', padding: '6px 14px', cursor: 'pointer' }}>
+          <button onClick={onCancel} style={{ minWidth: 70, border: '1px solid var(--dock-border-default)', background: 'var(--dock-surface)', color: 'var(--dock-text-secondary)', borderRadius: 6, fontSize: 'var(--fs-small, 12px)', padding: '6px 14px', cursor: 'pointer' }}>
             {L.cancel}
           </button>
         )}
-        <button onClick={submit} style={{ minWidth: 80, border: '1px solid var(--btn-primary-bg)', background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', borderRadius: 6, fontSize: 'var(--fs-small, 12px)', fontWeight: 500, padding: '6px 16px', cursor: 'pointer' }}>
+        <button onClick={submit} style={{ minWidth: 80, border: '1px solid var(--dock-btn-primary-bg)', background: 'var(--dock-btn-primary-bg)', color: 'var(--dock-btn-primary-text)', borderRadius: 6, fontSize: 'var(--fs-small, 12px)', fontWeight: 500, padding: '6px 16px', cursor: 'pointer' }}>
           {L.add}
         </button>
       </div>

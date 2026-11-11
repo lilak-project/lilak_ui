@@ -74,13 +74,13 @@ export default function TopBar({
           // Tabs render in caps; harmless for CJK (no case), uppercases Latin labels.
           textTransform: 'uppercase', letterSpacing: '0.02em',
           fontWeight: on ? 500 : 400,
-          color: on ? 'var(--nav-text)' : 'var(--nav-text-muted)',
+          color: on ? 'var(--dock-nav-text)' : 'var(--dock-nav-text-muted)',
           cursor: measure ? 'default' : 'pointer', transition: 'color .12s',
         }}
-        onMouseEnter={measure ? undefined : (e) => { if (!on) e.currentTarget.style.color = 'var(--nav-text)' }}
-        onMouseLeave={measure ? undefined : (e) => { if (!on) e.currentTarget.style.color = 'var(--nav-text-muted)' }}
+        onMouseEnter={measure ? undefined : (e) => { if (!on) e.currentTarget.style.color = 'var(--dock-nav-text)' }}
+        onMouseLeave={measure ? undefined : (e) => { if (!on) e.currentTarget.style.color = 'var(--dock-nav-text-muted)' }}
       >
-        <span aria-hidden="true" style={{ position: 'absolute', left: 1, top: -3, width: 4, height: 4, borderRadius: '50%', backgroundColor: 'var(--nav-text)', opacity: on ? 1 : 0, transition: 'opacity .12s' }} />
+        <span aria-hidden="true" style={{ position: 'absolute', left: 1, top: -3, width: 4, height: 4, borderRadius: '50%', backgroundColor: 'var(--dock-nav-text)', opacity: on ? 1 : 0, transition: 'opacity .12s' }} />
         {t.icon && <Icon name={t.icon} size={15} weight={on ? 'fill' : 'regular'} />}
         {showLabel && t.label}
       </button>
@@ -94,19 +94,19 @@ export default function TopBar({
       ref={rootRef}
       style={{
         position: 'sticky', top: 0, zIndex: 30, display: 'flex', alignItems: 'center', gap: 18,
-        height, padding: '0 32px', backgroundColor: 'var(--nav-bg)',
-        borderBottom: '1px solid var(--nav-border)', fontFamily: 'var(--font-sans)', ...style,
+        height, padding: '0 32px', backgroundColor: 'var(--dock-nav-bg)',
+        borderBottom: '1px solid var(--dock-nav-border)', fontFamily: 'var(--font-sans)', ...style,
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: tabsAsMenu ? 12 : 18, minWidth: 0 }}>
         <span ref={brandRef} onClick={onBrandClick} title={brandTitle}
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontWeight: 600, fontSize: 'var(--fs-large, 16px)', lineHeight: 1, color: 'var(--nav-text)', letterSpacing: '0.02em', flexShrink: 0, cursor: onBrandClick ? 'pointer' : 'default' }}>
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontWeight: 600, fontSize: 'var(--fs-large, 16px)', lineHeight: 1, color: 'var(--dock-nav-text)', letterSpacing: '0.02em', flexShrink: 0, cursor: onBrandClick ? 'pointer' : 'default' }}>
           {brandIcon}
           {/* `brandSub` stacks a smaller service name under the brand (e.g. LILAK / elog) */}
           {brandSub != null ? (
             <span style={{ display: 'inline-flex', flexDirection: 'column', lineHeight: 1, letterSpacing: '0.01em' }}>
-              <span style={{ textAlign: 'left', fontWeight: 700, color: 'var(--nav-text)' }}>{brand}</span>
-              <span style={{ textAlign: 'right', fontWeight: 500, fontSize: '0.72em', letterSpacing: '0.06em', color: 'var(--nav-text-muted)' }}>{brandSub}</span>
+              <span style={{ textAlign: 'left', fontWeight: 700, color: 'var(--dock-nav-text)' }}>{brand}</span>
+              <span style={{ textAlign: 'right', fontWeight: 500, fontSize: '0.72em', letterSpacing: '0.06em', color: 'var(--dock-nav-text-muted)' }}>{brandSub}</span>
             </span>
           ) : brand}
           {brandSuffix}
@@ -121,8 +121,8 @@ export default function TopBar({
                   title={activeTab?.label}
                   style={{
                     display: 'inline-flex', alignItems: 'center', gap: 7,
-                    background: 'var(--nav-accent)', border: '1px solid var(--nav-border)', borderRadius: 8,
-                    padding: '7px 11px', cursor: 'pointer', color: 'var(--nav-text)',
+                    background: 'var(--dock-nav-accent)', border: '1px solid var(--dock-nav-border)', borderRadius: 8,
+                    padding: '7px 11px', cursor: 'pointer', color: 'var(--dock-nav-text)',
                     fontSize: TAB_FONT + 1, fontWeight: 500, lineHeight: 1, WebkitTapHighlightColor: 'transparent',
                   }}
                 >

@@ -19,7 +19,7 @@ const Input = forwardRef(function Input({ size = 'sm', mono = false, style, ...r
     ...dims,
     borderWidth: 1,
     borderStyle: 'solid',
-    borderColor: 'var(--input-border)',
+    borderColor: 'var(--dock-input-border)',
     outline: 'none',
     width: '100%',
     fontFamily: mono ? 'var(--font-mono, ui-monospace, monospace)' : 'inherit',
@@ -30,8 +30,8 @@ const Input = forwardRef(function Input({ size = 'sm', mono = false, style, ...r
     <input
       ref={ref}
       style={base}
-      onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--border-focus)'; e.currentTarget.style.boxShadow = '0 0 0 2px var(--selection-bg)' }}
-      onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--input-border)'; e.currentTarget.style.boxShadow = 'none' }}
+      onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--dock-border-focus)'; e.currentTarget.style.boxShadow = '0 0 0 2px var(--dock-selection-bg)' }}
+      onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--dock-input-border)'; e.currentTarget.style.boxShadow = 'none' }}
       {...rest}
     />
   )

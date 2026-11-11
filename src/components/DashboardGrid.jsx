@@ -176,7 +176,7 @@ export default function DashboardGrid({
                 style={{
                   position: 'absolute', right: 0, bottom: 0, width: 16, height: 16,
                   cursor: 'nwse-resize', zIndex: 6,
-                  background: 'linear-gradient(135deg, transparent 50%, var(--border-strong) 50%, var(--border-strong) 60%, transparent 60%, transparent 72%, var(--border-strong) 72%, var(--border-strong) 82%, transparent 82%)',
+                  background: 'linear-gradient(135deg, transparent 50%, var(--dock-border-strong) 50%, var(--dock-border-strong) 60%, transparent 60%, transparent 72%, var(--dock-border-strong) 72%, var(--dock-border-strong) 82%, transparent 82%)',
                   borderBottomRightRadius: 10,
                 }}
               />

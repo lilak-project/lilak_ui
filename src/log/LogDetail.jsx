@@ -32,10 +32,10 @@ const CHIP = { fontSize: 'var(--fs-tiny, 11px)', padding: '2px 8px', borderRadiu
 
 function severityStyle(level) {
   switch (level) {
-    case 'warning':  return { backgroundColor: 'var(--warning-bg)', color: 'var(--warning-text)' }
-    case 'error':    return { backgroundColor: 'var(--danger-bg)',  color: 'var(--danger-text)' }
-    case 'critical': return { backgroundColor: 'var(--btn-danger-bg)', color: 'var(--btn-danger-text)' }
-    default:         return { backgroundColor: 'var(--info-bg)',    color: 'var(--info-text)' }
+    case 'warning':  return { backgroundColor: 'var(--dock-warning-bg)', color: 'var(--dock-warning-text)' }
+    case 'error':    return { backgroundColor: 'var(--dock-danger-bg)',  color: 'var(--dock-danger-text)' }
+    case 'critical': return { backgroundColor: 'var(--dock-btn-danger-bg)', color: 'var(--dock-btn-danger-text)' }
+    default:         return { backgroundColor: 'var(--dock-info-bg)',    color: 'var(--dock-info-text)' }
   }
 }
 
@@ -93,7 +93,7 @@ export default function LogDetail({
   const level = entry.level || 'info'
   const L = { noBody: '(no body)', attachments: (n) => `Attachments (${n})`, close: 'Close', editedBy: null, ...labels }
 
-  const idPill = { fontSize: 'var(--fs-tiny, 11px)', fontFamily: 'var(--font-mono)', padding: '1px 6px', borderRadius: 4, backgroundColor: 'var(--surface)', color: 'var(--text-muted)', border: '1px solid var(--border-default)' }
+  const idPill = { fontSize: 'var(--fs-tiny, 11px)', fontFamily: 'var(--font-mono)', padding: '1px 6px', borderRadius: 4, backgroundColor: 'var(--dock-surface)', color: 'var(--dock-text-muted)', border: '1px solid var(--dock-border-default)' }
 
   // tags: synthetic (run status / pending / auto / task) + real
   const isPending = d.task_status === 'pending' && !d.task_service_id && !d.task_module
@@ -106,16 +106,16 @@ export default function LogDetail({
   if (entry.is_auto) chips.push(synth('auto'))
   if (entry.parent_log_id) chips.push(synth('task'))
 
-  const divider = { borderTop: '1px solid var(--border-subtle)', paddingTop: 12, marginBottom: 12 }
+  const divider = { borderTop: '1px solid var(--dock-border-subtle)', paddingTop: 12, marginBottom: 12 }
 
   return (
     <div id={`log-card-${entry.id}`} style={{
       borderRadius: 12, borderWidth: 2, borderStyle: 'solid',
-      borderColor: focused ? 'var(--border-focus)'
-        : entry.is_deleted ? 'var(--danger-text)'
-        : isPolling(entry) ? 'var(--success-border)'    // still refilling — see LogEntryCard
-        : 'var(--border-default)',
-      backgroundColor: 'var(--surface)', boxShadow: '0 4px 14px rgba(0,0,0,0.08)', fontFamily: 'var(--font-sans)',
+      borderColor: focused ? 'var(--dock-border-focus)'
+        : entry.is_deleted ? 'var(--dock-danger-text)'
+        : isPolling(entry) ? 'var(--dock-success-border)'    // still refilling — see LogEntryCard
+        : 'var(--dock-border-default)',
+      backgroundColor: 'var(--dock-surface)', boxShadow: '0 4px 14px rgba(0,0,0,0.08)', fontFamily: 'var(--font-sans)',
     }}>
       {/* header — the whole bar closes the entry, not just the × in its corner.
           A strip that already reads as the card's title bar is the obvious
@@ -128,38 +128,38 @@ export default function LogDetail({
            } : undefined}
         title={onClose ? L.close : undefined}
         style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '10px 16px',
-        borderBottom: '1px solid var(--border-subtle)', backgroundColor: 'var(--surface-2)', borderRadius: '12px 12px 0 0', flexWrap: 'wrap',
+        borderBottom: '1px solid var(--dock-border-subtle)', backgroundColor: 'var(--dock-surface-2)', borderRadius: '12px 12px 0 0', flexWrap: 'wrap',
         cursor: onClose ? 'pointer' : undefined }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
           {showIndex && <span style={idPill}>{indexPrefix}{entry.log_index ?? entry.id}</span>}
           {level !== 'info' && <span style={{ ...CHIP, ...severityStyle(level) }}>{level.toUpperCase()}</span>}
           <RunBadges entry={entry} />
-          {entry.category && <span style={{ ...CHIP, backgroundColor: 'var(--surface-3)', color: 'var(--text-secondary)' }}>{entry.category}</span>}
+          {entry.category && <span style={{ ...CHIP, backgroundColor: 'var(--dock-surface-3)', color: 'var(--dock-text-secondary)' }}>{entry.category}</span>}
           {noticeBadge}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
           {headerRight}
           {onClose && (
             <button onClick={onClose} title={L.close}
-              style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 'var(--fs-medium, 14px)', padding: '0 4px' }}
-              onMouseEnter={(e) => e.currentTarget.style.color = 'var(--text-primary)'}
-              onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-muted)'}><Icon name="close" size={14} /></button>
+              style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--dock-text-muted)', fontSize: 'var(--fs-medium, 14px)', padding: '0 4px' }}
+              onMouseEnter={(e) => e.currentTarget.style.color = 'var(--dock-text-primary)'}
+              onMouseLeave={(e) => e.currentTarget.style.color = 'var(--dock-text-muted)'}><Icon name="close" size={14} /></button>
           )}
         </div>
       </div>
 
       <div style={{ padding: '14px 18px 12px' }}>
         {/* title */}
-        <h2 style={{ fontSize: 'var(--fs-large, 16px)', lineHeight: 1.35, margin: '0 0 4px', color: 'var(--text-primary)', fontWeight: 600 }}>
-          {(entry.title || '').trim() || <span style={{ fontStyle: 'italic', color: 'var(--text-muted)' }}>{L.noBody}</span>}
+        <h2 style={{ fontSize: 'var(--fs-large, 16px)', lineHeight: 1.35, margin: '0 0 4px', color: 'var(--dock-text-primary)', fontWeight: 600 }}>
+          {(entry.title || '').trim() || <span style={{ fontStyle: 'italic', color: 'var(--dock-text-muted)' }}>{L.noBody}</span>}
         </h2>
 
         {/* meta */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', fontSize: 'var(--fs-small, 12px)', color: 'var(--text-secondary)', marginBottom: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', fontSize: 'var(--fs-small, 12px)', color: 'var(--dock-text-secondary)', marginBottom: 12 }}>
           <span>{entry.author_name}</span>
           <span>{formatLogStamp(entry.created_at)}</span>
-          {L.editedBy && d.updated_by && <span style={{ color: 'var(--text-muted)' }}>{L.editedBy(d.updated_by, formatLogStamp(d.updated_at))}</span>}
-          {entry.source && entry.source !== 'human' && <span style={{ color: 'var(--text-link)' }}>{entry.source}</span>}
+          {L.editedBy && d.updated_by && <span style={{ color: 'var(--dock-text-muted)' }}>{L.editedBy(d.updated_by, formatLogStamp(d.updated_at))}</span>}
+          {entry.source && entry.source !== 'human' && <span style={{ color: 'var(--dock-text-link)' }}>{entry.source}</span>}
         </div>
 
         {banner}
@@ -181,12 +181,12 @@ export default function LogDetail({
           <div style={{ ...divider }}>{body}</div>
         ) : detail ? (
           d.body
-            ? <div style={{ ...divider, fontSize: 'var(--fs-medium, 14px)', color: 'var(--text-primary)' }}><Markdown>{d.body}</Markdown></div>
-            : <p style={{ ...divider, fontSize: 'var(--fs-medium, 14px)', fontStyle: 'italic', color: 'var(--text-muted)' }}>{L.noBody}</p>
+            ? <div style={{ ...divider, fontSize: 'var(--fs-medium, 14px)', color: 'var(--dock-text-primary)' }}><Markdown>{d.body}</Markdown></div>
+            : <p style={{ ...divider, fontSize: 'var(--fs-medium, 14px)', fontStyle: 'italic', color: 'var(--dock-text-muted)' }}>{L.noBody}</p>
         ) : (
           <div style={{ ...divider }}>
-            <div style={{ height: 14, borderRadius: 4, width: '75%', marginBottom: 8, backgroundColor: 'var(--surface-2)' }} />
-            <div style={{ height: 14, borderRadius: 4, width: '50%', backgroundColor: 'var(--surface-2)' }} />
+            <div style={{ height: 14, borderRadius: 4, width: '75%', marginBottom: 8, backgroundColor: 'var(--dock-surface-2)' }} />
+            <div style={{ height: 14, borderRadius: 4, width: '50%', backgroundColor: 'var(--dock-surface-2)' }} />
           </div>
         )}
 
@@ -195,7 +195,7 @@ export default function LogDetail({
           const files = detail.attachments.filter((a) => !isImg(a))
           return (
             <div style={{ ...divider }}>
-              <div style={{ fontSize: 'var(--fs-tiny, 11px)', textTransform: 'uppercase', letterSpacing: '.05em', color: 'var(--text-muted)', marginBottom: 8 }}>
+              <div style={{ fontSize: 'var(--fs-tiny, 11px)', textTransform: 'uppercase', letterSpacing: '.05em', color: 'var(--dock-text-muted)', marginBottom: 8 }}>
                 {L.attachments(detail.attachments.length)}
               </div>
               {images.length > 0 && (
@@ -206,7 +206,7 @@ export default function LogDetail({
                     <button key={att.id} type="button" title={att.original_filename}
                       onClick={(e) => { e.stopPropagation(); setLightIdx(i) }}
                       style={{ display: 'block', padding: 0, borderRadius: 8, overflow: 'hidden', cursor: 'zoom-in',
-                               border: '1px solid var(--border-default)', background: 'none', lineHeight: 0 }}>
+                               border: '1px solid var(--dock-border-default)', background: 'none', lineHeight: 0 }}>
                       <img src={attachmentHref(att)} alt={att.original_filename} loading="lazy"
                         style={{ display: 'block', width: 'auto', maxWidth: 220, maxHeight: 220, objectFit: 'cover' }} />
                     </button>
@@ -218,9 +218,9 @@ export default function LogDetail({
                   {files.map((att) => (
                     <a key={att.id} href={attachmentHref(att)} target="_blank" rel="noopener noreferrer"
                       style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--fs-small, 12px)', padding: '6px 10px', borderRadius: 8,
-                        border: '1px solid var(--border-default)', backgroundColor: 'var(--surface-2)', color: 'var(--text-primary)', textDecoration: 'none' }}>
+                        border: '1px solid var(--dock-border-default)', backgroundColor: 'var(--dock-surface-2)', color: 'var(--dock-text-primary)', textDecoration: 'none' }}>
                       <span style={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{att.original_filename}</span>
-                      {att.size && <span style={{ color: 'var(--text-muted)' }}>{formatSize(att.size)}</span>}
+                      {att.size && <span style={{ color: 'var(--dock-text-muted)' }}>{formatSize(att.size)}</span>}
                     </a>
                   ))}
                 </div>

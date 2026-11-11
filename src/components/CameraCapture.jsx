@@ -85,7 +85,7 @@ export default function CameraCapture({ open, onClose, onCapture, title = 'Camer
       )}
     >
       {error ? (
-        <div style={{ padding: 24, textAlign: 'center', color: 'var(--danger-text)', fontSize: 'var(--fs-body, 13px)' }}>{error}</div>
+        <div style={{ padding: 24, textAlign: 'center', color: 'var(--dock-danger-text)', fontSize: 'var(--fs-body, 13px)' }}>{error}</div>
       ) : (
         <div style={{ position: 'relative', backgroundColor: '#000', borderRadius: 8, overflow: 'hidden' }}>
           <video ref={videoRef} playsInline muted style={{ width: '100%', display: 'block', maxHeight: '60vh', objectFit: 'contain' }} />

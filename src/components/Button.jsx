@@ -16,16 +16,16 @@
  * size:    sm (compact, default) | md
  */
 
-const SOLID_TEXT = 'var(--btn-primary-text, #fff)'
+const SOLID_TEXT = 'var(--dock-btn-primary-text, #fff)'
 
 // Tinted (semantic/action) variants: light bg + text at rest, solid on hover.
 const TINTED = {
-  primary:    { bg: 'var(--info-bg)',    fg: 'var(--info-text)',    onBg: 'var(--info-text)' },
-  info:       { bg: 'var(--info-bg)',    fg: 'var(--info-text)',    onBg: 'var(--info-text)' },
-  success:    { bg: 'var(--success-bg)', fg: 'var(--success-text)', onBg: 'var(--success-text)' },
-  warning:    { bg: 'var(--warning-bg)', fg: 'var(--warning-text)', onBg: 'var(--warning-text)' },
-  danger:     { bg: 'var(--danger-bg)',  fg: 'var(--danger-text)',  onBg: 'var(--danger-text)' },
-  dangerSoft: { bg: 'var(--danger-bg)',  fg: 'var(--danger-text)',  onBg: 'var(--danger-text)' },
+  primary:    { bg: 'var(--dock-info-bg)',    fg: 'var(--dock-info-text)',    onBg: 'var(--dock-info-text)' },
+  info:       { bg: 'var(--dock-info-bg)',    fg: 'var(--dock-info-text)',    onBg: 'var(--dock-info-text)' },
+  success:    { bg: 'var(--dock-success-bg)', fg: 'var(--dock-success-text)', onBg: 'var(--dock-success-text)' },
+  warning:    { bg: 'var(--dock-warning-bg)', fg: 'var(--dock-warning-text)', onBg: 'var(--dock-warning-text)' },
+  danger:     { bg: 'var(--dock-danger-bg)',  fg: 'var(--dock-danger-text)',  onBg: 'var(--dock-danger-text)' },
+  dangerSoft: { bg: 'var(--dock-danger-bg)',  fg: 'var(--dock-danger-text)',  onBg: 'var(--dock-danger-text)' },
 }
 
 const SIZES = {
@@ -38,8 +38,8 @@ function palette(variant) {
   const t = TINTED[variant]
   if (t) return { restBg: t.bg, restFg: t.fg, hovBg: t.onBg, hovFg: SOLID_TEXT }
   // neutral: secondary (grey pill) / ghost (transparent) — only darken on hover.
-  const restBg = variant === 'ghost' ? 'transparent' : 'var(--surface-2)'
-  return { restBg, restFg: 'var(--text-secondary)', hovBg: 'var(--surface-3)', hovFg: 'var(--text-primary)' }
+  const restBg = variant === 'ghost' ? 'transparent' : 'var(--dock-surface-2)'
+  return { restBg, restFg: 'var(--dock-text-secondary)', hovBg: 'var(--dock-surface-3)', hovFg: 'var(--dock-text-primary)' }
 }
 
 export default function Button({

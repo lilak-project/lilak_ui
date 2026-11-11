@@ -24,14 +24,14 @@ export default function SideNav({
     <aside
       style={{
         width, flexShrink: 0, paddingRight: 8, marginRight: 24,
-        borderRight: '1px solid var(--border-subtle)', ...style,
+        borderRight: '1px solid var(--dock-border-subtle)', ...style,
       }}
       {...rest}
     >
       {title && (
         <p style={{
           fontSize: 'var(--fs-micro, 10px)', fontWeight: 600, textTransform: 'uppercase',
-          letterSpacing: '0.05em', color: 'var(--text-muted)',
+          letterSpacing: '0.05em', color: 'var(--dock-text-muted)',
           padding: '0 8px', margin: '0 0 8px',
         }}>{title}</p>
       )}
@@ -53,10 +53,10 @@ export default function SideNav({
                 borderRadius: 8, border: 'none', cursor: 'pointer',
                 textAlign: 'left', fontSize: 'var(--fs-small, 12px)', fontFamily: 'inherit',
                 transition: 'background-color .12s, color .12s',
-                backgroundColor: on ? 'var(--info-bg)' : 'transparent',
-                color: on ? 'var(--info-text)' : 'var(--text-secondary)',
+                backgroundColor: on ? 'var(--dock-info-bg)' : 'transparent',
+                color: on ? 'var(--dock-info-text)' : 'var(--dock-text-secondary)',
               }}
-              onMouseEnter={(e) => { if (!on) e.currentTarget.style.backgroundColor = 'var(--surface-2)' }}
+              onMouseEnter={(e) => { if (!on) e.currentTarget.style.backgroundColor = 'var(--dock-surface-2)' }}
               onMouseLeave={(e) => { if (!on) e.currentTarget.style.backgroundColor = 'transparent' }}
             >
               {s.icon && <Icon name={s.icon} size={15} weight={on ? 'fill' : 'regular'} />}

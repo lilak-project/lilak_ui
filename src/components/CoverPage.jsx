@@ -37,8 +37,8 @@ export default function CoverPage({
   // screens never shifts the layout horizontally.
   const rootStyle = fill
     ? { height: '100dvh', overflow: 'hidden', display: 'flex', flexDirection: 'column',
-        backgroundColor: 'var(--app-bg, var(--surface-2))', ...style }
-    : { minHeight: '100vh', backgroundColor: 'var(--app-bg, var(--surface-2))', paddingBottom: 64, ...style }
+        backgroundColor: 'var(--dock-app-bg, var(--dock-surface-2))', ...style }
+    : { minHeight: '100vh', backgroundColor: 'var(--dock-app-bg, var(--dock-surface-2))', paddingBottom: 64, ...style }
   return (
     <div data-theme={theme} style={rootStyle} {...rest}>
       <Container max={max} style={fill ? { display: 'flex', flexDirection: 'column', minHeight: 0, flex: 1 } : undefined}>
@@ -59,12 +59,12 @@ export default function CoverPage({
           {(title != null || subtitle != null) && (
             <div style={center ? { minWidth: 0 } : { flex: 1, minWidth: 0 }}>
               {title != null && (
-                <h1 style={{ margin: 0, fontSize: 'var(--fs-title, 22px)', color: 'var(--text-emphasis)', letterSpacing: '0.01em' }}>
+                <h1 style={{ margin: 0, fontSize: 'var(--fs-title, 22px)', color: 'var(--dock-text-emphasis)', letterSpacing: '0.01em' }}>
                   {title}
                 </h1>
               )}
               {subtitle && (
-                <p style={{ margin: '2px 0 0', fontSize: 'var(--fs-small, 12px)', color: 'var(--text-muted)' }}>
+                <p style={{ margin: '2px 0 0', fontSize: 'var(--fs-small, 12px)', color: 'var(--dock-text-muted)' }}>
                   {subtitle}
                 </p>
               )}
@@ -76,7 +76,7 @@ export default function CoverPage({
         </header>
 
         {note && (
-          <div style={{ margin: '8px 0', fontSize: 'var(--fs-small, 12px)', color: 'var(--text-muted)', flexShrink: 0 }}>
+          <div style={{ margin: '8px 0', fontSize: 'var(--fs-small, 12px)', color: 'var(--dock-text-muted)', flexShrink: 0 }}>
             {note}
           </div>
         )}
@@ -105,7 +105,7 @@ export default function CoverPage({
  *
  * Props
  *   icon        icon name (string) OR a node
- *   iconColor   leading icon colour (default --text-primary)
+ *   iconColor   leading icon colour (default --dock-text-primary)
  *   title       name text/node (mono 600 by default; set mono={false} to disable)
  *   badge       optional node beside the title (e.g. a "current" pill)
  *   statusOn    bool → status dot colour (success vs muted)
@@ -114,7 +114,7 @@ export default function CoverPage({
  *   active      bool → focus/selected border highlight
  */
 export function CoverCard({
-  icon, iconColor = 'var(--text-primary)', title, badge,
+  icon, iconColor = 'var(--dock-text-primary)', title, badge,
   statusOn = false, statusText, actions, active = false,
   mono = true, style, ...rest
 }) {
@@ -122,8 +122,8 @@ export function CoverCard({
     <div
       style={{
         display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px',
-        border: '1px solid', borderRadius: 10, backgroundColor: 'var(--surface)',
-        borderColor: active ? 'var(--border-focus, var(--btn-primary-bg))' : 'var(--border-default)',
+        border: '1px solid', borderRadius: 10, backgroundColor: 'var(--dock-surface)',
+        borderColor: active ? 'var(--dock-border-focus, var(--dock-btn-primary-bg))' : 'var(--dock-border-default)',
         ...style,
       }}
       {...rest}
@@ -137,14 +137,14 @@ export function CoverCard({
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{
             fontFamily: mono ? 'var(--font-mono)' : 'inherit',
-            fontSize: 'var(--fs-body, 13px)', color: 'var(--text-primary)', fontWeight: 600,
+            fontSize: 'var(--fs-body, 13px)', color: 'var(--dock-text-primary)', fontWeight: 600,
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           }}>{title}</span>
           {badge}
         </div>
         {statusText != null && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2, fontSize: 'var(--fs-micro, 10px)', color: 'var(--text-muted)' }}>
-            <span style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: statusOn ? 'var(--success-text)' : 'var(--text-muted)' }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2, fontSize: 'var(--fs-micro, 10px)', color: 'var(--dock-text-muted)' }}>
+            <span style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: statusOn ? 'var(--dock-success-text)' : 'var(--dock-text-muted)' }} />
             {statusText}
           </div>
         )}

@@ -16,6 +16,25 @@ step, no Tailwind. The host app's Vite transpiles the source directly.
 
 ---
 
+## DOCK — the look this kit draws
+
+The kit's own look is called **DOCK**: a coloured bar on top with the app's tabs
+docked in it (plus the `/` command bar and the `\` drawer), rounded cards and
+buttons, pill badges, slate surfaces in layers, a blue primary button, and the
+`--dock-surface` / `--dock-text-primary` … tokens with the bright / dark / lowcontrast themes.
+elog, nptoy, analysis and stark_planner are DOCK apps.
+
+The portal cover and the rack services use **RACK** instead (square, flat, white
+modules with coloured nameplates on a grey floor) — see
+`service_manager/frontend/src/pages/portal/RACK.md`. Say which one a screen is
+before changing how it looks.
+
+DOCK's colours are `--dock-<name>`, one per entry in `src/theme/tokens.js`
+(`applyTheme` writes them; a saved override keeps the bare name, `surface`). The
+old bare `--surface` … still resolve, as aliases of the new ones, until
+`scripts/dock.py --check` (in `~/web_service`) finds no old use left; then drop
+the alias block at the end of `buildThemeCSS`.
+
 ## The default skeleton — `AppShell`
 
 Ask for "just a skeleton with lilak-ui" and this is what you get. `AppShell` wires
@@ -152,8 +171,8 @@ switch tabs · `g r/l/o/s` jump to a tab · `?` shortcuts modal.
 
 The single source of truth for every color and size.
 
-- **`tokens.js`** — every color is a *semantic token* (`--app-bg`, `--surface`,
-  `--text-primary`, `--btn-primary-bg`, …) enumerated in `TOKEN_GROUPS` with a
+- **`tokens.js`** — every color is a *semantic token* (`--dock-app-bg`, `--dock-surface`,
+  `--dock-text-primary`, `--dock-btn-primary-bg`, …) enumerated in `TOKEN_GROUPS` with a
   value for each theme (**bright / dark / lowcontrast**). Grouped by category
   (surface / border / text / status / bubble / button / input / schedule) so
   the settings editor can render them.
