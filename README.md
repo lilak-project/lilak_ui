@@ -31,9 +31,8 @@ before changing how it looks.
 
 DOCK's colours are `--dock-<name>`, one per entry in `src/theme/tokens.js`
 (`applyTheme` writes them; a saved override keeps the bare name, `surface`). The
-old bare `--surface` … still resolve, as aliases of the new ones, until
-`scripts/dock.py --check` (in `~/web_service`) finds no old use left; then drop
-the alias block at the end of `buildThemeCSS`.
+old bare `--surface` … are gone: they draw nothing now. `scripts/dock.py --check`
+(in `~/web_service`) names any file that still uses one.
 
 ## The default skeleton — `AppShell`
 

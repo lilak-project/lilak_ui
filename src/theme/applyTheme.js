@@ -124,10 +124,8 @@ export function buildThemeCSS() {
     const selector = id === THEMES[0].id ? `:root, [data-theme="${id}"]` : `[data-theme="${id}"]`
     blocks.push(`${selector} {\n${lines.join('\n')}\n}`)
   }
-  // The old bare names, while code that has not moved to --dock-* is still
-  // around (scripts/dock.py --check lists it). Remove once that is empty.
-  const alias = Object.keys(TOKENS).map((name) => `  --${name}: var(--dock-${name});`)
-  blocks.push(`:root {\n${alias.join('\n')}\n}`)
+  // Only the --dock-* names: the old bare aliases are gone (2026-11-19); a bare
+  // name now draws nothing, and scripts/dock.py --check names whoever uses one.
   return blocks.join('\n\n')
 }
 
